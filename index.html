@@ -576,7 +576,7 @@
 
   /* ===== Combate ===== */
   .cm{display:flex;flex-direction:column;gap:16px}
-  .cm-cab{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);grid-template-areas:"vida tiles" "vida stats";gap:12px 16px;
+  .cm-cab{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);grid-template-areas:"vida he" "tiles tiles" "stats stats";gap:12px 16px;
     padding:4px 0 14px;border-bottom:1px solid var(--linea)}
   .cm-vida{grid-area:vida;background:var(--panel);border:1px solid var(--linea);border-left:4px solid var(--verde);border-radius:12px;padding:12px 14px}
   .cm-vida.est-grave{border-left-color:var(--ambar)} .cm-vida.est-mortal{border-left-color:var(--rojo);box-shadow:0 0 0 1px rgba(255,46,46,.35),0 0 24px rgba(255,46,46,.18)}
@@ -589,12 +589,19 @@
   .cm-barra i{position:absolute;inset:0 auto 0 0;background:var(--verde);border-radius:99px;transition:width .2s}
   .est-grave .cm-barra i{background:var(--ambar)} .est-mortal .cm-barra i{background:var(--rojo)}
   .cm-barra em{position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(237,231,222,.55)}
-  .cm-estado{margin:0 0 8px;font-size:13.5px;color:var(--hueso)}
+  .cm-estado{margin:0 0 6px;font-size:14.5px;font-weight:650;color:var(--verde)}
+  .cm-estado.est-grave{color:var(--ambar)} .cm-estado.est-mortal{color:var(--rojo)}
+  .cm-he{grid-area:he;background:var(--panel);border:1px solid var(--linea);border-left:4px solid var(--verde);border-radius:12px;padding:12px 14px;min-width:0}
+  .cm-he.est-grave{border-left-color:var(--ambar)} .cm-he.est-mortal{border-left-color:var(--rojo)}
+  .cm-he h4{font-family:var(--display);font-size:14.5px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;color:var(--hueso)}
+  .cm-he-pen{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .cm-he-pen span{border:1px solid rgba(255,46,46,.5);color:var(--rojo);border-radius:99px;padding:3px 10px;font-size:13px;font-weight:600}
+  .cm-he .cm-estado-t{font-size:14px;padding:4px 7px 4px 11px}
   .cm-vida-mandos{display:flex;flex-wrap:wrap;gap:6px}
   .cm-vida-mandos .btn{min-width:46px;padding:7px 9px;min-height:38px}
   .cm-vida-mandos input{width:64px;text-align:center;font-family:var(--display);font-size:18px;padding:4px}
   .cm-nota{margin:8px 0 0;font-size:12px;color:var(--apagado)}
-  .cm-tiles{grid-area:tiles;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+  .cm-tiles{grid-area:tiles;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-content:start}
   .cm-tile{background:var(--panel);border:1px solid var(--linea);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
   .cm-tile small{font-family:var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--apagado);font-size:11.5px}
   .cm-tile b{font-family:var(--display);font-size:28px;line-height:1.05;font-variant-numeric:tabular-nums}
@@ -622,6 +629,16 @@
   details.cm-bloque > summary h4::after{content:"▾";margin-left:auto;color:var(--apagado)}
   .cm-acc{border-top:1px solid var(--linea);padding:9px 0 8px}
   .cm-bloque h4 + .cm-acc{border-top:none;padding-top:2px}
+  /* acciones disponibles: tarjetas más estrechas en varias columnas (mismo contenido) */
+  .cm-col.principal .cm-bloque{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;align-items:start}
+  .cm-col.principal .cm-bloque > h4,.cm-col.principal .cm-bloque > .cm-vacio,.cm-col.principal .cm-bloque > .cm-sin-equipar{grid-column:1/-1;margin-bottom:0}
+  .cm-col.principal .cm-acc,.cm-col.principal .cm-bloque h4 + .cm-acc{border:1px solid var(--linea);border-radius:10px;padding:9px 11px;background:var(--panel-alto);min-width:0}
+  .cm-acc.agotada h5{color:var(--rojo)}
+  .cm-col.principal .cm-acc.agotada{border-color:rgba(255,46,46,.55);background:rgba(255,46,46,.07)}
+  .cm-col:not(.principal) .cm-acc.agotada{border-left:3px solid var(--rojo);padding-left:8px}
+  .cm-sin-equipar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;color:var(--apagado)}
+  .cm-se{display:inline-flex;align-items:center;gap:6px;color:var(--hueso)}
+  .cm-se .btn{padding:3px 8px;min-height:28px;font-size:12px}
   .cm-acc-cab{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
   .cm-acc-cab h5{margin:0;font-size:15px;font-weight:650;color:var(--hueso);flex:1 1 180px;min-width:0}
   .cm-chips{display:flex;flex-wrap:wrap;gap:5px}
@@ -678,9 +695,9 @@
   .cm-crit-t td:first-child{font-family:var(--display);font-size:15px;color:var(--ambar);width:30px}
   .cm-crit-t .btn{padding:3px 8px;min-height:28px;font-size:12px}
   @media (max-width:600px){ .cm-dist{font-size:11px} .cm-dist th,.cm-dist td{padding:2px 3px} .cm-crit-t td:nth-child(4),.cm-crit-t th:nth-child(4){display:none} }
-  @media (max-width:1180px){ .cm-tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @media (max-width:1180px){ .cm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media (max-width:900px){
-    .cm-cab{grid-template-columns:minmax(0,1fr);grid-template-areas:"vida" "tiles" "stats";position:static}
+    .cm-cab{grid-template-columns:minmax(0,1fr);grid-template-areas:"vida" "he" "tiles" "stats";position:static}
     .cm-rejilla{grid-template-columns:minmax(0,1fr)}
     .cm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
     .cm-det dl > div,.cm-def-lista > div{grid-template-columns:1fr;gap:0}
@@ -5995,7 +6012,8 @@ function modeloCombate(){
   const C = calcular(), E = estado(), K = datosCombate();
   const an = C.an, r = C.r;
   const conflicto = E.confRec;
-  const M = {C, acciones:{ataques:[], movimiento:[], turno:[], tecno:[], activables:[], rol:[]}, defensa:[], pasivas:[], condicionales:[], rasgos:[], no:[], faltan:[], fueraCombate:0};
+  // M.no: lo que el personaje no puede hacer (no se pinta). Lo gastado (sin usos, sin munición, sin RAM) se queda en su sitio con «agotada».
+  const M = {C, acciones:{ataques:[], movimiento:[], turno:[], tecno:[], activables:[], rol:[]}, defensa:[], pasivas:[], condicionales:[], rasgos:[], no:[], sinEquipar:[], faltan:[], fueraCombate:0};
   const contador = (clave, total, por, etiqueta, rec) => total ? {clave, total, usados:Math.min(total, num(K.cont[clave])), por, etiqueta} : null;
   const quedan = c => c ? c.total - c.usados : 1;
 
@@ -6012,10 +6030,11 @@ function modeloCombate(){
   M.cartas = K.cartas;
 
   // ---- CB: solo cuenta la mayor fuente (leyenda del catálogo)
-  const fuentesCB = [{n:"Blindaje del cuerpo", v:num(D["f-cb-cuerpo"])}, {n:an.mods.cbF ? "Ciberware · " + an.mods.cbF.n : "Ciberware", v:an.mods.cb}, {n:"Raza", v:r.cb || 0}].filter(f => f.v > 0);
-  const fuentesCBc = [{n:"Blindaje de la cabeza", v:num(D["f-cb-cabeza"])}, {n:"Raza", v:r.cb || 0}].filter(f => f.v > 0);
+  // CB universal (sin zonas): la mayor de todas las fuentes
+  const fuentesCB = [{n:"Blindaje del cuerpo", v:num(D["f-cb-cuerpo"])}, {n:"Blindaje de la cabeza", v:num(D["f-cb-cabeza"])},
+    {n:an.mods.cbF ? "Ciberware · " + an.mods.cbF.n : "Ciberware", v:an.mods.cb}, {n:"Raza", v:r.cb || 0}].filter(f => f.v > 0);
   const mayor = l => l.reduce((m, f) => f.v > m.v ? f : m, {n:"", v:0});
-  M.cb = {cuerpo:mayor(fuentesCB), cabeza:mayor(fuentesCBc), fuentes:fuentesCB, fuentesCabeza:fuentesCBc};
+  M.cb = Object.assign(mayor(fuentesCB), {fuentes:fuentesCB});
 
   // ---- estadísticas que intervienen en combate (efectivas, con su desglose)
   M.stats = ESTADISTICAS.map(e => ({c:e.c, n:e.n, v:C.s[e.c], base:C.base[e.c], desglose:C.desglose.stat[e.c]}));
@@ -6074,12 +6093,12 @@ function modeloCombate(){
     if(va.revisar.length) acc.aviso = "Por revisar en la Ficha: " + va.revisar.join(" ");
     else if(!tipo) acc.aviso = "Indica qué tipo de arma es para saber qué tirada usa.";
     else if(T.dist && !va.cargador && tipo !== "lanzar") acc.aviso = "Escribe la capacidad del cargador en la Ficha para llevar la cuenta de la munición.";
-    const motivo = !va.equipada ? "No la llevas equipada (equípala en la Ficha o aquí)." : va.perdida ? "Su definición ya no está en el catálogo de armas." :
-      t && t.falta ? t.falta : mun && mun.n <= 0 ? "Sin munición cargada: recarga (gasta la Acción)." : "";
-    if(!va.equipada) acc.equipar = true;
-    // sin munición sigue en su sitio, marcada, para poder recargar ahí mismo
-    const enSitio = va.equipada && !va.perdida && !(t && t.falta) && mun && mun.n <= 0;
-    (motivo && !enSitio ? M.no : M.acciones.ataques).push(motivo ? Object.assign(acc, {motivo}) : acc);
+    if(!va.equipada){ M.sinEquipar.push({id:va.id, nombre:va.nombre}); return; }     // se puede equipar, pero no atacar con ella
+    const motivo = va.perdida ? "Su definición ya no está en el catálogo de armas." : t && t.falta ? t.falta : "";
+    if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
+    // sin munición sigue en su sitio, en rojo, para poder recargar ahí mismo
+    if(mun && mun.n <= 0) acc.agotada = true;
+    M.acciones.ataques.push(acc);
   });
   // ---- ataques desarmados: Lucha (Cuerpo) y Artes Marciales (Destreza); daño según Cuerpo, mínimo 2d6 con ciberbrazo
   const ciberbrazo = E.pos.brazo.some(P => P.ciber);
@@ -6117,8 +6136,10 @@ function modeloCombate(){
           "Contra la dificultad según la distancia (la fila depende del arma: la fija el máster). Si el objetivo tiene Reflejos 8 o más, puede esquivar: contra su Destreza + Evasión + Carta.",
         efectos:[].concat(at.ignoraMitad || at.cc ? ["Ignora la mitad de la armadura del defensor."] : [], at.extraCB ? ["Ignora " + at.extraCB + " puntos más de CB."] : [], [CRITICO]),
         variantes:[precisoDe(t, 0)] });
-      const motivo = motivoConf || (t.falta) || (cont && quedan(cont) <= 0 ? "Sin " + cont.etiqueta + ": recarga." : "");
-      (motivo ? M.no : M.acciones.ataques).push(motivo ? Object.assign(acc, {motivo}) : acc);
+      const motivo = motivoConf || t.falta;
+      if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
+      if(cont && quedan(cont) <= 0) acc.agotada = true;
+      M.acciones.ataques.push(acc);
       return;
     }
     // lo que ya va en otro número (salvación contra muerte, daño desarmado de la Lucha) no se repite como entrada
@@ -6129,8 +6150,8 @@ function modeloCombate(){
     const activa = SENYAL_ACTIVA.test(x.e);
     const cont = usos ? contador("rec" + rec.id + ":usos", usos.n, usos.por, "usos") : null;
     const acc = Object.assign(base, {clase:activa ? "activa" : "pasiva", cont, usos, coste:activa ? (/sin gastar Acción/i.test(x.e) ? "Sin gastar Acción" : "Acción") : ""});
-    const motivo = motivoConf || (cont && quedan(cont) <= 0 ? "Sin usos: " + (usos.por === "combate" ? "se recuperan al acabar el combate" : "se recuperan cada " + usos.por) + "." : "");
-    if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
+    if(motivoConf){ M.no.push(Object.assign(acc, {motivo:motivoConf})); return; }
+    if(cont && quedan(cont) <= 0) acc.agotada = true;
     if(activa) M.acciones.activables.push(acc);
     else if(SENYAL_DEFENSA.test(x.e)) M.defensa.push(acc);
     else if(SENYAL_CONDICION.test(x.e)) M.condicionales.push(acc);
@@ -6181,9 +6202,10 @@ function modeloCombate(){
     const acc = {id:"hack" + i, clase:"hackeo", nombre:h.nombre, origen:"Hackeos rápidos", e:h.efecto || "", tirada:tTec, ram:coste,
       coste:neuropuerto ? "Acción de Tecnomancia (con el Neuropuerto, aparte de tu Acción)" : "Acción (Tecnomancia)",
       resolucion:"Contra VD13 si es un objeto, o contra Tecnología + Cibertecnología + Carta del objetivo."};
-    const motivo = !terminal ? "Necesitas un ciberterminal (instalado o apuntado en el inventario o en los programas)." : tTec.falta ? tTec.falta :
-      coste !== null && coste > K.ram ? "No te queda RAM suficiente (" + K.ram + " de " + coste + ")." : "";
-    (motivo ? M.no : M.acciones.tecno).push(motivo ? Object.assign(acc, {motivo}) : acc);
+    const motivo = !terminal ? "Necesitas un ciberterminal (instalado o apuntado en el inventario o en los programas)." : tTec.falta ? tTec.falta : "";
+    if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
+    if(coste !== null && coste > K.ram) acc.agotada = true;          // sin RAM suficiente ahora: en rojo, en su sitio
+    M.acciones.tecno.push(acc);
   });
 
   // ---- defensa: CB, bloquear con escudo, resistencias (las pasivas del ciberware ya se han añadido arriba)
@@ -6208,8 +6230,8 @@ function modeloCombate(){
     const activa = SENYAL_ACTIVA.test(x.d);
     const cont = usos ? contador(x.k + ":usos", usos.n, usos.por, "usos") : null;
     const acc = {id:x.k, clase:activa ? "activa" : "pasiva", nombre:x.t || "", origen:x.origen, e:x.d, cont, usos, puntos:x.puntos, libre:x.libre};
-    if(cont && quedan(cont) <= 0) M.no.push(Object.assign(acc, {motivo:"Sin usos: " + (usos.por === "combate" ? "se recuperan al acabar el combate" : "se recuperan cada " + usos.por) + "."}));
-    else if(activa){ acc.coste = /sin gastar Acción/i.test(x.d) ? "Sin gastar Acción" : /con una acción|usando una acción/i.test(x.d) ? "Acción" : ""; M.acciones.rol.push(acc); }
+    if(cont && quedan(cont) <= 0) acc.agotada = true;
+    if(activa){ acc.coste = /sin gastar Acción/i.test(x.d) ? "Sin gastar Acción" : /con una acción|usando una acción/i.test(x.d) ? "Acción" : ""; M.acciones.rol.push(acc); }
     else M.rasgos.push(acc);
   });
 
@@ -6218,7 +6240,6 @@ function modeloCombate(){
   if(armasDelPersonaje().some(a => a.tipo === "arco")) M.faltan.push("La fila de la tabla de distancias para arcos y ballestas.");
   if(armasDelPersonaje().some(a => a.tipo === "subfusil")) M.faltan.push("La competencia del subfusil en disparo normal (se usa Armas Cortas).");
   if(M.acciones.ataques.concat(M.no).some(a => a.rec && /distancia/.test(a.resolucion || ""))) M.faltan.push("La fila de distancia de las armas integradas en el ciberware (el catálogo no la dice).");
-  if(an.mods.cb) M.faltan.push("A qué zona cubre la CB del ciberware: aquí se cuenta en el cuerpo.");
   M.estados = K.estados;
   return M;
 }
@@ -6282,7 +6303,7 @@ function htmlAccion(a, M){
   const dist = a.fila && DIFICULTAD_DISTANCIA[a.fila] ? `<table class="cm-dist" aria-label="Dificultad según la distancia (${esc(a.fila)})"><tr><th>casillas</th>${TRAMOS.map(x => `<th>${x}</th>`).join("")}</tr>
     <tr><th>dificultad</th>${DIFICULTAD_DISTANCIA[a.fila].map(v => `<td${v === null ? ' class="x"' : ""}>${v === null ? "×" : v}</td>`).join("")}</tr></table>` : "";
   const ramBtn = a.clase === "hackeo" && a.ram ? `<button type="button" class="btn fina" data-cm="ram-gastar" data-n="${a.ram}" ${a.motivo || a.ram > M.ram.actual ? "disabled" : ""}>Gastar ${a.ram} RAM</button>` : "";
-  return `<article class="cm-acc ${a.motivo ? "no" : ""}" data-acc="${esc(a.id)}"${a.rec ? ` data-rec="${esc(a.rec)}"` : ""}>
+  return `<article class="cm-acc ${a.motivo ? "no" : ""}${a.agotada ? " agotada" : ""}" data-acc="${esc(a.id)}"${a.rec ? ` data-rec="${esc(a.rec)}"` : ""}>
     <div class="cm-acc-cab">${a.nombre ? `<h5>${esc(a.nombre)}</h5>` : `<h5 class="sin">${esc(a.origen)}</h5>`}<div class="cm-chips">${chips.join("")}</div></div>
     ${textoVisible && a.e ? `<p class="cm-texto">${esc(a.e)}</p>` : ""}
     ${a.motivo ? `<p class="cm-motivo">${esc(a.motivo)}</p>` : ""}${a.aviso ? `<p class="cm-aviso">${esc(a.aviso)}</p>` : ""}
@@ -6291,9 +6312,9 @@ function htmlAccion(a, M){
     ${textoVisible && det.filter(Boolean).length <= 1 ? (a.nombre ? `<p class="cm-origen">${esc(a.origen)}</p>` : "")
       : `<details class="cm-det"><summary>Detalles</summary><dl>${det.join("")}</dl></details>`}</article>`;
 }
-function bloqueCm(titulo, items, M, vacio, cls){
-  if(!items.length && !vacio) return "";
-  return `<section class="cm-bloque ${cls || ""}"><h4>${esc(titulo)}${items.length ? `<span>${items.length}</span>` : ""}</h4>${items.length ? items.map(a => htmlAccion(a, M)).join("") : `<p class="cm-vacio">${esc(vacio)}</p>`}</section>`;
+function bloqueCm(titulo, items, M, vacio, cls, pie){
+  if(!items.length && !vacio && !pie) return "";
+  return `<section class="cm-bloque ${cls || ""}"><h4>${esc(titulo)}${items.length ? `<span>${items.length}</span>` : ""}</h4>${items.length ? items.map(a => htmlAccion(a, M)).join("") : vacio ? `<p class="cm-vacio">${esc(vacio)}</p>` : ""}${pie || ""}</section>`;
 }
 
 function pintarCombate(){
@@ -6304,12 +6325,15 @@ function pintarCombate(){
   const tile = (t, v, sub, cls, titulo) => `<div class="cm-tile ${cls || ""}"${titulo ? ` title="${esc(titulo)}"` : ""}><small>${t}</small><b>${v}</b>${sub ? `<span>${sub}</span>` : ""}</div>`;
   const cb = M.cb;
   const enfoque = document.activeElement && caja.contains(document.activeElement) ? document.activeElement.id : "";
+  // heridas: el estado de vida y sus penalizaciones, siempre a la vista bajo la vida
+  const heridas = [V.penal ? `<span class="mal">${sgn(V.penal)} a todo por heridas</span>` : "", V.menosMov ? `<span class="mal">−${V.menosMov} casillas</span>` : "",
+    M.agarre ? `<span class="mal">−2 a las acciones por el agarre</span>` : ""].filter(Boolean).join("");
+  const sinEquipar = M.sinEquipar.length ? `<div class="cm-sin-equipar"><span>Sin equipar:</span>${M.sinEquipar.map(w => `<span class="cm-se">${esc(w.nombre)} <button type="button" class="btn fina" data-cm="arma-equipar" data-w="${esc(w.id)}">Equipar</button></span>`).join("")}</div>` : "";
   caja.innerHTML = `
   <header class="cm-cab">
     <section class="cm-vida est-${V.nivel}" aria-label="Vida">
       <div class="cm-vida-num"><small>VIDA</small><b id="cmVida">${V.actual}</b><span>/ ${V.max}</span></div>
       <div class="cm-barra" role="meter" aria-valuemin="0" aria-valuemax="${V.max}" aria-valuenow="${V.actual}"><i style="width:${pct}%"></i><em style="left:${V.max ? Math.round(100 * V.umbralGrave / V.max) : 50}%" title="Por debajo de ${V.umbralGrave}: gravemente herido"></em></div>
-      <p class="cm-estado">${esc(V.estado)}</p>
       <div class="cm-vida-mandos">
         <button type="button" class="btn" data-cm="vida" data-n="-1">−1</button><button type="button" class="btn" data-cm="vida" data-n="-5">−5</button><button type="button" class="btn" data-cm="vida" data-n="-10">−10</button>
         <input id="cmVidaN" inputmode="numeric" placeholder="N" aria-label="Cantidad de vida">
@@ -6318,9 +6342,19 @@ function pintarCombate(){
       </div>
       <p class="cm-nota">Resta tú la CB a cada impacto antes de quitar la vida (las armas cuerpo a cuerpo ignoran la mitad; la herida crítica, toda).</p>
     </section>
+      <section class="cm-he est-${V.nivel}" aria-label="Heridas y estados">
+        <h4>Heridas y estados</h4>
+        <p class="cm-estado est-${V.nivel}">${esc(V.estado)}</p>
+        ${heridas ? `<div class="cm-he-pen">${heridas}</div>` : ""}
+        <div class="cm-estados">${M.estados.map((x, i) => `<span class="cm-estado-t">${esc(x.n)} <b>${x.rot}</b> rot. <button type="button" data-cm="estado-quitar" data-i="${i}" aria-label="Quitar ${esc(x.n)}">×</button></span>`).join("") || `<span class="cm-vacio">Sin estados.</span>`}</div>
+        <div class="cm-estados-mandos">${ESTADOS_RAPIDOS.map(n => `<button type="button" class="btn fina" data-cm="estado" data-n="${n}">${n}</button>`).join("")}
+          <input id="cmEstadoN" placeholder="Otro estado" aria-label="Nombre del estado"><input id="cmEstadoR" inputmode="numeric" placeholder="rot." value="1" aria-label="Rotaciones">
+          <button type="button" class="btn fina" data-cm="estado-otro">Añadir</button>
+          <button type="button" class="btn fina" data-cm="rotacion" ${M.estados.length ? "" : "disabled"}>Nueva rotación (−1)</button></div>
+        <label class="cm-heridas">Heridas críticas y estados (la misma nota que en la Ficha)<textarea id="cmHeridas" rows="3">${esc(D["f-heridas"] || "")}</textarea></label>
+      </section>
     <div class="cm-tiles">
-      ${tile("CB cuerpo", cb.cuerpo.v, cb.cuerpo.v ? esc(cb.cuerpo.n) : "sin blindaje", "cb", "Solo cuenta la mayor fuente:\n" + (cb.fuentes.map(f => f.n + " " + f.v).join("\n") || "ninguna"))}
-      ${tile("CB cabeza", cb.cabeza.v, cb.cabeza.v ? esc(cb.cabeza.n) : "sin blindaje", "cb", cb.fuentesCabeza.map(f => f.n + " " + f.v).join("\n") || "ninguna")}
+      ${tile("CB", cb.v, cb.v ? esc(cb.n) : "sin blindaje", "cb", "Solo cuenta la mayor fuente:\n" + (cb.fuentes.map(f => f.n + " " + f.v).join("\n") || "ninguna"))}
       <div class="cm-tile ini" title="${esc(M.ini.desglose.join("\n"))}"><small>Iniciativa</small><b>${M.ini.v} <i>+ carta</i></b>
         <label class="cm-mini">Tirada <input id="cmIni" inputmode="numeric" value="${esc(M.ini.tirada)}" placeholder="—" aria-label="Resultado de tu iniciativa"></label>
         <span>La carta es opcional · empates: se repite</span></div>
@@ -6328,18 +6362,14 @@ function pintarCombate(){
       <div class="cm-tile ram" title="${esc(M.ram.desglose.join("\n"))}"><small>RAM</small><b>${M.ram.actual}<i> / ${M.ram.max}</i></b>
         <span class="cm-mini-mandos"><button type="button" class="btn fina" data-cm="ram" data-n="-1" aria-label="Gastar 1 RAM">−1</button><button type="button" class="btn fina" data-cm="ram" data-n="1" aria-label="Recuperar 1 RAM">+1</button></span>
         <span>+1 al inicio de cada turno</span></div>
-      <div class="cm-tile cartas"><small>Cartas en mano</small><b>${M.cartas}<i> / ${MANO_CARTAS}</i></b>
-        <span class="cm-mini-mandos"><button type="button" class="btn fina" data-cm="carta">Gastar una</button><button type="button" class="btn fina" data-cm="cartas-reponer" ${M.cartas >= MANO_CARTAS ? "disabled" : ""}>Reponer</button></span>
-        <span>J, Q y K valen 11 · el As vale 11 y suma otra carta (crítico)</span></div>
     </div>
-    <div class="cm-stats">${M.stats.map(s => `<span title="${esc(s.desglose.join("\n"))}">${esc(s.n)} <b>${s.v}</b>${s.v !== s.base ? `<i>base ${s.base}</i>` : ""}</span>`).join("")}
-      ${V.penal ? `<span class="mal">${sgn(V.penal)} a todo por heridas</span>` : ""}${V.menosMov ? `<span class="mal">−${V.menosMov} casillas</span>` : ""}${M.agarre ? `<span class="mal">−2 a las acciones por el agarre</span>` : ""}
+    <div class="cm-stats">${M.stats.map(x => `<span title="${esc(x.desglose.join("\n"))}">${esc(x.n)} <b>${x.v}</b>${x.v !== x.base ? `<i>base ${x.base}</i>` : ""}</span>`).join("")}
       <button type="button" class="btn fina cm-fin" data-cm="fin">Fin del combate</button></div>
   </header>
   <div class="cm-rejilla">
     <div class="cm-col principal">
       <h3 class="cm-titulo">ACCIONES DISPONIBLES</h3>
-      ${bloqueCm("Ataques y armas", M.acciones.ataques, M, M.no.some(a => a.clase === "arma") ? "Ningún ataque disponible ahora: mira «No disponibles ahora»." : "No tienes ningún ataque: añade armas en la Ficha.")}
+      ${bloqueCm("Ataques y armas", M.acciones.ataques, M, M.sinEquipar.length ? "" : "No tienes ningún ataque disponible.", "", sinEquipar)}
       ${bloqueCm("Movimiento", M.acciones.movimiento, M)}
       ${bloqueCm("Acciones del turno", M.acciones.turno, M)}
       ${bloqueCm("Tecnomancia", M.acciones.tecno, M)}
@@ -6350,11 +6380,8 @@ function pintarCombate(){
     <div class="cm-col">
       <section class="cm-bloque cm-def"><h4>Defensa y reacciones</h4>
         <dl class="cm-def-lista">
-          <div><dt>CB (permanente)</dt><dd>Cuerpo <b>${cb.cuerpo.v}</b> · cabeza <b>${cb.cabeza.v}</b>. Se resta al daño de cada impacto; solo cuenta la mayor fuente.</dd></div>
           <div><dt>Defensa cuerpo a cuerpo</dt><dd>${htmlTirada(M.esquiva.tirada)} Destreza + Evasión contra cualquier ataque cuerpo a cuerpo.</dd></div>
-          <div class="${M.esquiva.disparos ? "" : "apagada"}"><dt>Esquivar disparos</dt><dd>${M.esquiva.disparos ? htmlTirada(M.esquiva.tirada) + " Con Reflejos 8 o más puedes esquivar los disparos con Destreza + Evasión, en vez de que el atacante tire contra la distancia."
-            : "No puedes: hace falta Reflejos 8 o más (tienes " + M.esquiva.reflejos + "). Los disparos van contra la dificultad por distancia."}</dd></div>
-          <div><dt>Heridas</dt><dd>Gravemente herido por debajo de ${V.umbralGrave} (−2 a todo) · mortalmente con 1 o menos (−4 a todo, −3 casillas). Cada estado sustituye al anterior.</dd></div>
+          ${M.esquiva.disparos ? `<div><dt>Esquivar disparos</dt><dd>${htmlTirada(M.esquiva.tirada)} Con Reflejos 8 o más puedes esquivar los disparos con Destreza + Evasión, en vez de que el atacante tire contra la distancia.</dd></div>` : ""}
           <div class="${V.nivel === "mortal" ? "alerta" : ""}"><dt>Salvación contra muerte</dt><dd>${V.nivel === "mortal" ? "<b>Ahora:</b> " : "Si quedas mortalmente herido: "}1d10 cada turno: sobrevives si sacas menos de <b>${M.salvacion.objetivo}</b>; un 10 siempre falla. Cada salvación y cada ataque que recibas así suma 1 a la dificultad; cada ataque te causa además una herida crítica.
             <span class="cm-salv">Cuerpo ${M.salvacion.base}${M.salvacion.fuentes.map(f => " +" + f.v + " " + esc(f.n)).join("")}${M.salvacion.penal ? " −" + M.salvacion.penal + " acumulado" : ""}
             <button type="button" class="btn fina" data-cm="muerte" data-n="1">+1 acumulado</button><button type="button" class="btn fina" data-cm="muerte" data-n="0" ${M.salvacion.penal ? "" : "disabled"}>Poner a 0</button></span></dd></div>
@@ -6365,21 +6392,10 @@ function pintarCombate(){
       ${bloqueCm("Efectos pasivos del ciberware", M.pasivas, M)}
       ${bloqueCm("Efectos que dependen de una condición", M.condicionales, M)}
       ${bloqueCm("Habilidades de raza y rol en combate", M.rasgos, M)}
-      <section class="cm-bloque"><h4>Estados</h4>
-        <div class="cm-estados">${M.estados.map((s, i) => `<span class="cm-estado-t">${esc(s.n)} <b>${s.rot}</b> rot. <button type="button" data-cm="estado-quitar" data-i="${i}" aria-label="Quitar ${esc(s.n)}">×</button></span>`).join("") || `<span class="cm-vacio">Ninguno.</span>`}</div>
-        <div class="cm-estados-mandos">${ESTADOS_RAPIDOS.map(n => `<button type="button" class="btn fina" data-cm="estado" data-n="${n}">${n}</button>`).join("")}
-          <input id="cmEstadoN" placeholder="Otro estado" aria-label="Nombre del estado"><input id="cmEstadoR" inputmode="numeric" placeholder="rot." value="1" aria-label="Rotaciones">
-          <button type="button" class="btn fina" data-cm="estado-otro">Añadir</button>
-          <button type="button" class="btn fina" data-cm="rotacion" ${M.estados.length ? "" : "disabled"}>Nueva rotación (−1)</button></div>
-        <label class="cm-heridas">Heridas críticas y estados (la misma nota que en la Ficha)<textarea id="cmHeridas" rows="3">${esc(D["f-heridas"] || "")}</textarea></label>
-      </section>
       <details class="cm-bloque cm-crit"><summary><h4>Heridas críticas (2d6)</h4></summary>
         <p class="cm-vacio">Con dos o más 6 en el daño. Tira en la del cuerpo, o en la de la cabeza si el ataque preciso iba a la cabeza; repite si sale una que ya sufre. «Apuntar» la añade a tu nota.</p>
         ${Object.keys(HERIDAS_CRITICAS).map(z => `<h5>${z}</h5><table class="cm-crit-t"><tr><th>2d6</th><th>Herida</th><th>Efecto</th><th>Remedio · tratamiento</th><th></th></tr>${HERIDAS_CRITICAS[z].map(h =>
           `<tr><td>${h[0]}</td><td><b>${esc(h[1])}</b></td><td>${esc(h[2])}</td><td>${esc(h[3])} · ${esc(h[4])}</td><td><button type="button" class="btn fina" data-cm="critica" data-z="${z}" data-n="${h[0]}">Apuntar</button></td></tr>`).join("")}</table>`).join("")}</details>
-      ${M.no.length ? `<details class="cm-bloque cm-no"><summary><h4>No disponibles ahora<span>${M.no.length}</span></h4></summary>${M.no.map(a => htmlAccion(a, M)).join("")}</details>` : ""}
-      <details class="cm-bloque cm-faltan"><summary><h4>Reglas sin definir</h4></summary><ul>${M.faltan.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
-        ${M.fueraCombate ? `<p class="cm-vacio">${plural(M.fueraCombate, "habilidad", "habilidades")} del ciberware sin uso en combate (están en la Ficha).</p>` : ""}</details>
     </div>
   </div>`;
   if(enfoque){ const el = document.getElementById(enfoque); if(el) try{ el.focus({preventScroll:true}); }catch(e){} }
@@ -6430,7 +6446,7 @@ function accionCombate(b){
     case "estado-quitar": K.estados.splice(num(b.dataset.i), 1); break;
     case "rotacion": K.estados.forEach(s => s.rot = num(s.rot) - 1); K.estados = K.estados.filter(s => s.rot > 0); break;
     case "fin":
-      confirmar("Se recupera toda la RAM, repones las " + MANO_CARTAS + " cartas, vuelven los usos «por combate», se borran los estados temporales, la iniciativa y la penalización de la salvación. La vida, la munición y las cargas no cambian.", "Terminar combate", "Fin del combate")
+      confirmar("Se recupera toda la RAM, vuelven los usos «por combate», se borran los estados temporales, la iniciativa y la penalización de la salvación. La vida, la munición y las cargas no cambian.", "Terminar combate", "Fin del combate")
         .then(ok => { if(!ok) return; const K2 = datosCombate();
           K2.ram = calcular().ram; K2.cartas = MANO_CARTAS; K2.estados = []; K2.ini = ""; K2.muerte = 0;
           Object.keys(K2.cont).forEach(k => { if(/:usos$/.test(k) && usoPorCombate(k)) delete K2.cont[k]; });
@@ -6443,7 +6459,7 @@ function accionCombate(b){
 /* ¿El contador es de usos «por combate»? (se mira en el modelo actual) */
 function usoPorCombate(clave){
   const M = modeloCombate();
-  const todos = [].concat(M.acciones.activables, M.defensa, M.pasivas, M.condicionales, M.rasgos, M.no);
+  const todos = [].concat(M.acciones.ataques, M.acciones.activables, M.acciones.rol, M.defensa, M.pasivas, M.condicionales, M.rasgos, M.no);
   const a = todos.find(x => x.cont && x.cont.clave === clave);
   return !a || a.cont.por === "combate";
 }
