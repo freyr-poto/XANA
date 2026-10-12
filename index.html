@@ -532,6 +532,119 @@
   .cw-pk-sep{font-size:12.5px;color:var(--sec);padding:10px 10px 4px;margin-top:6px;border-top:1px solid var(--hair)}
   .cw-pk-vacio{margin:0;padding:12px;color:var(--sec);font-size:13.5px}
 
+  /* ===== Combate ===== */
+  .cm{display:flex;flex-direction:column;gap:16px}
+  .cm-cab{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);grid-template-areas:"vida tiles" "vida stats";gap:12px 16px;
+    padding:4px 0 14px;border-bottom:1px solid var(--linea)}
+  .cm-vida{grid-area:vida;background:var(--panel);border:1px solid var(--linea);border-left:4px solid var(--verde);border-radius:12px;padding:12px 14px}
+  .cm-vida.est-grave{border-left-color:var(--ambar)} .cm-vida.est-mortal{border-left-color:var(--rojo);box-shadow:0 0 0 1px rgba(255,46,46,.35),0 0 24px rgba(255,46,46,.18)}
+  .cm-vida-num{display:flex;align-items:baseline;gap:8px}
+  .cm-vida-num small{font-family:var(--display);letter-spacing:.14em;color:var(--apagado);font-size:13px}
+  .cm-vida-num b{font-family:var(--display);font-size:46px;line-height:1;font-variant-numeric:tabular-nums;color:var(--verde)}
+  .est-grave .cm-vida-num b{color:var(--ambar)} .est-mortal .cm-vida-num b{color:var(--rojo)}
+  .cm-vida-num span{font-family:var(--display);font-size:22px;color:var(--apagado)}
+  .cm-barra{position:relative;height:10px;border-radius:99px;background:#0A0E12;border:1px solid var(--linea);margin:8px 0 6px;overflow:hidden}
+  .cm-barra i{position:absolute;inset:0 auto 0 0;background:var(--verde);border-radius:99px;transition:width .2s}
+  .est-grave .cm-barra i{background:var(--ambar)} .est-mortal .cm-barra i{background:var(--rojo)}
+  .cm-barra em{position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(237,231,222,.55)}
+  .cm-estado{margin:0 0 8px;font-size:13.5px;color:var(--hueso)}
+  .cm-vida-mandos{display:flex;flex-wrap:wrap;gap:6px}
+  .cm-vida-mandos .btn{min-width:46px;padding:7px 9px;min-height:38px}
+  .cm-vida-mandos input{width:64px;text-align:center;font-family:var(--display);font-size:18px;padding:4px}
+  .cm-nota{margin:8px 0 0;font-size:12px;color:var(--apagado)}
+  .cm-tiles{grid-area:tiles;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+  .cm-tile{background:var(--panel);border:1px solid var(--linea);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .cm-tile small{font-family:var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--apagado);font-size:11.5px}
+  .cm-tile b{font-family:var(--display);font-size:28px;line-height:1.05;font-variant-numeric:tabular-nums}
+  .cm-tile b i{font-style:normal;font-size:15px;color:var(--apagado)}
+  .cm-tile > span{font-size:12px;color:var(--apagado);overflow-wrap:anywhere}
+  .cm-tile.cb b{color:var(--hueso)} .cm-tile.ram b{color:var(--cian)} .cm-tile.cartas b{color:var(--ambar)}
+  .cm-mini{font-size:12px;color:var(--apagado);display:flex;align-items:center;gap:6px}
+  .cm-mini input{width:52px;padding:3px 4px;text-align:center}
+  .cm-mini-mandos{display:flex;gap:4px;flex-wrap:wrap}
+  .cm-mini-mandos .btn{padding:4px 8px;min-height:30px;font-size:12.5px}
+  .cm-stats{grid-area:stats;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+  .cm-stats > span{background:var(--panel-alto);border:1px solid var(--linea);border-radius:99px;padding:4px 11px;font-size:13px;color:var(--apagado)}
+  .cm-stats > span b{color:var(--hueso);font-family:var(--display);font-size:16px;margin-left:3px}
+  .cm-stats > span i{font-style:normal;font-size:11px;margin-left:4px;color:var(--cian)}
+  .cm-stats > span.mal{color:var(--rojo);border-color:rgba(255,46,46,.45)}
+  .cm-fin{margin-left:auto}
+  .cm-rejilla{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+  .cm-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .cm-titulo{font-family:var(--display);font-size:20px;letter-spacing:.14em;color:var(--rojo);margin:0;padding-bottom:6px;border-bottom:1px solid var(--rojo-hondo)}
+  .cm-bloque{background:var(--panel);border:1px solid var(--linea);border-radius:12px;padding:12px 14px}
+  .cm-bloque h4{font-family:var(--display);font-size:14.5px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;color:var(--hueso);display:flex;align-items:center;gap:8px}
+  .cm-bloque h4 span{font-size:12px;color:var(--apagado);border:1px solid var(--linea);border-radius:99px;padding:0 7px;letter-spacing:0}
+  details.cm-bloque > summary{list-style:none;cursor:pointer} details.cm-bloque > summary::-webkit-details-marker{display:none}
+  details.cm-bloque > summary h4{margin:0} details.cm-bloque[open] > summary h4{margin-bottom:8px}
+  details.cm-bloque > summary h4::after{content:"▾";margin-left:auto;color:var(--apagado)}
+  .cm-acc{border-top:1px solid var(--linea);padding:9px 0 8px}
+  .cm-bloque h4 + .cm-acc{border-top:none;padding-top:2px}
+  .cm-acc-cab{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+  .cm-acc-cab h5{margin:0;font-size:15px;font-weight:650;color:var(--hueso);flex:1 1 180px;min-width:0}
+  .cm-chips{display:flex;flex-wrap:wrap;gap:5px}
+  .cm-chip{font-size:12px;line-height:1.5;padding:1px 8px;border-radius:99px;border:1px solid var(--linea);color:var(--apagado);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .cm-chip.tirada{border-color:rgba(53,214,232,.5);color:var(--cian)} .cm-chip.tirada b{font-size:14px}
+  .cm-chip.danyo{border-color:rgba(255,46,46,.45);color:#FF8A8A}
+  .cm-chip.ram{border-color:rgba(53,214,232,.5);color:var(--cian)}
+  .cm-chip.coste{color:var(--ambar);border-color:rgba(245,166,35,.45)}
+  .cm-chip.activa{color:#C9B4FF;border-color:rgba(185,140,255,.45)}
+  .cm-chip.fbc{color:var(--cian);border-color:rgba(53,214,232,.45)}
+  .cm-chip.mal{color:var(--rojo);border-color:rgba(255,46,46,.5)}
+  .cm-chip.valor{color:var(--hueso)}
+  .cm-acc.no h5{color:var(--apagado)}
+  .cm-acc-cab h5.sin{font-size:12.5px;font-weight:500;color:var(--apagado);letter-spacing:.02em}
+  .cm-texto{margin:3px 0 0;font-size:13.5px;line-height:1.45;color:var(--hueso)}
+  .cm-origen{margin:3px 0 0;font-size:12px;color:var(--apagado)}
+  .cm-motivo{margin:4px 0 0;font-size:12.5px;color:#FF9C9C}
+  .cm-aviso{margin:4px 0 0;font-size:12.5px;color:var(--ambar)}
+  .cm-acc-mandos{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:6px}
+  .cm-tipo{font-size:12.5px;color:var(--apagado);display:flex;align-items:center;gap:6px}
+  .cm-tipo select{padding:4px 6px;font-size:13px;max-width:210px}
+  .cm-cont{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .cm-cont-n{font-size:12.5px;color:var(--apagado)} .cm-cont-n b{font-family:var(--display);font-size:17px;color:var(--ambar)}
+  .cm-cont.agotado .cm-cont-n b{color:var(--rojo)}
+  .cm-cont .btn,.cm-acc-mandos > .btn{padding:4px 9px;min-height:30px;font-size:12.5px}
+  .cm-det{margin-top:4px}
+  .cm-det > summary{font-size:12px;color:var(--apagado);cursor:pointer;width:max-content}
+  .cm-det dl{margin:6px 0 0;display:grid;gap:3px}
+  .cm-det dl > div,.cm-def-lista > div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;font-size:13px;line-height:1.45}
+  .cm-det dt,.cm-def-lista dt{color:var(--apagado)} .cm-det dd,.cm-def-lista dd{margin:0;color:var(--hueso);overflow-wrap:anywhere}
+  .cm-def-lista{margin:0 0 6px;display:grid;gap:8px}
+  .cm-def-lista > div.alerta{border-left:3px solid var(--rojo);padding-left:8px}
+  .cm-salv{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:var(--apagado)}
+  .cm-salv .btn{padding:3px 8px;min-height:28px;font-size:12px}
+  .cm-estados{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .cm-estado-t{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.45);color:var(--hueso);border-radius:99px;padding:3px 6px 3px 10px;font-size:13px}
+  .cm-estado-t button{background:none;border:none;color:var(--apagado);font-size:15px;padding:0 4px;cursor:pointer}
+  .cm-estados-mandos{display:flex;flex-wrap:wrap;gap:6px}
+  .cm-estados-mandos .btn{padding:4px 9px;min-height:30px;font-size:12.5px}
+  .cm-estados-mandos input{width:120px;padding:4px 6px;font-size:13px} .cm-estados-mandos #cmEstadoR{width:52px;text-align:center}
+  .cm-heridas{display:block;margin-top:10px;font-size:12.5px;color:var(--apagado)}
+  .cm-heridas textarea{margin-top:4px}
+  .cm-vacio{margin:0;font-size:13px;color:var(--apagado);font-style:italic}
+  .cm-faltan ul{margin:0;padding-left:18px;font-size:13px;color:var(--apagado);line-height:1.55}
+  .cm-no{border-color:rgba(255,46,46,.3)}
+  .cm-dist{border-collapse:collapse;margin:6px 0 2px;font-size:12px;font-variant-numeric:tabular-nums;width:auto;max-width:100%}
+  .cm-dist th,.cm-dist td{border:1px solid var(--linea);padding:2px 6px;text-align:center;font-weight:500}
+  .cm-dist th{color:var(--apagado);font-size:11px} .cm-dist td{color:var(--hueso)} .cm-dist td.x{color:var(--apagado)}
+  .cm-def-lista > div.apagada dd{color:var(--apagado)}
+  .cm-crit h5{font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;font-size:13px;margin:10px 0 4px;color:var(--apagado)}
+  .cm-crit-t{border-collapse:collapse;width:100%;font-size:12.5px}
+  .cm-crit-t th,.cm-crit-t td{border-top:1px solid var(--linea);padding:4px 5px;text-align:left;vertical-align:top}
+  .cm-crit-t th{color:var(--apagado);font-weight:500;font-size:11.5px}
+  .cm-crit-t td:first-child{font-family:var(--display);font-size:15px;color:var(--ambar);width:30px}
+  .cm-crit-t .btn{padding:3px 8px;min-height:28px;font-size:12px}
+  @media (max-width:600px){ .cm-dist{font-size:11px} .cm-dist th,.cm-dist td{padding:2px 3px} .cm-crit-t td:nth-child(4),.cm-crit-t th:nth-child(4){display:none} }
+  @media (max-width:1180px){ .cm-tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @media (max-width:900px){
+    .cm-cab{grid-template-columns:minmax(0,1fr);grid-template-areas:"vida" "tiles" "stats";position:static}
+    .cm-rejilla{grid-template-columns:minmax(0,1fr)}
+    .cm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .cm-det dl > div,.cm-def-lista > div{grid-template-columns:1fr;gap:0}
+    .cm-fin{margin-left:0}
+  }
+
   /* Conversión de cuerpo completo: botón bajo los pies (solo en la vista general) y su panel */
   .cw-fbc{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 4px;width:100%}
   .cw-escena.enfocada .cw-fbc{display:none}
@@ -633,6 +746,12 @@
     #reparto .nota{order:5;flex-basis:100%;font-size:11.5px;min-width:0}
     #reparto .btn{min-height:34px;padding:6px 10px}
     body.creando{padding-bottom:150px}
+    /* tres pestañas y los botones en dos filas: pestañas arriba, acciones abajo */
+    .barra{gap:6px 6px;padding:8px 10px}
+    .marca{font-size:20px}
+    .pestanya{padding:7px 10px;min-height:38px;font-size:14px}
+    .barra > .btn{padding:6px 10px;min-height:34px;font-size:13px}
+    .barra .crece{flex-basis:100%;height:0}
   }
 
   /* ============ DOCUMENTO DE EXPORTACIÓN ============ */
@@ -707,6 +826,7 @@
   <div class="marca">XANA</div>
   <button class="pestanya" id="tab-ficha" aria-selected="true">Ficha</button>
   <button class="pestanya" id="tab-ciber" aria-selected="false">Ciberware</button>
+  <button class="pestanya" id="tab-combate" aria-selected="false">Combate</button>
   <div class="crece"></div>
   <button class="aviso-guardado" id="avisoGuardado" hidden type="button">⚠ No se está guardando</button>
   <button class="btn fina" id="btnCreacion" aria-pressed="false">Modo creación</button>
@@ -853,6 +973,10 @@
       <textarea id="f-notas" data-g rows="4" placeholder="Trasfondo, deudas, gente que te debe favores…"></textarea></div>
   </div>
 
+</section>
+
+<section class="pag" id="pag-combate" aria-label="Combate">
+  <div class="cm" id="cm"></div>
 </section>
 
 <section class="pag" id="pag-ciber">
@@ -1374,12 +1498,25 @@ function sanear(d){
   // conversión de cuerpo completo: {k, n, cuerpo, cuerpoAntes, fecha}
   if(d.fbc !== undefined && !(obj(d.fbc) && typeof d.fbc.k === "string" && /^fbc\|/.test(d.fbc.k))) delete d.fbc;
   if(Array.isArray(d.implantes)) d.implantes.forEach(r => { if(r.fbc !== undefined && !["cuerpo","incluido","gratis","exento"].includes(r.fbc)) delete r.fbc; });
+  // datos temporales del combate (RAM disponible, cartas, contadores, estados): nunca la vida máxima ni estadísticas
+  if(d.combate !== undefined){
+    if(!obj(d.combate)) delete d.combate;
+    else{
+      const c = d.combate;
+      if(!obj(c.cont)) c.cont = {};
+      Object.keys(c.cont).forEach(k => { const n = parseInt(c.cont[k], 10); if(isNaN(n) || n <= 0) delete c.cont[k]; else c.cont[k] = n; });
+      c.estados = Array.isArray(c.estados) ? c.estados.filter(s => obj(s) && typeof s.n === "string").map(s => ({n:s.n.slice(0, 40), rot:Math.max(1, parseInt(s.rot, 10) || 1)})) : [];
+      ["ram","cartas","muerte"].forEach(k => { if(c[k] != null && isNaN(parseInt(c[k], 10))) delete c[k]; });
+      if(c.ini != null) c.ini = String(c.ini).slice(0, 4);
+    }
+  }
   d.modoCreacion = !!d.modoCreacion;
   return d;
 }
 
 let D = sanear(Guardado.leer());
 const guardar = () => Guardado.escribir(D);
+let PESTANYA = "ficha";     // pestaña a la vista: ficha, ciber o combate
 
 /* ---------- Diálogos propios ----------
    alert/confirm/prompt no existen en el ejecutable (prompt) y la página publicada
@@ -1449,9 +1586,9 @@ const COMPETENCIAS = {
   temple:["Comerciar","Conocimiento de calle","Conversación","Interrogatorio","Cooperación",
     "Percepción Humana","Estilo y Arreglo Personal","Robar","Persuasión"]
 };
-const BONO_TEMPLE = [0,1,3,5,6,7,8,9];
+const BONO_TEMPLE = [0,1,3,5,6,7,8,9,10];      // tabla de vida del PDF: Temple 0 a 8
 /* Vida: 25 con Cuerpo 1 y +5 por cada punto más, sin tope (un FBC con Cuerpo 16 tiene 100 antes de Temple) */
-const vidaMaxima = (c,t) => 20 + Math.max(0,c)*5 + BONO_TEMPLE[Math.max(0,Math.min(7,t))];
+const vidaMaxima = (c,t) => 20 + Math.max(0,c)*5 + BONO_TEMPLE[Math.max(0,Math.min(8,t))];
 
 /* ---------- Utilidades ---------- */
 const $ = s => document.querySelector(s);
@@ -3811,7 +3948,7 @@ function analizarCiberware(reduccionHum, lista){
     const soloSitio = ["sistema","zocalo"].includes(f.tipo) || f.estandar || f.capacidad || f.ranurasExtra;
     const habilidad = f.tipo === "fbc" || e.trim() && !soloSitio && !/sin efecto mecánico/i.test(e) &&
       SENYAL_MECANICA.test(resto.replace(/[^\wáéíóúñ+−\- ]+/gi, " ").replace(/\b(y|e|o|a|en|de|del|la|el|los|las|tu|su|te|al|con|pero|que|un|una)\b/gi, " ").trim());
-    if(habilidad) (SENYAL_ACTIVA.test(e) ? activas : pasivas).push({n, zona, e, h});
+    if(habilidad) (SENYAL_ACTIVA.test(e) ? activas : pasivas).push({n, zona, e, h, rec, p:f});
   });
 
   return { piezas, humanidad, mods, activas, pasivas };
@@ -3932,7 +4069,7 @@ function calcular(lista){
 
   const desglose = {
     vida: ["Cuerpo " + s.cuerpo + " → " + (20 + Math.max(0, s.cuerpo + (r.vidaExtra?1:0))*5) + (r.vidaExtra ? " (tu raza cuenta Cuerpo +1)" : ""),
-           "Temple " + s.temple + " → +" + BONO_TEMPLE[Math.max(0,Math.min(7,s.temple))]]
+           "Temple " + s.temple + " → +" + BONO_TEMPLE[Math.max(0,Math.min(8,s.temple))]]
            .concat(r.vidaExtra ? ["+" + r.vidaExtra + " de tu raza"] : []),
     mov: ["Destreza " + s.destreza]
            .concat(r.mov ? [sg(r.mov) + " de tu raza"] : [])
@@ -4095,6 +4232,7 @@ function recalcular(){
 
   pintarHabilidadesCiber(an);
   pintarReparto();
+  if(PESTANYA === "combate") pintarCombate();
 }
 
 /* ================= MODO CREACIÓN ================= */
@@ -4307,17 +4445,19 @@ window.addEventListener("storage", ev => {
 
 /* ---------- Pestañas ---------- */
 function pestanya(cual){
-  const esFicha = cual === "ficha";
-  $("#pag-ficha").classList.toggle("viva", esFicha);
-  $("#pag-ciber").classList.toggle("viva", !esFicha);
-  $("#tab-ficha").setAttribute("aria-selected", esFicha);
-  $("#tab-ciber").setAttribute("aria-selected", !esFicha);
-  $("#hoja").classList.toggle("ancha", !esFicha);
+  PESTANYA = cual;
+  ["ficha","ciber","combate"].forEach(p => {
+    $("#pag-" + p).classList.toggle("viva", p === cual);
+    $("#tab-" + p).setAttribute("aria-selected", p === cual);
+  });
+  $("#hoja").classList.toggle("ancha", cual !== "ficha");
   window.scrollTo(0,0);
-  if(!esFicha) pintarCiber();
+  if(cual === "ciber") pintarCiber();
+  if(cual === "combate"){ iniciarCombate(); pintarCombate(); }
 }
 $("#tab-ficha").onclick = () => pestanya("ficha");
 $("#tab-ciber").onclick = () => pestanya("ciber");
+$("#tab-combate").onclick = () => pestanya("combate");
 
 /* ================= EXPORTAR ================= */
 function resumen(){
@@ -4925,6 +5065,640 @@ $("#btnExportar").onclick = () => {
   });
 };
 
+
+
+/* ================= COMBATE =================
+   Panel para usar la ficha durante una escena de combate. No es una segunda ficha: todo sale de calcular(),
+   del ciberware instalado (estado(), analizarCiberware) y de las tablas de la ficha (armas, hackeos, blindaje).
+   Lo único propio son los datos temporales del combate, en D.combate:
+     ram       RAM disponible ahora (la máxima la calcula la ficha)
+     cartas    cartas en mano
+     ini       resultado de la iniciativa tirada al empezar
+     cont      contadores de munición, cargas y usos limitados ({clave: usados})
+     estados   estados temporales [{n, rot}]
+     muerte    penalización acumulada a la salvación contra muerte
+   La vida actual es la misma casilla de la ficha (f-vidaActual): cambiarla aquí no toca la vida máxima ni las estadísticas.
+   Reglas: «Sistema XANA» (PDF del máster: baraja, turnos, acciones, ataques, distancias, vida y heridas críticas),
+   la leyenda del catálogo de ciberware (escala del Armero, CB) y la ficha. Lo que no está definido se dice, no se supone. */
+
+const MANO_CARTAS = 4;     // «Al principio del combate todas las partes roban 4 cartas de póker»
+const NUM_PALABRA = {una:1, un:1, uno:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8};
+const numTexto = t => /^\d+$/.test(t) ? num(t) : (NUM_PALABRA[String(t).toLowerCase()] || 0);
+
+/* Tipo de cada arma de la tabla: qué tirada usa (PDF: Los Ataques), su fila en la tabla de distancias
+   y la escala del Armero de la leyenda del catálogo (solo como referencia si no has apuntado el daño) */
+const TIPOS_ARMA = {
+  "":           {n:"Sin indicar"},
+  "cc-ligera":  {n:"Cuerpo a cuerpo ligera",     est:"destreza", comp:"Armas Cuerpo a Cuerpo", cad:"2", escala:"2d6", cc:true},
+  "cc-mediana": {n:"Cuerpo a cuerpo mediana",    est:"destreza", comp:"Armas Cuerpo a Cuerpo", cad:"2", escala:"4d6", cc:true},
+  "cc-pesada":  {n:"Cuerpo a cuerpo pesada",     est:"destreza", comp:"Armas Cuerpo a Cuerpo", cad:"2", escala:"6d6", cc:true},
+  "cc-muy":     {n:"Cuerpo a cuerpo muy pesada", est:"destreza", comp:"Armas Cuerpo a Cuerpo", cad:"2", escala:"8d6", cc:true, unAtaque:true},
+  "pistola":    {n:"Pistola",                    est:"reflejos", comp:"Armas Cortas",  fila:"Pistolas", escala:"6d6", cargador:6, dist:true},
+  "subfusil":   {n:"Subfusil",                   est:"reflejos", comp:"Armas Cortas",  fila:"Subfusiles", dist:true, auto:3,
+                 supuesto:"El PDF no dice qué competencia usa el subfusil en disparo normal: se toma Armas Cortas (armas de fuego de mano)."},
+  "escopeta":   {n:"Escopeta",                   est:"reflejos", comp:"Armas Largas",  fila:"Escopetas", escala:"8d6", cargador:9, dist:true},
+  "asalto":     {n:"Fusil de asalto",            est:"reflejos", comp:"Armas Largas",  fila:"Fusiles de asalto", escala:"8d6", cargador:9, dist:true, auto:4},
+  "franco":     {n:"Fusil de francotirador",     est:"reflejos", comp:"Armas Largas",  fila:"Fusiles de francotirador", escala:"8d6", cargador:9, dist:true},
+  "granadas":   {n:"Lanzagranadas",              est:"reflejos", comp:"Armas Pesadas", fila:"Lanzagranadas", dist:true},
+  "misiles":    {n:"Lanzamisiles",               est:"reflejos", comp:"Armas Pesadas", fila:"Lanzamisiles", dist:true},
+  "arco":       {n:"Arco o ballesta",            est:"reflejos", comp:"Disparo con Arco", dist:true},
+  "lanzar":     {n:"Arma arrojadiza",            est:"destreza", comp:"Atletismo", fila:"Lanzar un objeto", dist:true}
+};
+const ALIAS_TIPO = {corta:"pistola"};      // nombres de una versión anterior de este panel
+/* Dificultades según distancia (PDF), en casillas; null = no se puede */
+const TRAMOS = ["0–3", "4–12", "13–25", "26–50", "51–100", "101–200", "201–400"];
+const DIFICULTAD_DISTANCIA = {
+  "Pistolas":[15,17,22,27,29,null,null], "Subfusiles":[17,15,17,22,27,27,null], "Escopetas":[15,17,22,27,29,null,null],
+  "Fusiles de asalto":[19,18,17,15,17,22,29], "Fusiles de francotirador":[29,27,27,22,17,18,19],
+  "Lanzagranadas":[17,15,17,19,22,24,null], "Lanzamisiles":[18,17,17,19,22,24,29], "Lanzar un objeto":[19,18,17,17,22,null,null]
+};
+/* Daño desarmado según Cuerpo (PDF); con un ciberbrazo, al menos 2d6 */
+const danyoDesarmado = (cu, ciberbrazo) => cu >= 11 ? "4d6" : cu >= 7 ? "3d6" : (cu >= 5 || ciberbrazo) ? "2d6" : "1d6";
+/* Heridas críticas (PDF): 2d6 en la tabla del cuerpo, o en la de la cabeza con un disparo preciso a la cabeza */
+const HERIDAS_CRITICAS = {
+  "Cuerpo":[[2,"Brazo amputado","Pierdes el brazo. Sueltas lo que tuvieras en esa mano. No puedes usar armas a dos manos.","—","Cirugía 17"],
+    [3,"Mano amputada","Pierdes la mano. Sueltas lo que tuvieras en ella. No puedes usar armas a dos manos.","—","Cirugía 17"],
+    [4,"Pulmón colapsado","−2 casillas de movimiento.","Enfermería 15","Cirugía 15"],
+    [5,"Costillas rotas","Cada vez que te muevas más de 2 casillas, vuelves a sufrir 5 de daño.","Enfermería 13","Enfermería 15 o Cirugía 13"],
+    [6,"Brazo roto","Sueltas lo que tuvieras en esa mano. No puedes usar armas a dos manos.","Enfermería 13","Enfermería 15 o Cirugía 13"],
+    [7,"Objeto clavado","Cada vez que te muevas más de 2 casillas, vuelves a sufrir 5 de daño.","Enfermería o Primeros Auxilios 13","Solo remedio rápido"],
+    [8,"Pierna rota","−4 casillas de movimiento.","Enfermería 13","Enfermería 15 o Cirugía 13"],
+    [9,"Desgarro muscular","−2 en cualquier ataque cuerpo a cuerpo.","Enfermería o Primeros Auxilios 13","Solo remedio rápido"],
+    [10,"Lesión de columna","En el siguiente turno no puedes usar ninguna acción, solo moverte.","Enfermería 15","Cirugía 15"],
+    [11,"Dedos aplastados","−4 a todas las acciones que usen la mano afectada.","Enfermería 13","Cirugía 15"],
+    [12,"Pierna amputada","Pierdes la pierna. −4 casillas de movimiento. No puedes esquivar.","—","Cirugía 17"]],
+  "Cabeza":[[2,"Ojo perdido","−4 a los ataques a distancia y a las tiradas de Percepción que impliquen ver.","—","Cirugía 17"],
+    [3,"Lesión cerebral","−2 a todas las acciones.","—","Cirugía 17"],
+    [4,"Ojo dañado","−2 a los ataques a distancia y a las tiradas de Percepción que impliquen ver.","Enfermería 15","Cirugía 13"],
+    [5,"Conmoción cerebral","−2 a todas las acciones.","Enfermería o Primeros Auxilios 13","Solo remedio rápido"],
+    [6,"Mandíbula rota","−4 a todas las acciones que impliquen hablar.","Enfermería 13","Enfermería o Cirugía 13"],
+    [7,"Latigazo cervical","En el siguiente turno no puedes usar ninguna acción, solo moverte.","Enfermería 13","Enfermería o Cirugía 13"],
+    [8,"Cráneo roto","Los tiros que recibas en la cabeza multiplican su daño ×3 en vez de ×2.","Enfermería 15","Enfermería o Cirugía 13"],
+    [9,"Oído dañado","Si te mueves más de 2 casillas, al siguiente turno no puedes moverte. −2 a Percepción que implique escuchar.","Enfermería 13","Cirugía 13"],
+    [10,"Tráquea aplastada","No puedes hablar.","—","Cirugía 15"],
+    [11,"Oído perdido","Si te mueves más de 2 casillas, al siguiente turno no puedes moverte. −4 a Percepción que implique escuchar.","—","Cirugía 17"],
+    [12,"Objeto clavado","Cada vez que te muevas más de 2 casillas, vuelves a sufrir 5 de daño.","Enfermería o Primeros Auxilios 13","Solo remedio rápido"]]
+};
+const ESTADOS_RAPIDOS = ["Tumbado","Agarrado","Agarrando","Aturdido","A cubierto","Cegado","Sobrecalentado","Ralentizado"];
+
+/* Señales de que un texto tiene uso en combate (ataque, defensa, movimiento, sentidos, recursos…) */
+const SENYAL_COMBATE = /dañ|ataque|atac|\barma|dispar|golpe|Cadencia|\bCB\b|blind|inmun|esquiv|iniciativa|casilla|movimiento|\bsalt|aturd|ceg|inconscien|\bPEM\b|hackeo|Tecnomancia|\bRAM\b|\bvida\b|herid|salvaci|\bcura|resist|veneno|dolor|Reflejos|Destreza|Lucha|Evasión|Agarr|percep|detect|oscuridad|infrarroj|visión|\bves\b|oyes|ocult|sigilo|acci[oó]n|turno|rotaci|combate|enemig|cobertura|explot|granad|misil|\bcono\b|tiro|carta|pifia|apunt|objetivo/i;
+const SENYAL_DEFENSA = /\bCB\b|blind|inmun|resist|esquiv|salvaci|daño que recibes|recibes [^.]*daño|reduce[^.]*daño|armadura/i;
+const SENYAL_CONDICION = /\b(cuando|si |mientras|al (recibir|caer|ser|quedar|estar|empezar)|tras )/i;
+
+function datosCombate(){
+  const c = D.combate = (D.combate && typeof D.combate === "object" && !Array.isArray(D.combate)) ? D.combate : {};
+  if(!c.cont || typeof c.cont !== "object" || Array.isArray(c.cont)) c.cont = {};
+  if(!Array.isArray(c.estados)) c.estados = [];
+  return c;
+}
+
+/* ---------- Lectura de reglas desde los textos ---------- */
+/* «una vez por combate», «tres activaciones por combate», «1 vez por partida», «una vez al día» */
+function usosDe(texto){
+  // si el texto da varias cifras (una habilidad y su mejora: «una vez… dos veces por combate»), cuenta la mayor
+  let mejor = null;
+  for(const m of String(texto).matchAll(/\b(\d+|una|un|dos|tres|cuatro|cinco|seis) (?:vez|veces|activaciones|usos) (?:por|al|a la) (combate|partida|día|sesión|semana|escena)/gi)){
+    const n = numTexto(m[1]);
+    if(n && (!mejor || n > mejor.n)) mejor = {n, por:m[2].toLowerCase()};
+  }
+  return mejor;
+}
+/* Tirada de una estadística + competencia con lo que diga la ficha (incluye heridas y modificadores, una sola vez) */
+function tiradaCombate(C, est, comp){
+  const g = buscarComp(comp);
+  if(!g) return {total:null, desglose:[], falta:"la competencia «" + comp + "» no está en la ficha"};
+  if(g.est === est){
+    const t = C.totalComp(est, comp);
+    return {total:t, desglose:C.descComp(est, comp), falta:t === null ? comp + " a nivel 0: se falla automáticamente" : ""};
+  }
+  const ce = C.compEfectiva(g.est, comp);
+  if(ce.nivel <= 0) return {total:null, desglose:["No aprendida: se falla automáticamente."], falta:comp + " a nivel 0: se falla automáticamente"};
+  const nombre = SINONIMOS[comp] || comp;
+  return {total:C.s[est] + ce.v + C.penal, desglose:[ESTADISTICA_NOMBRES[est] + " " + C.s[est], nombre + " " + ce.v].concat(ce.pasos)
+    .concat(C.penal ? [(C.penal > 0 ? "+" : "−") + Math.abs(C.penal) + " por heridas"] : []).concat(["+ la carta que juegues"]), falta:""};
+}
+/* Arma integrada en una pieza de ciberware: tirada, daño, cadencia, munición y área, tal como lo dice su efecto */
+function ataqueDeTexto(e){
+  e = String(e || "");
+  let est, comp, cad, cc = false;
+  const m = e.match(/\((Reflejos|Destreza|Cuerpo|Inteligencia|Tecnología|Temple) \+ ([^+()]+?) \+ Carta(?:,? Cadencia (\d+))?\)/);
+  if(m){ est = CLAVE_ESTADISTICA[m[1].toLowerCase()]; comp = m[2].trim(); cad = m[3] || (e.match(/Cadencia (\d+)/) || [])[1] || ""; cc = /Cuerpo a Cuerpo/i.test(comp); }
+  else if(/arma cuerpo a cuerpo (ligera|mediana|pesada|muy pesada)|golpeas como arma cuerpo a cuerpo/i.test(e)){
+    est = "destreza"; comp = "Armas Cuerpo a Cuerpo"; cad = (e.match(/Cadencia (\d+)/) || [])[1] || "2"; cc = true;
+  }else return null;
+  const d = e.match(/\b(\d+)d6\b/);
+  const area = e.match(/en (\d+×\d+) casillas|en un cono de (\d+) casillas|a (\d+) casillas/);
+  return { est, comp, cad, cc, danyo:d ? d[0] : "",
+    cargador:num((e.match(/cargador de (\d+)/i) || [])[1]), cargas:num((e.match(/\b(\d+) cargas\b/i) || [])[1]),
+    area:area ? (area[1] ? area[1] + " casillas" : area[2] ? "cono de " + area[2] + " casillas" : area[3] + " casillas") : "",
+    ignoraMitad:/ignora(n)? la mitad de la armadura/i.test(e), extraCB:(e.match(/ignora (\d+) puntos? más de CB/i) || [])[1] || "" };
+}
+/* Penalización del disparo preciso: −8 según la leyenda; algunas razas la cambian (p. ej. «tu penalización es de −6») */
+function penalPreciso(){
+  const r = razaActual();
+  const txt = (r.rasgos || []).concat(r.subrazas && r.subrazas[val("f-subraza")] ? r.subrazas[val("f-subraza")].rasgos || [] : []).join(" ");
+  const m = txt.match(/tiro de precisión tu penalización es de [−-](\d+)/i);
+  return m ? {v:-num(m[1]), por:val("f-raza")} : {v:-8, por:""};
+}
+/* Rasgos de la raza y entradas abiertas de la habilidad de rol (las versiones II y III sustituyen a la anterior) */
+function rasgosRaza(){
+  const r = razaActual();
+  if(!val("f-raza")) return [];
+  const l = (r.rasgos || []).slice();
+  if(r.subrazas && r.subrazas[val("f-subraza")]) (r.subrazas[val("f-subraza")].rasgos || []).forEach(x => l.push(x));
+  if(r.manual) (D.vastaya || []).filter(Boolean).forEach(x => l.push(x));
+  return l.map((d, i) => ({k:"raza:" + i, origen:"Raza · " + (r.t || val("f-raza")), t:"", d}));
+}
+/* Lo que la ficha ya suma sola a los números (modsTrabajo): sale en los desgloses, no como habilidad aparte */
+const ROL_YA_APLICADO = ["Reacción de iniciativa", "Ataque de precisión", "Maestría de Campo:Campo"];
+function entradasRol(){
+  if(!val("f-trabajo")) return [];
+  const t = trabajoActual(), nivel = nivelTrabajo(), rep = repartoRol();
+  const out = [];
+  (t.intro || []).forEach((d, i) => out.push({k:"rol:intro" + i, origen:"Rol · " + t.t, t:"", d}));
+  (t.bloques || []).forEach(b => {
+    const p = b.tipo === "puntos" ? num(rep[b.titulo]) : 0;
+    (b.entradas || []).forEach(e => {
+      const abierta = b.tipo === "nivel" ? nivel >= e.lv && nivel <= (e.hasta || e.lv) : b.tipo === "puntos" ? (!e.lv || p >= e.lv) : true;
+      if(abierta && !ROL_YA_APLICADO.includes(b.titulo + ":" + e.t) && !ROL_YA_APLICADO.includes(b.titulo))
+        out.push({k:"rol:" + b.titulo + ":" + e.t, origen:"Rol · " + (b.titulo || t.t), t:/^(Cada|\d)/.test(e.t) ? b.titulo : e.t, d:e.d, puntos:b.tipo === "puntos" ? p : null, libre:!!b.libre});
+    });
+  });
+  // «Sobrecarga II» y «III» mejoran a «Sobrecarga»: una sola entrada con el texto de la base y lo que añade la mejor
+  const raiz = x => x.t.replace(/ (II|III)$/, ""), grado = x => (/ III$/.test(x.t) ? 3 : / II$/.test(x.t) ? 2 : 1);
+  const quedan = [];
+  out.forEach(x => {
+    if(!x.t){ quedan.push(x); return; }
+    const grupo = out.filter(y => y.t && raiz(y) === raiz(x));
+    const mejor = grupo.reduce((m, y) => grado(y) > grado(m) ? y : m, grupo[0]);
+    if(grado(x) !== 1 && grupo.some(y => grado(y) === 1)) return;          // la base ya lleva la mejora
+    if(grado(x) === 1 && mejor !== x) quedan.push(Object.assign({}, x, {t:raiz(x) + " (" + mejor.t.split(" ").pop() + ")", d:x.d + " " + mejor.t + ": " + mejor.d}));
+    else quedan.push(x);
+  });
+  return quedan;
+}
+
+/* ---------- Modelo del panel: todo lo que se muestra, calculado de la ficha actual ---------- */
+function modeloCombate(){
+  const C = calcular(), E = estado(), K = datosCombate();
+  const an = C.an, r = C.r;
+  const conflicto = E.confRec;
+  const M = {C, acciones:{ataques:[], movimiento:[], turno:[], tecno:[], activables:[], rol:[]}, defensa:[], pasivas:[], condicionales:[], rasgos:[], no:[], faltan:[], fueraCombate:0};
+  const contador = (clave, total, por, etiqueta, rec) => total ? {clave, total, usados:Math.min(total, num(K.cont[clave])), por, etiqueta} : null;
+  const quedan = c => c ? c.total - c.usados : 1;
+
+  // ---- vida, recursos y estados
+  const vidaMax = C.vidaMax, vida = Math.max(0, Math.min(vidaMax, C.vida));
+  const ramMax = C.ram;
+  if(K.ram === undefined || K.ram === null || K.ram === "") K.ram = ramMax;
+  K.ram = Math.max(0, Math.min(ramMax, num(K.ram)));
+  if(K.cartas === undefined || K.cartas === null) K.cartas = MANO_CARTAS;
+  K.cartas = Math.max(0, Math.min(MANO_CARTAS, num(K.cartas)));
+  M.vida = {actual:vida, max:vidaMax, estado:C.estado, penal:C.penal, menosMov:C.menosMov,
+    nivel:vida <= 1 ? "mortal" : vida < Math.ceil(vidaMax / 2) ? "grave" : "leve", umbralGrave:Math.ceil(vidaMax / 2)};
+  M.ram = {actual:K.ram, max:ramMax, desglose:C.desglose.ram};
+  M.cartas = K.cartas;
+
+  // ---- CB: solo cuenta la mayor fuente (leyenda del catálogo)
+  const fuentesCB = [{n:"Blindaje del cuerpo", v:num(D["f-cb-cuerpo"])}, {n:an.mods.cbF ? "Ciberware · " + an.mods.cbF.n : "Ciberware", v:an.mods.cb}, {n:"Raza", v:r.cb || 0}].filter(f => f.v > 0);
+  const fuentesCBc = [{n:"Blindaje de la cabeza", v:num(D["f-cb-cabeza"])}, {n:"Raza", v:r.cb || 0}].filter(f => f.v > 0);
+  const mayor = l => l.reduce((m, f) => f.v > m.v ? f : m, {n:"", v:0});
+  M.cb = {cuerpo:mayor(fuentesCB), cabeza:mayor(fuentesCBc), fuentes:fuentesCB, fuentesCabeza:fuentesCBc};
+
+  // ---- estadísticas que intervienen en combate (efectivas, con su desglose)
+  M.stats = ESTADISTICAS.map(e => ({c:e.c, n:e.n, v:C.s[e.c], base:C.base[e.c], desglose:C.desglose.stat[e.c]}));
+  M.ini = {v:C.ini, desglose:C.desglose.ini, tirada:K.ini || ""};
+  M.mov = {v:C.mov, correr:C.mov * 2, desglose:C.desglose.mov};
+
+  // ---- salvación contra muerte: 1d10 contra tu Cuerpo (+ lo que digan las piezas), −1 por cada salvación o golpe estando mortal (tracker)
+  const salvF = [];
+  an.piezas.forEach(({rec, p}) => { if(rec.secundario || conflicto[rec.id]) return; const m = String(p.m || "").match(/Cuerpo cuenta como \+(\d+) en las salvaciones/i); if(m) salvF.push({n:p.n, v:num(m[1])}); });
+  const salvBase = C.s.cuerpo + salvF.reduce((s, f) => s + f.v, 0);
+  M.salvacion = {objetivo:salvBase - num(K.muerte), base:C.s.cuerpo, fuentes:salvF, penal:num(K.muerte)};
+
+  // ---- estados con efecto en las reglas (PDF, acción Agarrar): agarrado o agarrando = −2 a todas las acciones
+  const tieneEstado = n => K.estados.some(s => s.n === n);
+  const agarre = tieneEstado("Agarrado") || tieneEstado("Agarrando");
+  const ajustar = t => {
+    if(!t || t.total === null || !agarre) return t;
+    return Object.assign({}, t, {total:t.total - 2, desglose:t.desglose.filter(x => !/^\+ la carta/.test(x)).concat(["−2 por el agarre", "+ la carta que juegues"])});
+  };
+  const tirada = (est, comp) => ajustar(tiradaCombate(C, est, comp));
+  M.agarre = agarre;
+  const evasionObjetivo = "Destreza + Evasión + Carta del objetivo";
+  const efectosPreciso = "Cabeza: ×2 el daño que no niegue la armadura de la cabeza (y la herida crítica sale de la tabla de la cabeza) · Objeto en la mano: lo suelta y cae delante · Pierna: sufre la herida crítica Pierna rota.";
+  const precisoDe = (tt, extra) => ({n:"Ataque o disparo preciso",
+    d:(precision.v < 0 ? "−" : "+") + Math.abs(precision.v) + " para acertar" + (precision.por ? " (" + precision.por + ")" : "") + ", con Cadencia 1 o renunciando a la cadencia para hacer un solo ataque. " + efectosPreciso,
+    total:tt && tt.total !== null ? tt.total + (extra || 0) + precision.v : null});
+  const CRITICO = "Dos o más 6 en los dados de daño: herida crítica y 5 de daño extra, que ignoran la armadura.";
+
+  // ---- ataques: armas de la tabla
+  const textoEquipo = [].concat((D.armas || []).map(a => (a.nombre || "") + " " + (a.notas || "")), (D.inventario || []).map(a => (a.nombre || "") + " " + (a.notas || "")),
+    [D["f-bl-cuerpo"], D["f-bl-cabeza"], D["f-programas"]]).join(" · ");
+  const precision = penalPreciso();
+  (D.armas || []).forEach((a, i) => {
+    if(!String(a.nombre || "").trim()) return;
+    const tipo = TIPOS_ARMA[ALIAS_TIPO[a.tipo] || a.tipo] ? (ALIAS_TIPO[a.tipo] || a.tipo) : "";
+    const T = TIPOS_ARMA[tipo];
+    const excelente = /calidad excelente|\bexcelente\b/i.test((a.nombre || "") + " " + (a.notas || ""));
+    const t = T.comp ? tirada(T.est, T.comp) : null;
+    const cargador = num(a.municion);
+    const cont = contador("arma:" + i + ":" + a.nombre, cargador, "recarga", "munición");
+    const acc = { id:"arma" + i, clase:"arma", indice:i, tipo, nombre:a.nombre, origen:"Tabla de armas",
+      tirada:t, mods:excelente ? [{n:"calidad excelente", v:1}] : [], cad:a.cadencia || T.cad || "", danyo:a.danyo || "", escala:T.escala || "",
+      danyoMods:excelente ? ["+1 calidad excelente"] : [], cont, notas:a.notas || "", fila:T.fila || "",
+      resolucion:T.cc ? "Contra " + evasionObjetivo + ". Tienes que estar a 1 casilla." :
+        T.dist ? (T.fila ? "Contra la dificultad según la distancia." : "Contra la dificultad según la distancia (el PDF no tiene fila para este tipo: la fija el máster).") +
+          " Si el objetivo tiene Reflejos 8 o más, puede esquivar: contra su Destreza + Evasión + Carta." : "",
+      efectos:[].concat(T.cc ? ["Ignora la mitad de la armadura del defensor.", "Cadencia 2: los dos ataques se pueden repartir a lo largo de tu movimiento."] : [],
+        T.unAtaque ? ["Un solo ataque por turno (escala del Armero)."] : [], [CRITICO]),
+      coste:"Acción", variantes:[] };
+    if(T.comp) acc.variantes.push(precisoDe(t, excelente ? 1 : 0));
+    if(T.auto){
+      const ta = tirada("reflejos", "Disparo Automático");
+      acc.variantes.push({n:"Disparo automático", d:"Cuesta la Acción y 10 balas (no se puede con menos de 10 en el cargador). +3 a la dificultad. Si impactas: 2d6 × lo que superes la dificultad, hasta ×" + T.auto + ".",
+        total:ta.total !== null ? ta.total + (excelente ? 1 : 0) : null, req:ta.falta || ""});
+      acc.auto = {total:ta.total, falta:ta.falta};
+    }
+    if(T.supuesto) acc.efectos.push(T.supuesto);
+    if(!tipo) acc.aviso = "Indica qué tipo de arma es para saber qué tirada usa.";
+    else if(T.dist && !cargador && tipo !== "lanzar") acc.aviso = "Apunta su munición en la tabla de armas para llevar la cuenta" + (T.cargador ? " (escala del Armero: cargador de " + T.cargador + ")." : ".");
+    const motivo = t && t.falta ? t.falta : cont && quedan(cont) <= 0 ? "Sin munición: recarga (gasta la Acción)." : "";
+    (motivo ? M.no : M.acciones.ataques).push(motivo ? Object.assign(acc, {motivo}) : acc);
+  });
+  // ---- ataques desarmados: Lucha (Cuerpo) y Artes Marciales (Destreza); daño según Cuerpo, mínimo 2d6 con ciberbrazo
+  const ciberbrazo = E.pos.brazo.some(P => P.ciber);
+  const desarmado = [];
+  an.piezas.forEach(({rec, p}) => { if(rec.secundario || conflicto[rec.id]) return; const m = String(p.m || "").match(/\+(\d+) al daño desarmado/i); if(m) desarmado.push("+" + m[1] + " " + p.n); });
+  const dDes = danyoDesarmado(C.s.cuerpo, ciberbrazo);
+  [["lucha", "Lucha (desarmado)", "cuerpo", "Lucha", ["No ignora la armadura.", "Cadencia 2: los dos golpes se pueden repartir a lo largo de tu movimiento."]],
+   ["artes", "Artes marciales", "destreza", "Artes Marciales", ["Ignora la mitad de la armadura del defensor.", "Cadencia 2: los dos golpes se pueden repartir a lo largo de tu movimiento."]]].forEach(([id, nombre, est, comp, ef]) => {
+    const tt = tirada(est, comp);
+    const acc = { id, clase:"arma", nombre, origen:"Reglas · Cuerpo a cuerpo", tirada:tt, mods:[], cad:"2", danyo:dDes, escala:"", danyoMods:desarmado,
+      desglose:["Daño desarmado con Cuerpo " + C.s.cuerpo + ": " + dDes + (ciberbrazo && C.s.cuerpo < 7 ? " (con ciberbrazo, al menos 2d6)" : "")],
+      resolucion:"Contra " + evasionObjetivo + ". Tienes que estar a 1 casilla.", efectos:ef.concat([CRITICO]), coste:"Acción", variantes:[precisoDe(tt, 0)] };
+    if(id === "artes" && tt.falta) return;           // las artes marciales solo salen si las has aprendido
+    (tt.falta ? M.no : M.acciones.ataques).push(tt.falta ? Object.assign(acc, {motivo:tt.falta}) : acc);
+  });
+
+  // ---- ciberware: cada habilidad mecánica en un solo sitio (ataque, activable, defensa, condicional o pasiva)
+  const borgCromo = entradasRol().some(x => x.t === "Cromo afilado");
+  const neuropuerto = an.activas.concat(an.pasivas).some(x => /acciones de Tecnomancia aparte de tu acción/i.test(x.e) && !conflicto[x.rec.id]);
+  an.activas.concat(an.pasivas).forEach(x => {
+    const rec = x.rec, p = x.p;
+    if(!rec || !p) return;
+    const lugar = x.zona || "";
+    const origen = p.n + (lugar ? " · " + lugar : "") + (rec.fbc ? " · " + ({cuerpo:"FBC", incluido:"integrado en el FBC", gratis:"gratis con el FBC", exento:"FBC"})[rec.fbc] : "");
+    const base = {id:"rec" + rec.id, rec:rec.id, nombre:p.n, origen, e:x.e, fbc:rec.fbc || ""};
+    const motivoConf = conflicto[rec.id] ? "La pieza no cumple sus requisitos o su sitio: " + conflicto[rec.id].join(" ") : "";
+    const usos = usosDe(x.e);
+    const at = ataqueDeTexto(x.e);
+    if(at){
+      const t = tirada(at.est, at.comp);
+      const cont = contador("rec" + rec.id + ":mun", at.cargador || at.cargas, "recarga", at.cargador ? "munición" : "cargas");
+      const acc = Object.assign(base, { clase:"arma", tirada:t, mods:[], cad:at.cad, danyo:at.danyo, escala:"", danyoMods:borgCromo ? ["+2 Cromo afilado (Borg)"] : [],
+        area:at.area, cont, coste:/sin gastar Acción|sin gastar acción/i.test(x.e) ? "Sin gastar Acción (según la pieza)" : "Acción",
+        resolucion:at.cc ? "Contra " + evasionObjetivo + ". Tienes que estar a 1 casilla." :
+          "Contra la dificultad según la distancia (la fila depende del arma: la fija el máster). Si el objetivo tiene Reflejos 8 o más, puede esquivar: contra su Destreza + Evasión + Carta.",
+        efectos:[].concat(at.ignoraMitad || at.cc ? ["Ignora la mitad de la armadura del defensor."] : [], at.extraCB ? ["Ignora " + at.extraCB + " puntos más de CB."] : [], [CRITICO]),
+        variantes:[precisoDe(t, 0)] });
+      const motivo = motivoConf || (t.falta) || (cont && quedan(cont) <= 0 ? "Sin " + cont.etiqueta + ": recarga." : "");
+      (motivo ? M.no : M.acciones.ataques).push(motivo ? Object.assign(acc, {motivo}) : acc);
+      return;
+    }
+    // lo que ya va en otro número (salvación contra muerte, daño desarmado de la Lucha) no se repite como entrada
+    const sinNumeros = x.e.replace(/[^.]*Cuerpo cuenta como \+\d+ en las salvaciones contra muerte\.?/i, " ").replace(/\+\d+ al daño desarmado[,.]?( pero[^:]*:)?/i, " ")
+      .replace(/[−-]\d+ a [A-ZÁÉÍÓÚ][^.;]*\.?/g, m => { const c = m.replace(/^[−-]\d+ a /, "").split(/ y (?:a )?|, /).every(z => leerCompetencia(z.replace(/[.]$/, ""))); return c ? " " : m; });
+    if(sinNumeros !== x.e && !SENYAL_COMBATE.test(sinNumeros.replace(/[^\wáéíóúñ ]+/gi, " "))) return;
+    if(!SENYAL_COMBATE.test(x.e)){ M.fueraCombate++; return; }
+    const activa = SENYAL_ACTIVA.test(x.e);
+    const cont = usos ? contador("rec" + rec.id + ":usos", usos.n, usos.por, "usos") : null;
+    const acc = Object.assign(base, {clase:activa ? "activa" : "pasiva", cont, usos, coste:activa ? (/sin gastar Acción/i.test(x.e) ? "Sin gastar Acción" : "Acción") : ""});
+    const motivo = motivoConf || (cont && quedan(cont) <= 0 ? "Sin usos: " + (usos.por === "combate" ? "se recuperan al acabar el combate" : "se recuperan cada " + usos.por) + "." : "");
+    if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
+    if(activa) M.acciones.activables.push(acc);
+    else if(SENYAL_DEFENSA.test(x.e)) M.defensa.push(acc);
+    else if(SENYAL_CONDICION.test(x.e)) M.condicionales.push(acc);
+    else M.pasivas.push(acc);
+  });
+
+  // ---- movimiento (PDF: tantas casillas como tu Destreza, con diagonales; se puede partir alrededor de la Acción)
+  const tumbado = tieneEstado("Tumbado"), agarrado = tieneEstado("Agarrado");
+  const mover = {id:"mover", clase:"regla", nombre:"Moverte", origen:"Reglas · Turnos", valor:M.mov.v + " casillas", coste:"Movimiento",
+    d:"Hasta " + M.mov.v + " casillas, también en diagonal (1 casilla = 2 m). Puedes hacer tu Acción en medio del movimiento y terminarlo después.", desglose:M.mov.desglose};
+  const correr = {id:"correr", clase:"regla", nombre:"Correr", origen:"Reglas · Acciones", valor:M.mov.correr + " casillas", coste:"Acción",
+    d:"Multiplicas tu movimiento ×2: " + M.mov.correr + " casillas."};
+  const bloqueoMov = tumbado ? "Estás tumbado: primero usa la acción Levantarse." : agarrado ? "Te tienen agarrado: no puedes usar tu Movimiento (para escapar, usa la acción Agarrar)." : "";
+  [mover, correr].forEach(x => (bloqueoMov ? M.no : M.acciones.movimiento).push(bloqueoMov ? Object.assign(x, {motivo:bloqueoMov}) : x));
+  if(tumbado) M.acciones.movimiento.unshift({id:"levantarse", clase:"regla", nombre:"Levantarse", origen:"Reglas · Acciones", coste:"Acción",
+    d:"Te levantas del suelo. Hasta hacerlo no puedes usar acciones de Movimiento."});
+
+  // ---- acciones del turno (PDF: Los Turnos: Acciones)
+  const tAgarrar = tirada("cuerpo", "Lucha");
+  const tCoop = tirada("temple", "Cooperación");
+  const turno = [
+    {id:"agarrar", clase:"regla", nombre:"Agarrar", origen:"Reglas · Acciones", coste:"Acción", tirada:tAgarrar,
+      d:"Agarras y retienes a un adversario o le quitas lo que sujeta. Usa Lucha. Mientras agarras, los dos tenéis −2 a todas las acciones, él no puede usar su Movimiento y al moverte lo arrastras. Para escaparse, el otro también usa Agarrar.", req:tAgarrar.falta},
+    {id:"lanzar", clase:"regla", nombre:"Lanzar", origen:"Reglas · Acciones", coste:"Acción",
+      d:"A alguien agarrado: lo tiras al suelo o contra un obstáculo, con " + C.s.cuerpo + " de daño (tu Cuerpo) que ignora la armadura, y queda tumbado. Un objeto: contra la fila «Lanzar un objeto» de la tabla de distancias.", fila:"Lanzar un objeto"},
+    {id:"combo", clase:"regla", nombre:"Combo", origen:"Reglas · Combos", coste:"Acción (de todos)", tirada:tCoop,
+      d:"Ataque al unísono: describís el combo y tiráis Cooperación contra la dificultad del oponente. Suma una carta al daño. Cada combo seguido sube 2 la dificultad (combo, sin combo, combo no la sube). Como mucho " + C.s.temple + " personas (tu Temple), y todas con ese Temple. Si vuestras tiradas quedan a 3 o menos: nivel 1 (+2 al acierto del siguiente combo); a 2: nivel 2 (el siguiente combo sin tirar Cooperación); a 1: nivel 3 (lo mismo y aturde 1 turno).", req:tCoop.falta},
+    {id:"estabilizar", clase:"regla", nombre:"Estabilizar", origen:"Reglas · Vida", coste:"Acción",
+      d:"Inicias la curación natural de alguien o lo sacas de herida mortal. Dificultad 13 si está gravemente herido; 15 si está mortalmente herido (queda inconsciente 1 minuto: 20 turnos)."},
+    {id:"recargar", clase:"regla", nombre:"Recargar", origen:"Reglas · Acciones", coste:"Acción",
+      d:"Recargas del todo y cambias el cargador de un arma, con un solo tipo de munición (botón «Recargar» de cada arma)."},
+    {id:"objeto", clase:"regla", nombre:"Usar un objeto", origen:"Reglas · Acciones", coste:"Acción", d:"Manipular un objeto sin necesidad de una habilidad concreta."},
+    {id:"habilidad", clase:"regla", nombre:"Usar habilidad", origen:"Reglas · Acciones", coste:"Acción", d:"Una tarea rápida con una competencia; las largas necesitan varias acciones en varios turnos."}
+  ];
+  turno.forEach(x => { const req = x.req; delete x.req; (req ? M.no : M.acciones.turno).push(req ? Object.assign(x, {motivo:req}) : x); });
+
+  // ---- Tecnomancia: hackeos rápidos de la tabla, con su coste de RAM
+  const terminal = E.lista.some(rr => { const pp = defDe(rr); return pp && /ciberterminal/i.test(pp.n) && !/^Neuropuerto|^Ampliación/.test(pp.n) && !conflicto[rr.id]; }) || /terminal/i.test(textoEquipo);
+  const tTec = tirada("inteligencia", "Tecnomancia");
+  (D.hackeos || []).forEach((h, i) => {
+    if(!String(h.nombre || "").trim()) return;
+    const txt = (h.nombre || "") + " " + (h.efecto || "");
+    const m = txt.match(/\/\/\s*(\d+)/) || txt.match(/(\d+)\s*(?:de )?RAM\b/i);
+    const coste = m ? num(m[1]) : null;
+    const acc = {id:"hack" + i, clase:"hackeo", nombre:h.nombre, origen:"Hackeos rápidos", e:h.efecto || "", tirada:tTec, ram:coste,
+      coste:neuropuerto ? "Acción de Tecnomancia (con el Neuropuerto, aparte de tu Acción)" : "Acción (Tecnomancia)",
+      resolucion:"Contra VD13 si es un objeto, o contra Tecnología + Cibertecnología + Carta del objetivo."};
+    const motivo = !terminal ? "Necesitas un ciberterminal (instalado o apuntado en el inventario o en los programas)." : tTec.falta ? tTec.falta :
+      coste !== null && coste > K.ram ? "No te queda RAM suficiente (" + K.ram + " de " + coste + ")." : "";
+    (motivo ? M.no : M.acciones.tecno).push(motivo ? Object.assign(acc, {motivo}) : acc);
+  });
+
+  // ---- defensa: CB, bloquear con escudo, resistencias (las pasivas del ciberware ya se han añadido arriba)
+  const escudo = /escudo/i.test(textoEquipo) || E.lista.some(rr => { const pp = defDe(rr); return pp && /escudo/i.test(pp.n); });
+  const balistico = /escudo[^·]*bal[ií]stic|bal[ií]stic[^·]*escudo/i.test(textoEquipo);
+  const bloquear = {id:"bloquear", clase:"regla", nombre:"Bloquear con escudo", origen:"Reglas", tipoDef:"accion",
+    d:"Reduce a la mitad el daño" + (balistico ? "; con el escudo balístico, todo el de los disparos." : " (el escudo balístico para todo el de los disparos)."), req:"Un escudo"};
+  if(escudo) M.defensaAcc = [bloquear]; else { M.defensaAcc = []; M.no.push(Object.assign(bloquear, {motivo:"No llevas ningún escudo apuntado en la ficha."})); }
+  const tEva = tiradaCombate(C, "destreza", "Evasión");
+  const esquivaDisparos = C.s.reflejos >= 8;
+  M.esquiva = {tirada:tEva, disparos:esquivaDisparos, reflejos:C.s.reflejos};
+  M.resist = [
+    Object.assign({id:"res-fis", nombre:"Resistencia física", d:"Venenos, gases, drogas, dolor."}, {tirada:tiradaCombate(C, "cuerpo", "Vigor")}),
+    {id:"res-men", nombre:"Resistencia mental", d:"Dependencias, compulsiones. Sin competencia.",
+      tirada:{total:C.s.temple + C.penal, desglose:["Temple " + C.s.temple].concat(C.penal ? [(C.penal > 0 ? "+" : "−") + Math.abs(C.penal) + " por heridas"] : []).concat(["+ la carta que juegues"]), falta:""}}
+  ];
+
+  // ---- rasgos de raza y habilidad de rol con uso en combate
+  rasgosRaza().concat(entradasRol()).forEach(x => {
+    if(!SENYAL_COMBATE.test(x.d) && !SENYAL_COMBATE.test(x.t)) return;
+    const usos = usosDe(x.d);
+    const activa = SENYAL_ACTIVA.test(x.d);
+    const cont = usos ? contador(x.k + ":usos", usos.n, usos.por, "usos") : null;
+    const acc = {id:x.k, clase:activa ? "activa" : "pasiva", nombre:x.t || "", origen:x.origen, e:x.d, cont, usos, puntos:x.puntos, libre:x.libre};
+    if(cont && quedan(cont) <= 0) M.no.push(Object.assign(acc, {motivo:"Sin usos: " + (usos.por === "combate" ? "se recuperan al acabar el combate" : "se recuperan cada " + usos.por) + "."}));
+    else if(activa){ acc.coste = /sin gastar Acción/i.test(x.d) ? "Sin gastar Acción" : /con una acción|usando una acción/i.test(x.d) ? "Acción" : ""; M.acciones.rol.push(acc); }
+    else M.rasgos.push(acc);
+  });
+
+  // ---- lo que ni el PDF ni la ficha definen (se dice, no se supone)
+  M.faltan.push("Qué competencia se tira para Estabilizar (el PDF da la dificultad: 13 o 15).");
+  if((D.armas || []).some(a => a.tipo === "arco")) M.faltan.push("La fila de la tabla de distancias para arcos y ballestas.");
+  if((D.armas || []).some(a => a.tipo === "subfusil")) M.faltan.push("La competencia del subfusil en disparo normal (se usa Armas Cortas).");
+  if(M.acciones.ataques.concat(M.no).some(a => a.rec && /distancia/.test(a.resolucion || ""))) M.faltan.push("La fila de distancia de las armas integradas en el ciberware (el catálogo no la dice).");
+  if(an.mods.cb) M.faltan.push("A qué zona cubre la CB del ciberware: aquí se cuenta en el cuerpo.");
+  M.estados = K.estados;
+  return M;
+}
+
+/* ================= Pintado ================= */
+const sgn = v => (v >= 0 ? "+" : "−") + Math.abs(v);
+function chip(txt, cls, titulo){ return `<span class="cm-chip ${cls || ""}"${titulo ? ` title="${esc(titulo)}"` : ""}>${txt}</span>`; }
+function htmlTirada(t, extra){
+  if(!t) return chip("tirada: indica el tipo", "apagado");
+  if(t.total === null) return chip("falla automático", "mal", t.desglose.join("\n"));
+  return chip(`<b>${t.total + (extra || 0)}</b> + carta`, "tirada", t.desglose.concat(extra ? [sgn(extra) + " otros modificadores"] : []).join("\n"));
+}
+function htmlContador(cont){
+  if(!cont) return "";
+  const q = cont.total - cont.usados;
+  const recarga = cont.por === "recarga";
+  return `<div class="cm-cont${q <= 0 ? " agotado" : ""}"><span class="cm-cont-n"><b>${q}</b>/${cont.total} ${esc(cont.etiqueta)}${recarga ? "" : " · por " + esc(cont.por)}</span>
+    <button type="button" class="btn fina" data-cm="gastar" data-k="${esc(cont.clave)}" ${q <= 0 ? "disabled" : ""}>${recarga ? "Gastar 1" : "Usar"}</button>
+    <button type="button" class="btn fina" data-cm="reponer" data-k="${esc(cont.clave)}" ${cont.usados <= 0 ? "disabled" : ""}${recarga ? ' title="Recargar gasta la Acción"' : ""}>${recarga ? "Recargar" : "Reponer"}</button></div>`;
+}
+function filaDet(n, v){ return v ? `<div><dt>${n}</dt><dd>${v}</dd></div>` : ""; }
+function htmlAccion(a, M){
+  const C = M.C;
+  const extra = (a.mods || []).reduce((s, m) => s + m.v, 0);
+  const chips = [];
+  if(a.clase === "arma" || a.clase === "hackeo" || a.tirada) chips.push(htmlTirada(a.tirada, extra));
+  if(a.danyo || a.escala) chips.push(chip(esc(a.danyo || a.escala) + (a.danyoMods && a.danyoMods.length ? " " + esc(a.danyoMods.map(x => x.split(" ")[0]).join(" ")) : ""), "danyo", a.danyo ? "Daño" : "Escala del Armero (referencia)"));
+  if(a.cad) chips.push(chip("Cadencia " + esc(a.cad), ""));
+  if(a.ram !== undefined) chips.push(chip(a.ram === null ? "RAM sin indicar" : a.ram + " RAM", "ram"));
+  if(a.valor) chips.push(chip(esc(a.valor), "valor"));
+  if(a.coste) chips.push(chip(esc(a.coste), "coste"));
+  if(a.clase === "activa") chips.push(chip("Activa", "activa"));
+  if(a.clase === "pasiva" && a.usos) chips.push(chip("Uso limitado", "activa"));
+  if(a.fbc) chips.push(chip(a.fbc === "incluido" ? "Integrado FBC" : "FBC", "fbc"));
+  const det = [];
+  const textoVisible = a.clase === "activa" || a.clase === "pasiva";
+  if(!textoVisible) det.push(filaDet(a.tipo !== undefined ? "Tipo" : "Qué hace", esc(a.e || a.d || (a.tipo !== undefined ? TIPOS_ARMA[a.tipo].n : ""))));
+  if(a.clase === "arma" || a.clase === "hackeo" || a.tirada){
+    const t = a.tirada;
+    det.push(filaDet("Tirada", t ? (t.total === null ? esc(t.falta) : esc(t.desglose.join(" · ")) + (extra ? " · " + esc(a.mods.map(m => sgn(m.v) + " " + m.n).join(" · ")) : "")) : "Elige el tipo de arma"));
+  }
+  if(a.desglose) det.push(filaDet("Cálculo", esc(a.desglose.join(" · "))));
+  if(a.danyoMods && a.danyoMods.length) det.push(filaDet("Daño", esc((a.danyo || a.escala || "") + " " + a.danyoMods.join(" "))));
+  if(!a.danyo && a.escala) det.push(filaDet("Escala", "Referencia de la escala del Armero: " + esc(a.escala) + ". Apunta el daño real en la tabla de armas."));
+  det.push(filaDet("Resolución", esc(a.resolucion || "")));
+  det.push(filaDet("Alcance", esc(a.area || "")));
+  if(a.req) det.push(filaDet("Requisito", esc(a.req)));
+  if(a.puntos !== null && a.puntos !== undefined) det.push(filaDet("Tus puntos", a.puntos + (a.libre ? " (se reparten al inicio de cada combate)" : "")));
+  (a.efectos || []).forEach((x, i) => det.push(filaDet(i ? "" : "Efectos", esc(x))));
+  (a.variantes || []).forEach(v => det.push(filaDet(esc(v.n), esc(v.d) + (v.total !== null && !v.req ? " → <b>" + v.total + "</b> + carta" : ""))));
+  if(a.notas) det.push(filaDet("Notas", esc(a.notas)));
+  det.push(filaDet("Origen", esc(a.origen)));
+  const tipoSel = a.indice !== undefined ? `<label class="cm-tipo">Tipo <select data-cm="tipo" data-i="${a.indice}">${Object.keys(TIPOS_ARMA).map(k => `<option value="${k}"${k === a.tipo ? " selected" : ""}>${esc(TIPOS_ARMA[k].n)}</option>`).join("")}</select></label>` : "";
+  const rafaga = a.auto && a.cont ? `<button type="button" class="btn fina" data-cm="gastar" data-n="10" data-k="${esc(a.cont.clave)}" ${a.auto.falta || a.cont.total - a.cont.usados < 10 ? "disabled" : ""} title="Disparo automático: la Acción y 10 balas">Ráfaga (−10 balas)</button>` : "";
+  const dist = a.fila && DIFICULTAD_DISTANCIA[a.fila] ? `<table class="cm-dist" aria-label="Dificultad según la distancia (${esc(a.fila)})"><tr><th>casillas</th>${TRAMOS.map(x => `<th>${x}</th>`).join("")}</tr>
+    <tr><th>dificultad</th>${DIFICULTAD_DISTANCIA[a.fila].map(v => `<td${v === null ? ' class="x"' : ""}>${v === null ? "×" : v}</td>`).join("")}</tr></table>` : "";
+  const ramBtn = a.clase === "hackeo" && a.ram ? `<button type="button" class="btn fina" data-cm="ram-gastar" data-n="${a.ram}" ${a.motivo || a.ram > M.ram.actual ? "disabled" : ""}>Gastar ${a.ram} RAM</button>` : "";
+  return `<article class="cm-acc ${a.motivo ? "no" : ""}" data-acc="${esc(a.id)}"${a.rec ? ` data-rec="${esc(a.rec)}"` : ""}>
+    <div class="cm-acc-cab">${a.nombre ? `<h5>${esc(a.nombre)}</h5>` : `<h5 class="sin">${esc(a.origen)}</h5>`}<div class="cm-chips">${chips.join("")}</div></div>
+    ${textoVisible && a.e ? `<p class="cm-texto">${esc(a.e)}</p>` : ""}
+    ${a.motivo ? `<p class="cm-motivo">${esc(a.motivo)}</p>` : ""}${a.aviso ? `<p class="cm-aviso">${esc(a.aviso)}</p>` : ""}
+    ${dist}
+    ${a.cont || tipoSel || ramBtn ? `<div class="cm-acc-mandos">${tipoSel}${htmlContador(a.cont)}${rafaga}${ramBtn}</div>` : ""}
+    ${textoVisible && det.filter(Boolean).length <= 1 ? (a.nombre ? `<p class="cm-origen">${esc(a.origen)}</p>` : "")
+      : `<details class="cm-det"><summary>Detalles</summary><dl>${det.join("")}</dl></details>`}</article>`;
+}
+function bloqueCm(titulo, items, M, vacio, cls){
+  if(!items.length && !vacio) return "";
+  return `<section class="cm-bloque ${cls || ""}"><h4>${esc(titulo)}${items.length ? `<span>${items.length}</span>` : ""}</h4>${items.length ? items.map(a => htmlAccion(a, M)).join("") : `<p class="cm-vacio">${esc(vacio)}</p>`}</section>`;
+}
+
+function pintarCombate(){
+  const caja = $("#cm");
+  if(!caja) return;
+  const M = modeloCombate();
+  const V = M.vida, pct = V.max ? Math.round(100 * V.actual / V.max) : 0;
+  const tile = (t, v, sub, cls, titulo) => `<div class="cm-tile ${cls || ""}"${titulo ? ` title="${esc(titulo)}"` : ""}><small>${t}</small><b>${v}</b>${sub ? `<span>${sub}</span>` : ""}</div>`;
+  const cb = M.cb;
+  const enfoque = document.activeElement && caja.contains(document.activeElement) ? document.activeElement.id : "";
+  caja.innerHTML = `
+  <header class="cm-cab">
+    <section class="cm-vida est-${V.nivel}" aria-label="Vida">
+      <div class="cm-vida-num"><small>VIDA</small><b id="cmVida">${V.actual}</b><span>/ ${V.max}</span></div>
+      <div class="cm-barra" role="meter" aria-valuemin="0" aria-valuemax="${V.max}" aria-valuenow="${V.actual}"><i style="width:${pct}%"></i><em style="left:${V.max ? Math.round(100 * V.umbralGrave / V.max) : 50}%" title="Por debajo de ${V.umbralGrave}: gravemente herido"></em></div>
+      <p class="cm-estado">${esc(V.estado)}</p>
+      <div class="cm-vida-mandos">
+        <button type="button" class="btn" data-cm="vida" data-n="-1">−1</button><button type="button" class="btn" data-cm="vida" data-n="-5">−5</button><button type="button" class="btn" data-cm="vida" data-n="-10">−10</button>
+        <input id="cmVidaN" inputmode="numeric" placeholder="N" aria-label="Cantidad de vida">
+        <button type="button" class="btn" data-cm="vida-quitar">Quitar</button><button type="button" class="btn" data-cm="vida-curar">Curar</button>
+        <button type="button" class="btn" data-cm="vida" data-n="1">+1</button><button type="button" class="btn" data-cm="vida" data-n="5">+5</button>
+      </div>
+      <p class="cm-nota">Resta tú la CB a cada impacto antes de quitar la vida (las armas cuerpo a cuerpo ignoran la mitad; la herida crítica, toda).</p>
+    </section>
+    <div class="cm-tiles">
+      ${tile("CB cuerpo", cb.cuerpo.v, cb.cuerpo.v ? esc(cb.cuerpo.n) : "sin blindaje", "cb", "Solo cuenta la mayor fuente:\n" + (cb.fuentes.map(f => f.n + " " + f.v).join("\n") || "ninguna"))}
+      ${tile("CB cabeza", cb.cabeza.v, cb.cabeza.v ? esc(cb.cabeza.n) : "sin blindaje", "cb", cb.fuentesCabeza.map(f => f.n + " " + f.v).join("\n") || "ninguna")}
+      <div class="cm-tile ini" title="${esc(M.ini.desglose.join("\n"))}"><small>Iniciativa</small><b>${M.ini.v} <i>+ carta</i></b>
+        <label class="cm-mini">Tirada <input id="cmIni" inputmode="numeric" value="${esc(M.ini.tirada)}" placeholder="—" aria-label="Resultado de tu iniciativa"></label>
+        <span>La carta es opcional · empates: se repite</span></div>
+      ${tile("Movimiento", M.mov.v, "corriendo " + M.mov.correr, "", M.mov.desglose.join("\n"))}
+      <div class="cm-tile ram" title="${esc(M.ram.desglose.join("\n"))}"><small>RAM</small><b>${M.ram.actual}<i> / ${M.ram.max}</i></b>
+        <span class="cm-mini-mandos"><button type="button" class="btn fina" data-cm="ram" data-n="-1" aria-label="Gastar 1 RAM">−1</button><button type="button" class="btn fina" data-cm="ram" data-n="1" aria-label="Recuperar 1 RAM">+1</button></span>
+        <span>+1 al inicio de cada turno</span></div>
+      <div class="cm-tile cartas"><small>Cartas en mano</small><b>${M.cartas}<i> / ${MANO_CARTAS}</i></b>
+        <span class="cm-mini-mandos"><button type="button" class="btn fina" data-cm="carta">Gastar una</button><button type="button" class="btn fina" data-cm="cartas-reponer" ${M.cartas >= MANO_CARTAS ? "disabled" : ""}>Reponer</button></span>
+        <span>J, Q y K valen 11 · el As vale 11 y suma otra carta (crítico)</span></div>
+    </div>
+    <div class="cm-stats">${M.stats.map(s => `<span title="${esc(s.desglose.join("\n"))}">${esc(s.n)} <b>${s.v}</b>${s.v !== s.base ? `<i>base ${s.base}</i>` : ""}</span>`).join("")}
+      ${V.penal ? `<span class="mal">${sgn(V.penal)} a todo por heridas</span>` : ""}${V.menosMov ? `<span class="mal">−${V.menosMov} casillas</span>` : ""}${M.agarre ? `<span class="mal">−2 a las acciones por el agarre</span>` : ""}
+      <button type="button" class="btn fina cm-fin" data-cm="fin">Fin del combate</button></div>
+  </header>
+  <div class="cm-rejilla">
+    <div class="cm-col principal">
+      <h3 class="cm-titulo">ACCIONES DISPONIBLES</h3>
+      ${bloqueCm("Ataques y armas", M.acciones.ataques, M, M.no.some(a => a.clase === "arma") ? "Ningún ataque disponible ahora: mira «No disponibles ahora»." : "No tienes ningún ataque: añade armas en la Ficha.")}
+      ${bloqueCm("Movimiento", M.acciones.movimiento, M)}
+      ${bloqueCm("Acciones del turno", M.acciones.turno, M)}
+      ${bloqueCm("Tecnomancia", M.acciones.tecno, M)}
+      ${bloqueCm("Ciberware que se activa", M.acciones.activables, M)}
+      ${bloqueCm("Habilidades de raza y rol que se activan", M.acciones.rol, M)}
+      ${bloqueCm("Defensa activa", M.defensaAcc, M)}
+    </div>
+    <div class="cm-col">
+      <section class="cm-bloque cm-def"><h4>Defensa y reacciones</h4>
+        <dl class="cm-def-lista">
+          <div><dt>CB (permanente)</dt><dd>Cuerpo <b>${cb.cuerpo.v}</b> · cabeza <b>${cb.cabeza.v}</b>. Se resta al daño de cada impacto; solo cuenta la mayor fuente.</dd></div>
+          <div><dt>Defensa cuerpo a cuerpo</dt><dd>${htmlTirada(M.esquiva.tirada)} Destreza + Evasión contra cualquier ataque cuerpo a cuerpo.</dd></div>
+          <div class="${M.esquiva.disparos ? "" : "apagada"}"><dt>Esquivar disparos</dt><dd>${M.esquiva.disparos ? htmlTirada(M.esquiva.tirada) + " Con Reflejos 8 o más puedes esquivar los disparos con Destreza + Evasión, en vez de que el atacante tire contra la distancia."
+            : "No puedes: hace falta Reflejos 8 o más (tienes " + M.esquiva.reflejos + "). Los disparos van contra la dificultad por distancia."}</dd></div>
+          <div><dt>Heridas</dt><dd>Gravemente herido por debajo de ${V.umbralGrave} (−2 a todo) · mortalmente con 1 o menos (−4 a todo, −3 casillas). Cada estado sustituye al anterior.</dd></div>
+          <div class="${V.nivel === "mortal" ? "alerta" : ""}"><dt>Salvación contra muerte</dt><dd>${V.nivel === "mortal" ? "<b>Ahora:</b> " : "Si quedas mortalmente herido: "}1d10 cada turno: sobrevives si sacas menos de <b>${M.salvacion.objetivo}</b>; un 10 siempre falla. Cada salvación y cada ataque que recibas así suma 1 a la dificultad; cada ataque te causa además una herida crítica.
+            <span class="cm-salv">Cuerpo ${M.salvacion.base}${M.salvacion.fuentes.map(f => " +" + f.v + " " + esc(f.n)).join("")}${M.salvacion.penal ? " −" + M.salvacion.penal + " acumulado" : ""}
+            <button type="button" class="btn fina" data-cm="muerte" data-n="1">+1 acumulado</button><button type="button" class="btn fina" data-cm="muerte" data-n="0" ${M.salvacion.penal ? "" : "disabled"}>Poner a 0</button></span></dd></div>
+          ${M.resist.map(x => `<div><dt>${esc(x.nombre)}</dt><dd>${htmlTirada(x.tirada)} ${esc(x.d)}</dd></div>`).join("")}
+        </dl>
+        ${M.defensa.map(a => htmlAccion(a, M)).join("")}
+      </section>
+      ${bloqueCm("Efectos pasivos del ciberware", M.pasivas, M)}
+      ${bloqueCm("Efectos que dependen de una condición", M.condicionales, M)}
+      ${bloqueCm("Habilidades de raza y rol en combate", M.rasgos, M)}
+      <section class="cm-bloque"><h4>Estados</h4>
+        <div class="cm-estados">${M.estados.map((s, i) => `<span class="cm-estado-t">${esc(s.n)} <b>${s.rot}</b> rot. <button type="button" data-cm="estado-quitar" data-i="${i}" aria-label="Quitar ${esc(s.n)}">×</button></span>`).join("") || `<span class="cm-vacio">Ninguno.</span>`}</div>
+        <div class="cm-estados-mandos">${ESTADOS_RAPIDOS.map(n => `<button type="button" class="btn fina" data-cm="estado" data-n="${n}">${n}</button>`).join("")}
+          <input id="cmEstadoN" placeholder="Otro estado" aria-label="Nombre del estado"><input id="cmEstadoR" inputmode="numeric" placeholder="rot." value="1" aria-label="Rotaciones">
+          <button type="button" class="btn fina" data-cm="estado-otro">Añadir</button>
+          <button type="button" class="btn fina" data-cm="rotacion" ${M.estados.length ? "" : "disabled"}>Nueva rotación (−1)</button></div>
+        <label class="cm-heridas">Heridas críticas y estados (la misma nota que en la Ficha)<textarea id="cmHeridas" rows="3">${esc(D["f-heridas"] || "")}</textarea></label>
+      </section>
+      <details class="cm-bloque cm-crit"><summary><h4>Heridas críticas (2d6)</h4></summary>
+        <p class="cm-vacio">Con dos o más 6 en el daño. Tira en la del cuerpo, o en la de la cabeza si el ataque preciso iba a la cabeza; repite si sale una que ya sufre. «Apuntar» la añade a tu nota.</p>
+        ${Object.keys(HERIDAS_CRITICAS).map(z => `<h5>${z}</h5><table class="cm-crit-t"><tr><th>2d6</th><th>Herida</th><th>Efecto</th><th>Remedio · tratamiento</th><th></th></tr>${HERIDAS_CRITICAS[z].map(h =>
+          `<tr><td>${h[0]}</td><td><b>${esc(h[1])}</b></td><td>${esc(h[2])}</td><td>${esc(h[3])} · ${esc(h[4])}</td><td><button type="button" class="btn fina" data-cm="critica" data-z="${z}" data-n="${h[0]}">Apuntar</button></td></tr>`).join("")}</table>`).join("")}</details>
+      ${M.no.length ? `<details class="cm-bloque cm-no"><summary><h4>No disponibles ahora<span>${M.no.length}</span></h4></summary>${M.no.map(a => htmlAccion(a, M)).join("")}</details>` : ""}
+      <details class="cm-bloque cm-faltan"><summary><h4>Reglas sin definir</h4></summary><ul>${M.faltan.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+        ${M.fueraCombate ? `<p class="cm-vacio">${plural(M.fueraCombate, "habilidad", "habilidades")} del ciberware sin uso en combate (están en la Ficha).</p>` : ""}</details>
+    </div>
+  </div>`;
+  if(enfoque){ const el = document.getElementById(enfoque); if(el) try{ el.focus({preventScroll:true}); }catch(e){} }
+}
+
+/* ================= Acciones del panel (cada botón hace exactamente lo que dice) ================= */
+function cambiarVida(delta){
+  const C = calcular();
+  const antes = Math.max(0, Math.min(C.vidaMax, C.vida));
+  const ahora = Math.max(0, Math.min(C.vidaMax, antes + delta));
+  const K = datosCombate();
+  // tracker: cada golpe estando mortalmente herido suma 1 a la penalización de la salvación
+  if(delta < 0 && antes <= 1 && ahora <= 1) K.muerte = num(K.muerte) + 1;
+  D["f-vidaActual"] = String(ahora);
+  const campo = $("#f-vidaActual");
+  if(campo) campo.value = D["f-vidaActual"];
+  guardar(); recalcular();
+}
+function accionCombate(b){
+  const K = datosCombate(), a = b.dataset.cm, n = num(b.dataset.n);
+  const leerN = () => { const c = $("#cmVidaN"); const v = c ? Math.abs(num(c.value)) : 0; return v; };
+  switch(a){
+    case "vida": cambiarVida(n); return;
+    case "vida-quitar": { const v = leerN(); if(v) cambiarVida(-v); return; }
+    case "vida-curar": { const v = leerN(); if(v) cambiarVida(v); return; }
+    case "ram": K.ram = Math.max(0, Math.min(calcular().ram, num(K.ram) + n)); break;
+    case "ram-gastar": if(num(K.ram) >= n) K.ram = num(K.ram) - n; break;
+    case "carta": K.cartas = num(K.cartas) - 1; if(K.cartas <= 0){ K.cartas = MANO_CARTAS; toast("Gastas la última carta: repones " + MANO_CARTAS); } break;
+    case "cartas-reponer": K.cartas = MANO_CARTAS; break;
+    case "gastar": K.cont[b.dataset.k] = num(K.cont[b.dataset.k]) + (n || 1); break;
+    case "critica": {
+      const h = (HERIDAS_CRITICAS[b.dataset.z] || []).find(x => x[0] === n);
+      if(!h) return;
+      const linea = h[1] + " (" + b.dataset.z.toLowerCase() + "): " + h[2] + " Remedio rápido: " + h[3] + ". Tratamiento: " + h[4] + ".";
+      D["f-heridas"] = (String(D["f-heridas"] || "").trim() ? String(D["f-heridas"]).trim() + "\n" : "") + linea;
+      const f = $("#f-heridas"); if(f) f.value = D["f-heridas"];
+      toast("Apuntada: " + h[1]);
+      break;
+    }
+    case "reponer": delete K.cont[b.dataset.k]; break;
+    case "muerte": K.muerte = n ? num(K.muerte) + 1 : 0; break;
+    case "estado": K.estados.push({n:b.dataset.n, rot:1}); break;
+    case "estado-otro": { const nm = ($("#cmEstadoN") || {}).value || ""; const r = Math.max(1, num(($("#cmEstadoR") || {}).value) || 1);
+      if(nm.trim()) K.estados.push({n:nm.trim().slice(0, 40), rot:r}); break; }
+    case "estado-quitar": K.estados.splice(num(b.dataset.i), 1); break;
+    case "rotacion": K.estados.forEach(s => s.rot = num(s.rot) - 1); K.estados = K.estados.filter(s => s.rot > 0); break;
+    case "fin":
+      confirmar("Se recupera toda la RAM, repones las " + MANO_CARTAS + " cartas, vuelven los usos «por combate», se borran los estados temporales, la iniciativa y la penalización de la salvación. La vida, la munición y las cargas no cambian.", "Terminar combate", "Fin del combate")
+        .then(ok => { if(!ok) return; const K2 = datosCombate();
+          K2.ram = calcular().ram; K2.cartas = MANO_CARTAS; K2.estados = []; K2.ini = ""; K2.muerte = 0;
+          Object.keys(K2.cont).forEach(k => { if(/:usos$/.test(k) && usoPorCombate(k)) delete K2.cont[k]; });
+          guardar(); pintarCombate(); });
+      return;
+    default: return;
+  }
+  guardar(); pintarCombate();
+}
+/* ¿El contador es de usos «por combate»? (se mira en el modelo actual) */
+function usoPorCombate(clave){
+  const M = modeloCombate();
+  const todos = [].concat(M.acciones.activables, M.defensa, M.pasivas, M.condicionales, M.rasgos, M.no);
+  const a = todos.find(x => x.cont && x.cont.clave === clave);
+  return !a || a.cont.por === "combate";
+}
+function iniciarCombate(){
+  const caja = $("#cm");
+  if(!caja || caja.dataset.listo) return;
+  caja.dataset.listo = "1";
+  caja.addEventListener("click", ev => { const b = ev.target.closest("[data-cm]"); if(b && b.tagName === "BUTTON" && !b.disabled) accionCombate(b); });
+  caja.addEventListener("change", ev => {
+    const t = ev.target;
+    if(t.dataset.cm === "tipo"){ const f = (D.armas || [])[num(t.dataset.i)]; if(f){ f.tipo = t.value; guardar(); pintarCombate(); } }
+  });
+  caja.addEventListener("input", ev => {
+    const t = ev.target;
+    if(t.id === "cmIni"){ datosCombate().ini = t.value.replace(/[^\d−-]/g, "").slice(0, 4); guardar(); }
+    if(t.id === "cmHeridas"){ D["f-heridas"] = t.value; const f = $("#f-heridas"); if(f) f.value = t.value; guardar(); }
+  });
+  caja.addEventListener("keydown", ev => {
+    if(ev.key === "Enter" && ev.target.id === "cmVidaN"){ ev.preventDefault(); const v = Math.abs(num(ev.target.value)); if(v) cambiarVida(-v); }
+  });
+}
 
 
 $("#ficheroImportar").addEventListener("change", ev => {
