@@ -6883,7 +6883,7 @@ function chipsDeRasgo(a){
   if(/^Para curarte:/i.test(t)) poner("Se cura con Electrónica, Mecánica y Cibertecnología");
   if(!out.length){
     const titulo = (t.match(/^([A-ZÁÉÍÓÚ][^:.]{2,32}):/) || [])[1];
-    const frase = t.split(/(?<=\.)\s/)[0];
+    const corte = t.search(/\.\s/), frase = corte >= 0 ? t.slice(0, corte + 1) : t;   // sin lookbehind: Safari anterior a iOS 16.4 no lo entiende
     poner(a.nombre && a.nombre.length <= 40 ? a.nombre : titulo || (frase.length > 60 ? frase.slice(0, 57).replace(/\s+\S*$/, "") + "…" : frase.replace(/\.$/, "")));
   }
   return out;
