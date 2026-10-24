@@ -283,6 +283,12 @@
   .nube-campo input{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px}
   .nube-estado{font-size:13px;opacity:.85;min-height:1.2em}
   .nube-botones{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .modal .nube-nota{font-size:12.5px;color:var(--ambar);margin:6px 0 10px}
+  .nube-lista{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
+  .nube-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--linea);border-radius:10px;padding:8px 10px;background:var(--panel-alto)}
+  .nube-fila small{display:block;color:var(--apagado);font-size:12px}
+  .nube-esta{color:var(--verde);font-size:12px}
+  .nube-fila-acc{display:flex;gap:6px}
   .velo{position:fixed;inset:0;background:rgba(6,8,10,.8);z-index:100;display:flex;
     align-items:flex-start;justify-content:center;padding:22px 14px;overflow-y:auto}
   .modal{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:18px;
@@ -5734,6 +5740,7 @@ async function nubeEnviar(forzar){
   clearTimeout(NUBE.reintento); NUBE.reintento = null;
   if(!NUBE.codigo || !nubeLista()) return false;
   if(NUBE.enviando){ NUBE.pendiente = true; return false; }
+  if(nubeFichaVacia()){ nubePintar(); return false; }       // una ficha en blanco no se sube (dispositivo nuevo, «Vaciar»)
   if(!D.nube || typeof D.nube !== "object" || !/^f[A-Z0-9]{10}$/.test(D.nube.id || "")){ D.nube = {id:"f" + nubeAzar(10)}; Guardado.escribir(D); }
   const copia = Object.assign({}, D);
   const mini = await nubeMini(D.retrato);
@@ -5753,6 +5760,10 @@ async function nubeEnviar(forzar){
   if(NUBE.pendiente){ NUBE.pendiente = false; nubeCambio(); }
   return ok;
 }
+/* Ficha sin nombre ni estadísticas: no tiene nada que subir */
+const nubeFichaVacia = () => !String(D["f-nombre"] || "").trim() && !Object.keys(D).some(k => /^stat_/.test(k) && num(D[k]) > 0);
+const nubeHace = t => { const m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? "hace un momento" : m < 60 ? "hace " + m + " min" : m < 1440 ? "hace " + Math.round(m / 60) + " h" : new Date(t).toLocaleDateString("es-ES"); };
 const nubeHora = t => { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
 function nubeEstadoTexto(){
   if(!NUBE.codigo) return "";
@@ -5764,7 +5775,7 @@ function nubeEstadoTexto(){
 function nubePintar(){
   const b = document.getElementById("btnNube");
   if(b){
-    b.textContent = !NUBE.codigo ? "☁ Partida" : NUBE.enviando ? "☁ Subiendo…" : NUBE.error ? "☁ Sin conexión" : "☁ Sincronizada";
+    b.textContent = !NUBE.codigo ? "☁ Partida" : NUBE.enviando ? "☁ Subiendo…" : NUBE.error ? "☁ Sin conexión" : nubeFichaVacia() ? "☁ Conectada" : "☁ Sincronizada";
     b.classList.toggle("nube-ok", !!NUBE.codigo && !NUBE.error);
     b.classList.toggle("nube-mal", !!NUBE.codigo && !!NUBE.error);
     b.title = NUBE.codigo ? "Partida " + NUBE.codigo + " · " + nubeEstadoTexto() : "Conectar la ficha con la partida del máster";
@@ -5775,17 +5786,44 @@ function nubePintar(){
 function nubeAbrir(){
   const velo = document.createElement("div");
   velo.className = "velo";
+  let vista = NUBE.codigo ? "conectada" : "inicio", lista = null, errorLista = "";
+  const cargarLista = async () => {
+    lista = null; errorLista = ""; vista = "lista"; pintarModal();
+    try{
+      const idx = await nubeIndice(NUBE.codigo);
+      lista = Object.keys(idx).filter(id => idx[id] && idx[id].nombre).map(id => ({id, nombre:String(idx[id].nombre), t:num(idx[id].t)})).sort((a, b) => b.t - a.t);
+    }catch(e){ errorLista = e.message || String(e); }
+    if(vista === "lista") pintarModal();
+  };
   const pintarModal = () => {
-    velo.innerHTML = NUBE.codigo ? `<div class="modal">
+    const propia = D.nube && D.nube.id;
+    if(vista === "lista"){
+      const filas = errorLista ? `<p class="nube-estado">No se ha podido leer la partida (${esc(errorLista)}).</p>`
+        : !lista ? `<p class="nube-estado">Buscando las fichas de la partida…</p>`
+        : !lista.length ? `<p class="nube-estado">En esta partida todavía no hay ninguna ficha subida.</p>`
+        : `<div class="nube-lista">${lista.map(f => `<div class="nube-fila"><div><b>${esc(f.nombre)}</b>${f.id === propia ? ` <span class="nube-esta">(la de este dispositivo)</span>` : ""}<small>Subida ${esc(nubeHace(f.t))}</small></div>
+            <div class="nube-fila-acc"><button class="btn principal" data-n="traer" data-id="${esc(f.id)}"${f.id === propia ? " disabled" : ""}>Cargar aquí</button>
+            <button class="btn" data-n="json" data-id="${esc(f.id)}">.json</button></div></div>`).join("")}</div>`;
+      velo.innerHTML = `<div class="modal">
+        <h3>Fichas de la partida</h3>
+        <p><b>Cargar aquí</b> pone esa ficha en este dispositivo y sigue sincronizándose con la misma ficha de la nube: así puedes pasar tu personaje del ordenador al móvil, o al revés. <b>.json</b> la descarga como copia de seguridad.</p>
+        <p class="nube-nota">Usa la ficha en un solo dispositivo a la vez: si la cambias en dos sitios, se queda lo último que se haya subido. El retrato viene en pequeño.</p>
+        ${filas}
+        <div class="nube-botones"><button class="btn" data-n="volver">Volver</button></div></div>`;
+      return;
+    }
+    velo.innerHTML = vista === "conectada" ? `<div class="modal">
         <h3>Partida en la nube</h3>
         <p>Tu ficha está conectada a la partida <b class="nube-codigo">${esc(NUBE.codigo)}</b>. Cada cambio que hagas le llega solo al máster: ya no hace falta mandarle el .json.</p>
-        <p class="nube-estado" id="nubeEstado">${esc(nubeEstadoTexto())}</p>
+        <p class="nube-estado" id="nubeEstado">${esc(nubeFichaVacia() ? "La ficha está en blanco: se subirá en cuanto tenga nombre o estadísticas." : nubeEstadoTexto())}</p>
         <div class="nube-botones"><button class="btn principal" data-n="subir">Subir ahora</button>
+          <button class="btn" data-n="lista">Fichas de la partida</button>
           <button class="btn" data-n="desconectar">Desconectar</button>
           <button class="btn" data-n="cerrar">Cerrar</button></div></div>`
       : `<div class="modal">
         <h3>Conectar con la partida</h3>
         <p>Escribe el código de partida que te ha dado el máster. A partir de ahí tu ficha se sube sola cada vez que cambies algo, y el máster la tiene siempre al día.</p>
+        <p>¿Tu ficha ya está en la nube desde otro dispositivo? Conecta con el código y pulsa <b>Fichas de la partida</b> para traerla.</p>
         <label class="nube-campo">Código de partida<input id="nubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANA-XXXX-XXXX-XXXX"></label>
         <p class="nube-estado" id="nubeAviso"></p>
         <div class="nube-botones"><button class="btn principal" data-n="conectar">Conectar</button>
@@ -5793,14 +5831,24 @@ function nubeAbrir(){
     const campo = velo.querySelector("#nubeCodigo");
     if(campo){ campo.focus(); campo.addEventListener("keydown", ev => { if(ev.key === "Enter") velo.querySelector('[data-n="conectar"]').click(); }); }
   };
+  const bajar = async id => {
+    const f = await nubeFicha(NUBE.codigo, id);
+    if(!f || typeof f.datos !== "string") throw new Error("esa ficha ya no está en la nube");
+    const obj = JSON.parse(f.datos);
+    if(!obj || typeof obj !== "object") throw new Error("la ficha de la nube está dañada");
+    obj.nube = {id};
+    return {obj, nombre:String(f.nombre || "ficha")};
+  };
   pintarModal();
   document.body.appendChild(velo);
   velo.addEventListener("click", async ev => {
     if(ev.target === velo){ velo.remove(); return; }
     const b = ev.target.closest("[data-n]");
-    if(!b) return;
+    if(!b || b.disabled) return;
     const n = b.dataset.n;
     if(n === "cerrar"){ velo.remove(); return; }
+    if(n === "lista"){ cargarLista(); return; }
+    if(n === "volver"){ vista = NUBE.codigo ? "conectada" : "inicio"; pintarModal(); return; }
     if(n === "conectar"){
       const c = nubeNormalizar(velo.querySelector("#nubeCodigo").value);
       const aviso = velo.querySelector("#nubeAviso");
@@ -5808,9 +5856,32 @@ function nubeAbrir(){
       b.disabled = true; aviso.textContent = "Conectando…";
       NUBE.codigo = c; NUBE.ultimo = "";
       try{ localStorage.setItem(CLAVE_NUBE, c); }catch(e){}
+      if(nubeFichaVacia()){ nubePintar(); cargarLista(); return; }     // dispositivo nuevo: lo normal es traer la ficha
       const ok = await nubeEnviar(true);
-      pintarModal();
+      vista = "conectada"; pintarModal();
       toast(ok ? "Ficha conectada a la partida" : "Código guardado. La ficha se subirá en cuanto haya conexión.", 4000);
+      return;
+    }
+    if(n === "traer" || n === "json"){
+      const fila = lista && lista.find(f => f.id === b.dataset.id);
+      if(!fila) return;
+      if(n === "traer" && !nubeFichaVacia() &&
+         !await confirmar("Se sustituye la ficha de este dispositivo («" + (String(D["f-nombre"] || "").trim() || "sin nombre") + "») por «" + fila.nombre + "» de la nube. Si la de ahora no está subida ni guardada en un .json, se pierde.", "Cargar aquí")) return;
+      b.disabled = true;
+      try{
+        const {obj, nombre} = await bajar(fila.id);
+        if(n === "json"){
+          await descargar(JSON.stringify(obj, null, 2), "application/json", "xana-" + (nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ficha") + ".json");
+          b.disabled = false; return;
+        }
+        D = sanear(obj);
+        D.modoCreacion = false;
+        NUBE.ultimo = ""; NUBE.error = "";
+        if(!guardar()) avisar("La ficha se ha cargado, pero este navegador no deja guardarla: si cierras la página se perderá.");
+        repintarTodo(); pestanya("ficha"); nubePintar();
+        velo.remove();
+        toast("«" + nombre + "» cargada desde la nube. Sigue sincronizada.", 4000);
+      }catch(e){ b.disabled = false; avisar("No se ha podido traer la ficha: " + (e.message || e) + "."); }
       return;
     }
     if(n === "subir"){ b.disabled = true; await nubeEnviar(true); b.disabled = false; return; }
@@ -5819,7 +5890,7 @@ function nubeAbrir(){
       NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = "";
       clearTimeout(NUBE.temporizador); clearTimeout(NUBE.reintento);
       try{ localStorage.removeItem(CLAVE_NUBE); }catch(e){}
-      nubePintar(); pintarModal();
+      nubePintar(); vista = "inicio"; pintarModal();
     }
   });
 }
