@@ -276,6 +276,13 @@
   .comp .gratis{color:var(--verde);font-size:11px;font-style:normal}
 
   /* Modal */
+  .nube-btn.nube-ok{border-color:var(--verde);color:var(--verde)}
+  .nube-btn.nube-mal{border-color:var(--ambar);color:var(--ambar)}
+  .nube-codigo{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;color:var(--cian)}
+  .nube-campo{display:flex;flex-direction:column;gap:6px;font-size:13px;margin:10px 0}
+  .nube-campo input{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px}
+  .nube-estado{font-size:13px;opacity:.85;min-height:1.2em}
+  .nube-botones{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .velo{position:fixed;inset:0;background:rgba(6,8,10,.8);z-index:100;display:flex;
     align-items:flex-start;justify-content:center;padding:22px 14px;overflow-y:auto}
   .modal{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:18px;
@@ -933,6 +940,7 @@
   <button class="pestanya" id="tab-combate" aria-selected="false">Combate</button>
   <div class="crece"></div>
   <button class="aviso-guardado" id="avisoGuardado" hidden type="button">⚠ No se está guardando</button>
+  <button class="btn fina nube-btn" id="btnNube" type="button" hidden>☁ Partida</button>
   <button class="btn fina" id="btnCreacion" aria-pressed="false">Modo creación</button>
   <button class="btn fina" id="btnLimpiar">Vaciar</button>
   <button class="btn principal" id="btnExportar">Exportar</button>
@@ -1551,6 +1559,7 @@ const Guardado = {
     let ok = false;
     try{ const t = JSON.stringify(d); localStorage.setItem(CLAVE_GUARDADO, t); ultimoGuardado = t; ok = true; }
     catch(e){ ok = false; }
+    if(ok && typeof nubeCambio === "function") nubeCambio();      // ficha conectada a la partida: se sube sola (nube.js)
     if(ok !== Guardado.ok){
       Guardado.ok = ok;
       const aviso = document.getElementById("avisoGuardado");
@@ -5646,6 +5655,184 @@ document.addEventListener("click", ev => {
   if(!b) return;
   abrirConstructorFicha(b.id === "hkNuevo" ? -1 : num(b.dataset.hkEditar));
 });
+/*</UI>*/
+
+/* ================= NUBE: fichas sincronizadas con la partida =================
+   Base de datos: Firebase Realtime Database, por su API REST (fetch normal, sin librerías).
+   · El máster crea en el tracker un código de partida (XANA-XXXX-XXXX-XXXX) y se lo da a los jugadores.
+   · La ficha, con el código puesto, sube sola cada cambio (3 s después del último) a
+       partidas/<código>/fichas/<id>  = {nombre, t, datos}   (datos = la copia de seguridad .json, en texto)
+       partidas/<código>/indice/<id>  = {nombre, t}          (lo que mira el tracker para saber qué ha cambiado)
+     El retrato se sube en pequeño (el tracker solo usa una miniatura).
+   · El tracker mira el índice y baja solo las fichas que han cambiado.
+   Sin NUBE_URL no aparece nada de esto y todo sigue funcionando con .json. */
+const NUBE_URL = "https://xana-rol-default-rtdb.europe-west1.firebasedatabase.app".replace(/\/+$/, "");
+const nubeLista = () => /^https:\/\//.test(NUBE_URL);
+const NUBE_ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";      // sin 0/O ni 1/I/L: se dictan sin dudas
+function nubeAzar(n){
+  const a = new Uint32Array(n);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+  else for(let i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 4294967296);
+  return Array.from(a, x => NUBE_ALFABETO[x % NUBE_ALFABETO.length]).join("");
+}
+const nubeNuevoCodigo = () => "XANA-" + nubeAzar(4) + "-" + nubeAzar(4) + "-" + nubeAzar(4);
+/* Acepta el código como lo escriba el jugador: minúsculas, espacios, sin guiones… */
+function nubeNormalizar(t){
+  const s = String(t || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^XANA/, "");
+  return s.length === 12 ? "XANA-" + s.slice(0, 4) + "-" + s.slice(4, 8) + "-" + s.slice(8) : String(t || "").trim().toUpperCase();
+}
+const nubeCodigoValido = c => /^XANA(-[A-Z0-9]{4}){3}$/.test(String(c || ""));
+async function nubePedir(ruta, opc){
+  let r;
+  try{ r = await fetch(NUBE_URL + "/" + ruta + ".json", Object.assign({cache:"no-store"}, opc || {})); }
+  catch(e){ throw new Error("sin conexión"); }
+  if(r.status === 401 || r.status === 403) throw new Error("la nube no da permiso (revisa las reglas de Firebase)");
+  if(!r.ok) throw new Error("la nube ha respondido " + r.status);
+  return r.json();
+}
+const nubeEscribir = (codigo, cambios) => nubePedir("partidas/" + codigo, {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(cambios)});
+async function nubeSubir(codigo, id, nombre, texto){
+  const t = Date.now();
+  await nubeEscribir(codigo, {["fichas/" + id]:{nombre, t, datos:texto}, ["indice/" + id]:{nombre, t}});
+  return t;
+}
+const nubeIndice = codigo => nubePedir("partidas/" + codigo + "/indice").then(x => x && typeof x === "object" ? x : {});
+const nubeFicha = (codigo, id) => nubePedir("partidas/" + codigo + "/fichas/" + id);
+const nubeBorrar = (codigo, id) => nubeEscribir(codigo, {["fichas/" + id]:null, ["indice/" + id]:null});
+
+/*<UI>*/
+/* ---------- En la ficha: botón «Partida» y subida automática ----------
+   El código se guarda en este dispositivo (sobrevive a «Vaciar»); el id de la ficha va dentro de la ficha (D.nube.id),
+   así el tracker la reconoce aunque el personaje cambie de nombre. Variables con var: guardar() puede llamar a
+   nubeCambio() antes de que este bloque se haya ejecutado. */
+var NUBE = null;
+var CLAVE_NUBE = "xana-nube";
+function nubeCambio(){
+  if(!NUBE || !NUBE.codigo || !nubeLista()) return;
+  clearTimeout(NUBE.temporizador);
+  NUBE.temporizador = setTimeout(nubeEnviar, 3000);
+}
+function nubeMini(src){
+  if(!src || !/^data:image\//.test(src)) return Promise.resolve("");
+  if(NUBE.miniDe === src) return Promise.resolve(NUBE.mini);
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      try{
+        const e = Math.min(1, 200 / Math.min(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * e)); c.height = Math.max(1, Math.round(img.height * e));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", .82));
+      }catch(err){ res(""); }
+    };
+    img.onerror = () => res("");
+    img.src = src;
+  }).then(m => { NUBE.miniDe = src; NUBE.mini = m; return m; });
+}
+async function nubeEnviar(forzar){
+  clearTimeout(NUBE.temporizador); NUBE.temporizador = null;
+  clearTimeout(NUBE.reintento); NUBE.reintento = null;
+  if(!NUBE.codigo || !nubeLista()) return false;
+  if(NUBE.enviando){ NUBE.pendiente = true; return false; }
+  if(!D.nube || typeof D.nube !== "object" || !/^f[A-Z0-9]{10}$/.test(D.nube.id || "")){ D.nube = {id:"f" + nubeAzar(10)}; Guardado.escribir(D); }
+  const copia = Object.assign({}, D);
+  const mini = await nubeMini(D.retrato);
+  if(mini) copia.retrato = mini; else delete copia.retrato;
+  const texto = JSON.stringify(copia);
+  if(!forzar && texto === NUBE.ultimo){ nubePintar(); return true; }
+  NUBE.enviando = true; nubePintar();
+  let ok = false;
+  try{
+    await nubeSubir(NUBE.codigo, D.nube.id, String(D["f-nombre"] || "").trim() || "Sin nombre", texto);
+    NUBE.ultimo = texto; NUBE.hora = Date.now(); NUBE.error = ""; ok = true;
+  }catch(e){
+    NUBE.error = e.message || String(e);
+    NUBE.reintento = setTimeout(nubeEnviar, 30000);
+  }
+  NUBE.enviando = false; nubePintar();
+  if(NUBE.pendiente){ NUBE.pendiente = false; nubeCambio(); }
+  return ok;
+}
+const nubeHora = t => { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+function nubeEstadoTexto(){
+  if(!NUBE.codigo) return "";
+  if(NUBE.enviando) return "Subiendo la ficha…";
+  if(NUBE.error) return "No se ha podido subir (" + NUBE.error + "). Se vuelve a intentar sola cada 30 s.";
+  if(NUBE.hora) return "Ficha subida a las " + nubeHora(NUBE.hora) + ". Cada cambio se sube solo.";
+  return "Conectada. Cada cambio se sube solo.";
+}
+function nubePintar(){
+  const b = document.getElementById("btnNube");
+  if(b){
+    b.textContent = !NUBE.codigo ? "☁ Partida" : NUBE.enviando ? "☁ Subiendo…" : NUBE.error ? "☁ Sin conexión" : "☁ Sincronizada";
+    b.classList.toggle("nube-ok", !!NUBE.codigo && !NUBE.error);
+    b.classList.toggle("nube-mal", !!NUBE.codigo && !!NUBE.error);
+    b.title = NUBE.codigo ? "Partida " + NUBE.codigo + " · " + nubeEstadoTexto() : "Conectar la ficha con la partida del máster";
+  }
+  const est = document.getElementById("nubeEstado");
+  if(est) est.textContent = nubeEstadoTexto();
+}
+function nubeAbrir(){
+  const velo = document.createElement("div");
+  velo.className = "velo";
+  const pintarModal = () => {
+    velo.innerHTML = NUBE.codigo ? `<div class="modal">
+        <h3>Partida en la nube</h3>
+        <p>Tu ficha está conectada a la partida <b class="nube-codigo">${esc(NUBE.codigo)}</b>. Cada cambio que hagas le llega solo al máster: ya no hace falta mandarle el .json.</p>
+        <p class="nube-estado" id="nubeEstado">${esc(nubeEstadoTexto())}</p>
+        <div class="nube-botones"><button class="btn principal" data-n="subir">Subir ahora</button>
+          <button class="btn" data-n="desconectar">Desconectar</button>
+          <button class="btn" data-n="cerrar">Cerrar</button></div></div>`
+      : `<div class="modal">
+        <h3>Conectar con la partida</h3>
+        <p>Escribe el código de partida que te ha dado el máster. A partir de ahí tu ficha se sube sola cada vez que cambies algo, y el máster la tiene siempre al día.</p>
+        <label class="nube-campo">Código de partida<input id="nubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANA-XXXX-XXXX-XXXX"></label>
+        <p class="nube-estado" id="nubeAviso"></p>
+        <div class="nube-botones"><button class="btn principal" data-n="conectar">Conectar</button>
+          <button class="btn" data-n="cerrar">Cancelar</button></div></div>`;
+    const campo = velo.querySelector("#nubeCodigo");
+    if(campo){ campo.focus(); campo.addEventListener("keydown", ev => { if(ev.key === "Enter") velo.querySelector('[data-n="conectar"]').click(); }); }
+  };
+  pintarModal();
+  document.body.appendChild(velo);
+  velo.addEventListener("click", async ev => {
+    if(ev.target === velo){ velo.remove(); return; }
+    const b = ev.target.closest("[data-n]");
+    if(!b) return;
+    const n = b.dataset.n;
+    if(n === "cerrar"){ velo.remove(); return; }
+    if(n === "conectar"){
+      const c = nubeNormalizar(velo.querySelector("#nubeCodigo").value);
+      const aviso = velo.querySelector("#nubeAviso");
+      if(!nubeCodigoValido(c)){ aviso.textContent = "Ese código no tiene la forma XANA-XXXX-XXXX-XXXX. Cópialo tal cual te lo ha pasado el máster."; return; }
+      b.disabled = true; aviso.textContent = "Conectando…";
+      NUBE.codigo = c; NUBE.ultimo = "";
+      try{ localStorage.setItem(CLAVE_NUBE, c); }catch(e){}
+      const ok = await nubeEnviar(true);
+      pintarModal();
+      toast(ok ? "Ficha conectada a la partida" : "Código guardado. La ficha se subirá en cuanto haya conexión.", 4000);
+      return;
+    }
+    if(n === "subir"){ b.disabled = true; await nubeEnviar(true); b.disabled = false; return; }
+    if(n === "desconectar"){
+      if(!await confirmar("La ficha deja de subirse a la partida. Lo que ya está subido se queda donde está.", "Desconectar")) return;
+      NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = "";
+      clearTimeout(NUBE.temporizador); clearTimeout(NUBE.reintento);
+      try{ localStorage.removeItem(CLAVE_NUBE); }catch(e){}
+      nubePintar(); pintarModal();
+    }
+  });
+}
+NUBE = {codigo:"", hora:0, error:"", temporizador:null, reintento:null, ultimo:"", miniDe:"", mini:"", enviando:false, pendiente:false};
+if(nubeLista()){
+  try{ const c = nubeNormalizar(localStorage.getItem(CLAVE_NUBE) || ""); if(nubeCodigoValido(c)) NUBE.codigo = c; }catch(e){}
+  const boton = document.getElementById("btnNube");
+  if(boton){ boton.hidden = false; boton.onclick = nubeAbrir; }
+  nubePintar();
+  if(NUBE.codigo) setTimeout(nubeEnviar, 2000);       // por si hubo cambios sin conexión
+  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden" && NUBE.temporizador) nubeEnviar(); });
+  window.addEventListener("online", () => { if(NUBE.codigo && NUBE.error) nubeEnviar(); });
+}
 /*</UI>*/
 
 
