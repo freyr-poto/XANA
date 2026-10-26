@@ -731,8 +731,18 @@
   .cm-estados-mandos{display:flex;flex-wrap:wrap;gap:6px}
   .cm-estados-mandos .btn{padding:4px 9px;min-height:30px;font-size:12.5px}
   .cm-estados-mandos input{width:120px;padding:4px 6px;font-size:13px} .cm-estados-mandos #cmEstadoR{width:52px;text-align:center}
-  .cm-heridas{display:block;margin-top:10px;font-size:12.5px;color:var(--apagado)}
-  .cm-heridas textarea{margin-top:4px}
+  .cm-her-t{margin:12px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
+  .cm-her-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .cm-her{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;border:1px solid rgba(255,46,46,.5);background:rgba(255,46,46,.07);border-radius:8px;padding:7px 10px;font-size:13px;line-height:1.35}
+  .cm-her > b{color:#FF8A8A;grid-column:1} .cm-her > small{color:var(--apagado);grid-column:1}
+  .cm-her > span{grid-column:1} .cm-her .trat{font-size:12px;color:var(--apagado)}
+  .cm-her .btn{grid-column:2;grid-row:1/5;align-self:center;min-height:34px}
+  .cm-her.temporal{border-style:dashed}
+  .cm-her-notas{margin-top:8px;border:1px dashed var(--linea);border-radius:8px;padding:6px 10px;font-size:12.5px}
+  .cm-her-notas small{color:var(--apagado)} .cm-her-notas p{margin:2px 0 6px}
+  .nube-elegir{display:grid;gap:8px;margin:10px 0}
+  .nube-elegir .btn{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:3px;padding:10px 12px;min-height:0;white-space:normal}
+  .nube-elegir .btn small{font-weight:400;opacity:.85;font-size:12.5px}
   .cm-vacio{margin:0;font-size:13px;color:var(--apagado);font-style:italic}
   .cm-faltan ul{margin:0;padding-left:18px;font-size:13px;color:var(--apagado);line-height:1.55}
   .cm-no{border-color:rgba(255,46,46,.3)}
@@ -5764,8 +5774,12 @@ var NUBE = null;
 var CLAVE_NUBE = "xana-nube";
 var NUBE_APLICANDO = false;          // lo que llega del combate no se vuelve a subir
 var NUBE_VIVO = {fuente:null, sondeo:null, datos:null, hora:0, error:""};
+/* ¿Esta ficha está unida a la partida? Solo entonces se sube sola. Al conectar no se sube nada hasta que el jugador elige
+   «Subir esta ficha» o carga una de la partida: así no salen fichas repetidas (una ficha en blanco, una copia vieja…). */
+function nubeVinculada(){ return !!(NUBE && NUBE.codigo && D && D.nube && typeof D.nube === "object" && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && D.nube.partida === NUBE.codigo); }
 function nubeCambio(){
   if(!NUBE || !NUBE.codigo || !nubeLista() || NUBE_APLICANDO) return;
+  if(!nubeVinculada()){ nubePintar(); return; }       // otra ficha (vaciada, importada…): no se sube hasta elegir
   clearTimeout(NUBE.temporizador);
   NUBE.temporizador = setTimeout(nubeEnviar, 3000);
 }
@@ -5790,9 +5804,9 @@ async function nubeEnviar(forzar){
   clearTimeout(NUBE.temporizador); NUBE.temporizador = null;
   clearTimeout(NUBE.reintento); NUBE.reintento = null;
   if(!NUBE.codigo || !nubeLista()) return false;
+  if(!nubeVinculada()){ nubePintar(); return false; }
   if(NUBE.enviando){ NUBE.pendiente = true; return false; }
   if(nubeFichaVacia()){ nubePintar(); return false; }       // una ficha en blanco no se sube (dispositivo nuevo, «Vaciar»)
-  if(!D.nube || typeof D.nube !== "object" || !/^f[A-Z0-9]{10}$/.test(D.nube.id || "")){ D.nube = {id:"f" + nubeAzar(10)}; Guardado.escribir(D); }
   const copia = Object.assign({}, D);
   const mini = await nubeMini(D.retrato);
   if(mini) copia.retrato = mini; else delete copia.retrato;
@@ -5818,6 +5832,7 @@ const nubeHace = t => { const m = Math.round((Date.now() - t) / 60000);
 const nubeHora = t => { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
 function nubeEstadoTexto(){
   if(!NUBE.codigo) return "";
+  if(!nubeVinculada()) return "Conectada, pero esta ficha todavía no está en la partida: súbela o carga una de la partida.";
   if(NUBE.enviando) return "Subiendo la ficha…";
   if(NUBE.error) return "No se ha podido subir (" + NUBE.error + "). Se vuelve a intentar sola cada 30 s.";
   if(NUBE.hora) return "Ficha subida a las " + nubeHora(NUBE.hora) + ". Cada cambio se sube solo.";
@@ -5826,8 +5841,8 @@ function nubeEstadoTexto(){
 function nubePintar(){
   const b = document.getElementById("btnNube");
   if(b){
-    b.textContent = !NUBE.codigo ? "☁ Partida" : NUBE.enviando ? "☁ Subiendo…" : NUBE.error ? "☁ Sin conexión" : nubeFichaVacia() ? "☁ Conectada" : "☁ Sincronizada";
-    b.classList.toggle("nube-ok", !!NUBE.codigo && !NUBE.error);
+    b.textContent = !NUBE.codigo ? "☁ Partida" : !nubeVinculada() ? "☁ Sin subir" : NUBE.enviando ? "☁ Subiendo…" : NUBE.error ? "☁ Sin conexión" : nubeFichaVacia() ? "☁ Conectada" : "☁ Sincronizada";
+    b.classList.toggle("nube-ok", nubeVinculada() && !NUBE.error);
     b.classList.toggle("nube-mal", !!NUBE.codigo && !!NUBE.error);
     b.title = NUBE.codigo ? "Partida " + NUBE.codigo + " · " + nubeEstadoTexto() : "Conectar la ficha con la partida del máster";
   }
@@ -5864,6 +5879,19 @@ function nubeAbrir(){
         <div class="nube-botones"><button class="btn" data-n="volver">Volver</button></div></div>`;
       return;
     }
+    if(vista === "conectada" && !nubeVinculada()){
+      const nombre = String(D["f-nombre"] || "").trim();
+      velo.innerHTML = `<div class="modal">
+        <h3>Partida <span class="nube-codigo">${esc(NUBE.codigo)}</span></h3>
+        <p>Conectada. Esta ficha todavía no está en la partida. ¿Qué quieres hacer?</p>
+        <div class="nube-elegir">
+          <button class="btn principal" data-n="subirla"${nubeFichaVacia() ? " disabled" : ""}><b>Subir esta ficha</b><small>${nubeFichaVacia() ? "La ficha está en blanco: no hay nada que subir." : "«" + esc(nombre || "Sin nombre") + "» entra en la partida y se sube sola con cada cambio."}</small></button>
+          <button class="btn" data-n="lista"><b>Cargar una ficha de la partida</b><small>Si tu personaje ya está subido desde otro dispositivo: lo traes aquí y sigue sincronizado, sin crear otro.</small></button>
+        </div>
+        <p class="nube-nota">Hasta que elijas, no se sube nada.</p>
+        <div class="nube-botones"><button class="btn" data-n="desconectar">Desconectar</button><button class="btn" data-n="cerrar">Cerrar</button></div></div>`;
+      return;
+    }
     velo.innerHTML = vista === "conectada" ? `<div class="modal">
         <h3>Partida en la nube</h3>
         <p>Tu ficha está conectada a la partida <b class="nube-codigo">${esc(NUBE.codigo)}</b>. Cada cambio que hagas le llega solo al máster: ya no hace falta mandarle el .json.</p>
@@ -5874,8 +5902,7 @@ function nubeAbrir(){
           <button class="btn" data-n="cerrar">Cerrar</button></div></div>`
       : `<div class="modal">
         <h3>Conectar con la partida</h3>
-        <p>Escribe el código de partida que te ha dado el máster. A partir de ahí tu ficha se sube sola cada vez que cambies algo, y el máster la tiene siempre al día.</p>
-        <p>¿Tu ficha ya está en la nube desde otro dispositivo? Conecta con el código y pulsa <b>Fichas de la partida</b> para traerla.</p>
+        <p>Escribe el código de partida que te ha dado el máster. Después eliges: subir esta ficha o cargar una que ya esté en la partida. Desde ese momento se sube sola cada vez que cambies algo.</p>
         <label class="nube-campo">Código de partida<input id="nubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANA-XXXX-XXXX-XXXX"></label>
         <p class="nube-estado" id="nubeAviso"></p>
         <div class="nube-botones"><button class="btn principal" data-n="conectar">Conectar</button>
@@ -5888,7 +5915,7 @@ function nubeAbrir(){
     if(!f || typeof f.datos !== "string") throw new Error("esa ficha ya no está en la nube");
     const obj = JSON.parse(f.datos);
     if(!obj || typeof obj !== "object") throw new Error("la ficha de la nube está dañada");
-    obj.nube = {id};
+    obj.nube = {id, partida:NUBE.codigo};
     return {obj, nombre:String(f.nombre || "ficha")};
   };
   pintarModal();
@@ -5906,12 +5933,24 @@ function nubeAbrir(){
       const aviso = velo.querySelector("#nubeAviso");
       if(!nubeCodigoValido(c)){ aviso.textContent = "Ese código no tiene la forma XANA-XXXX-XXXX-XXXX. Cópialo tal cual te lo ha pasado el máster."; return; }
       b.disabled = true; aviso.textContent = "Conectando…";
-      NUBE.codigo = c; NUBE.ultimo = ""; nubeEscucharCombate();
+      NUBE.codigo = c; NUBE.ultimo = ""; NUBE.error = ""; nubeEscucharCombate();
       try{ localStorage.setItem(CLAVE_NUBE, c); }catch(e){}
-      if(nubeFichaVacia()){ nubePintar(); cargarLista(); return; }     // dispositivo nuevo: lo normal es traer la ficha
+      nubePintar();
+      // no se sube nada todavía: si ya era la ficha de esta partida, sigue; si no, el jugador elige subirla o cargar una
+      if(nubeVinculada()){ vista = "conectada"; pintarModal(); nubeEnviar(); return; }
+      if(nubeFichaVacia()){ cargarLista(); return; }     // dispositivo nuevo: lo normal es traer la ficha
+      vista = "conectada"; pintarModal();
+      return;
+    }
+    if(n === "subirla"){
+      if(nubeFichaVacia()) return;
+      b.disabled = true;
+      const id = D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") ? D.nube.id : "f" + nubeAzar(10);
+      D.nube = {id, partida:NUBE.codigo};
+      Guardado.escribir(D);
       const ok = await nubeEnviar(true);
       vista = "conectada"; pintarModal();
-      toast(ok ? "Ficha conectada a la partida" : "Código guardado. La ficha se subirá en cuanto haya conexión.", 4000);
+      toast(ok ? "Ficha subida a la partida" : "La ficha se subirá en cuanto haya conexión.", 4000);
       return;
     }
     if(n === "traer" || n === "json"){
@@ -5999,9 +6038,17 @@ function nubeDejarCombate(){
   if(NUBE_VIVO.fuente){ try{ NUBE_VIVO.fuente.close(); }catch(e){} NUBE_VIVO.fuente = null; }
   clearInterval(NUBE_VIVO.sondeo); NUBE_VIVO.sondeo = null; NUBE_VIVO.datos = null;
 }
+/* Lo que el tracker dice de este personaje en el combate en curso (o null) */
+function nubeVivoYo(){ const d = NUBE_VIVO && NUBE_VIVO.datos; return d && d.activo && D.nube && d.pjs ? d.pjs[D.nube.id] || null : null; }
 /* Lo que el máster cambia en el tracker (vida, estados, CB, RAM, usos) se pone en esta ficha sin volver a subirla */
 function nubeAplicarCombate(d){
   const yo = d && d.activo && D.nube && d.pjs ? d.pjs[D.nube.id] : null;
+  // el máster ha terminado el combate en el que estaba: fuera los estados y las heridas temporales (la vida y las demás heridas se quedan)
+  if(!yo && d && D.combate && D.combate.vivo){
+    NUBE_APLICANDO = true;
+    try{ const K = datosCombate(); K.estados = []; K.heridas = K.heridas.filter(h => !h.temporal); delete K.vivo; Guardado.escribir(D); if(typeof recalcular === "function") recalcular(); }
+    finally{ NUBE_APLICANDO = false; }
+  }
   if(yo){
     NUBE_APLICANDO = true;
     try{
@@ -6012,6 +6059,9 @@ function nubeAplicarCombate(d){
       if(yo.ram !== "" && yo.ram !== undefined) K.ram = num(yo.ram);
       K.muerte = num(yo.muerte);
       if(yo.cont && typeof yo.cont === "object") K.cont = yo.cont;
+      // las heridas críticas que pone el máster (ataques, críticos, granadas, PEM) también llegan a la ficha
+      K.vivo = true;
+      if(Array.isArray(yo.heridas)) K.heridas = yo.heridas.filter(h => h && h.n).map(h => Object.assign({}, h));
       if(yo.estabilizado) D.estabilizado = true; else delete D.estabilizado;
       Guardado.escribir(D);
       if(typeof recalcular === "function") recalcular();
@@ -6034,7 +6084,7 @@ function htmlCombateVivo(){
   return `<section class="cm-vivo" id="cmVivo" aria-label="Combate en curso">
     <header><b>COMBATE EN CURSO</b><span>Rotación ${num(d.rot)}${d.turno ? " · turno de <strong>" + esc(d.turno) + "</strong>" : ""}</span>${yo && d.turno === yo.nombre ? `<em>¡TE TOCA!</em>` : ""}</header>
     <ol class="cm-vivo-orden">${(d.orden || []).map(x => `<li class="${x.n === d.turno ? "turno" : ""}${x.pj ? " pj" : ""}">${esc(x.n)}${x.ini !== null && x.ini !== undefined ? ` <small>${x.ini}</small>` : ""}</li>`).join("")}</ol>
-    ${yo ? `<p class="cm-vivo-yo">El máster lleva tu vida, tus estados y tus heridas: se actualizan aquí solos.${(yo.heridas || []).length ? " Heridas: " + yo.heridas.map(h => esc(h.n) + (h.temporal ? " (" + num(h.rot) + " rot.)" : "")).join(", ") + "." : ""}</p>`
+    ${yo ? `<p class="cm-vivo-yo">El máster lleva tu vida, tus estados y tus heridas: se actualizan aquí solos.</p>`
       : `<p class="cm-vivo-yo">Tu personaje no está en este combate (o el máster tiene tu ficha cargada desde un .json).</p>`}
     <details class="cm-vivo-reg" open><summary>Registro <span>${(d.registro || []).length}</span></summary><ol>${reg || `<li class="cm-vacio">Nada todavía.</li>`}</ol></details>
   </section>`;
@@ -6045,6 +6095,8 @@ if(nubeLista()){
   const boton = document.getElementById("btnNube");
   if(boton){ boton.hidden = false; boton.onclick = nubeAbrir; }
   nubePintar();
+  // fichas que ya se subían antes de que hubiera que elegir: este dispositivo estaba conectado, así que siguen unidas a la partida
+  if(NUBE.codigo && D && D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && !D.nube.partida){ D.nube.partida = NUBE.codigo; Guardado.escribir(D); }
   if(NUBE.codigo){ setTimeout(nubeEnviar, 2000); setTimeout(nubeEscucharCombate, 800); }       // por si hubo cambios sin conexión
   document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden" && NUBE.temporizador) nubeEnviar(); });
   window.addEventListener("online", () => { if(NUBE.codigo && NUBE.error) nubeEnviar(); });
@@ -6262,7 +6314,7 @@ function construirDocumento(){
 
   h += tablaDoc("Hackeos rápidos","hackeos");
   h += tablaDoc("Inventario","inventario");
-  if(val("f-heridas")) h += `<h2>Heridas críticas y estados</h2><div class="doc-nota">${esc(val("f-heridas"))}</div>`;
+  if(textoHeridasFicha()) h += `<h2>Heridas críticas</h2><div class="doc-nota">${esc(textoHeridasFicha())}</div>`;
   if(val("f-notas"))   h += `<h2>Contactos y notas</h2><div class="doc-nota">${esc(val("f-notas"))}</div>`;
 
   h += `<div class="salto"></div><h2>Ciberware</h2>${figuraSVG("doc-figura")}`;
@@ -6354,7 +6406,7 @@ function construirTexto(){
   if(R.an.pasivas.length){ L.push(""); L.push("CIBERWARE PASIVO");
     ordenarHab(R.an.pasivas).forEach(x => L.push("· " + x.n + ": " + x.e)); }
   if(val("f-programas")) L.push("\nPROGRAMAS: " + val("f-programas"));
-  if(val("f-heridas")) L.push("\nHERIDAS: " + val("f-heridas"));
+  if(textoHeridasFicha()) L.push("\nHERIDAS: " + textoHeridasFicha());
   if(val("f-notas")) L.push("\nNOTAS: " + val("f-notas"));
   return L.join("\n");
 }
@@ -6577,7 +6629,7 @@ function definicionPDF(){
   }
   tabla("Hackeos rápidos", "hackeos");
   tabla("Inventario", "inventario");
-  if(val("f-heridas")){ c.push(titulo("Heridas críticas y estados")); c.push(recuadro(val("f-heridas"))); }
+  if(textoHeridasFicha()){ c.push(titulo("Heridas críticas")); c.push(recuadro(textoHeridasFicha())); }
   if(val("f-notas")){ c.push(titulo("Contactos y notas")); c.push(recuadro(val("f-notas"))); }
 
   // ---- ciberware (página nueva)
@@ -7062,7 +7114,56 @@ function datosCombate(){
   const c = D.combate = (D.combate && typeof D.combate === "object" && !Array.isArray(D.combate)) ? D.combate : {};
   if(!c.cont || typeof c.cont !== "object" || Array.isArray(c.cont)) c.cont = {};
   if(!Array.isArray(c.estados)) c.estados = [];
+  // heridas críticas de la ficha [{z, n, efecto, remedio, trat, temporal?, rot?}] (el tracker las pone en directo)
+  if(!Array.isArray(c.heridas)) c.heridas = [];
+  c.heridas = c.heridas.filter(h => h && typeof h === "object" && h.n);
   return c;
+}
+/* Las heridas que antes se apuntaban como texto («Ojo dañado (cabeza): …», el formato de «Apuntar») pasan a la lista;
+   lo que no se reconozca se queda como nota */
+function migrarHeridasTexto(){
+  const txt = String(D["f-heridas"] || "");
+  if(!txt.trim()) return;
+  const K = datosCombate(), resto = [];
+  txt.split(/\n/).forEach(l => {
+    const m = l.match(/^\s*(.+?) \((cuerpo|cabeza)\):/i);
+    const z = m ? (m[2].toLowerCase() === "cabeza" ? "Cabeza" : "Cuerpo") : "";
+    const h = m ? HERIDAS_CRITICAS[z].find(r => r[1].toLowerCase() === m[1].trim().toLowerCase()) : null;
+    if(h){ if(!K.heridas.some(x => x.n === h[1])) K.heridas.push({z, n:h[1], efecto:h[2], remedio:h[3], trat:h[4]}); }
+    else if(l.trim()) resto.push(l);
+  });
+  if(resto.join("\n") !== txt){ if(resto.length) D["f-heridas"] = resto.join("\n"); else delete D["f-heridas"]; Guardado.escribir(D); }
+}
+/* Las heridas de la ficha en texto (para exportar): la lista y las notas de antes */
+function textoHeridasFicha(){
+  const K = D.combate && Array.isArray(D.combate.heridas) ? D.combate.heridas : [];
+  return K.filter(h => h && h.n).map(h => h.n + " (" + String(h.z || "").toLowerCase() + (h.temporal ? ", temporal" : "") + "): " + (h.efecto || "")).concat(String(D["f-heridas"] || "").trim() ? [String(D["f-heridas"]).trim()] : []).join("\n");
+}
+/* ---------- Heridas críticas: sus penalizadores con número (ficha y tracker) ----------
+   p: cualquier cosa con .heridas (un combatiente del tracker, o {heridas} de la ficha). */
+function penalHeridas(p){
+  const out = {todas:0, distancia:0, cc:0, mov:0, noEsquiva:false, noEsquivaDe:"", fuentes:[], items:[]};
+  const poner = (a, v, h, txt) => { out[a] += a === "mov" ? v : -v; out.items.push({a, v:-v, n:h.n}); out.fuentes.push(txt); };
+  (p && p.heridas || []).forEach(h => {
+    const e = h.efecto || ""; let m;
+    if((m = e.match(/^[−-](\d+) a todas las acciones/))) poner("todas", num(m[1]), h, "−" + m[1] + " a todo (" + h.n + ")");
+    if((m = e.match(/[−-](\d+) a los ataques a distancia/))) poner("distancia", num(m[1]), h, "−" + m[1] + " a distancia (" + h.n + ")");
+    if((m = e.match(/[−-](\d+) en cualquier ataque cuerpo a cuerpo/))) poner("cc", num(m[1]), h, "−" + m[1] + " cuerpo a cuerpo (" + h.n + ")");
+    if((m = e.match(/[−-](\d+) casillas de movimiento/))) poner("mov", num(m[1]), h, "−" + m[1] + " casillas (" + h.n + ")");
+    if(/No puedes esquivar/i.test(e)){ out.noEsquiva = true; out.noEsquivaDe = h.n; out.fuentes.push("no puede esquivar (" + h.n + ")"); }
+  });
+  return out;
+}
+/* Los penalizadores de las heridas críticas (los que la tabla da con número) se suman a las tiradas que se ven */
+function ajustarPorHeridas(M, PH){
+  if(!PH.todas && !PH.distancia && !PH.cc && !PH.mov) return;
+  const tocar = (t, v, txt) => { if(!t || t.total === null || !v) return; t.total += v; t.desglose = (t.desglose || []).concat([sgn(v) + " " + txt]); };
+  M.acciones.ataques.forEach(a => { const cc = a.tipo !== undefined ? !!(TIPOS_ARMA[a.tipo] || {}).cc : /1 casilla/.test(a.resolucion || "");
+    if(a.tirada){ a.tirada = Object.assign({}, a.tirada); tocar(a.tirada, PH.todas + (cc ? PH.cc : PH.distancia), "heridas críticas"); } });
+  M.acciones.tecno.forEach(a => { if(a.tirada){ a.tirada = Object.assign({}, a.tirada); tocar(a.tirada, PH.todas, "heridas críticas"); } });
+  if(M.esquiva.tirada){ M.esquiva.tirada = Object.assign({}, M.esquiva.tirada); tocar(M.esquiva.tirada, PH.todas, "heridas críticas"); }
+  M.resist.forEach(x => { if(x.tirada){ x.tirada = Object.assign({}, x.tirada); tocar(x.tirada, PH.todas, "heridas críticas"); } });
+  if(PH.mov){ M.mov = Object.assign({}, M.mov, {v:Math.max(0, M.mov.v - PH.mov), correr:Math.max(0, M.mov.v - PH.mov) * 2, desglose:M.mov.desglose.concat(["−" + PH.mov + " heridas críticas"])}); }
 }
 
 /* ---------- Lectura de reglas desde los textos ---------- */
@@ -7577,14 +7678,19 @@ function bloqueCm(titulo, items, M, vacio, cls, pie){
 function pintarCombate(){
   const caja = $("#cm");
   if(!caja) return;
+  migrarHeridasTexto();
   const M = modeloCombate();
+  // heridas críticas: sus penalizadores con número cuentan en las tiradas de la pestaña, como en el tracker
+  const HK = datosCombate().heridas, PH = penalHeridas({heridas:HK});
+  ajustarPorHeridas(M, PH);
+  const vivoYo = typeof nubeVivoYo === "function" ? nubeVivoYo() : null;
   const V = M.vida, pct = V.max ? Math.round(100 * V.actual / V.max) : 0;
   const tile = (t, v, sub, cls, titulo) => `<div class="cm-tile ${cls || ""}"${titulo ? ` title="${esc(titulo)}"` : ""}><small>${t}</small><b>${v}</b>${sub ? `<span>${sub}</span>` : ""}</div>`;
   const cb = M.cb;
   const enfoque = document.activeElement && caja.contains(document.activeElement) ? document.activeElement.id : "";
   // heridas: el estado de vida y sus penalizaciones, siempre a la vista bajo la vida
   const heridas = [V.penal ? `<span class="mal">${sgn(V.penal)} a todo por heridas</span>` : "", V.menosMov ? `<span class="mal">−${V.menosMov} casillas</span>` : "",
-    M.agarre ? `<span class="mal">−2 a las acciones por el agarre</span>` : ""].filter(Boolean).join("");
+    M.agarre ? `<span class="mal">−2 a las acciones por el agarre</span>` : ""].concat(PH.fuentes.map(f => `<span class="mal">${esc(f)}</span>`)).filter(Boolean).join("");
   const sinEquipar = M.sinEquipar.length ? `<div class="cm-sin-equipar"><span>Sin equipar:</span>${M.sinEquipar.map(w => `<span class="cm-se">${esc(w.nombre)} <button type="button" class="btn fina" data-cm="arma-equipar" data-w="${esc(w.id)}">Equipar</button></span>`).join("")}</div>` : "";
   caja.innerHTML = `${typeof htmlCombateVivo === "function" ? htmlCombateVivo() : ""}
   <header class="cm-cab">
@@ -7609,7 +7715,13 @@ function pintarCombate(){
           <input id="cmEstadoN" placeholder="Otro estado" aria-label="Nombre del estado"><input id="cmEstadoR" inputmode="numeric" placeholder="rot." value="1" aria-label="Rotaciones">
           <button type="button" class="btn fina" data-cm="estado-otro">Añadir</button>
           <button type="button" class="btn fina" data-cm="rotacion" ${M.estados.length ? "" : "disabled"}>Nueva rotación (−1)</button></div>
-        <label class="cm-heridas">Heridas críticas y estados <textarea id="cmHeridas" rows="3">${esc(D["f-heridas"] || "")}</textarea></label>
+        <h4 class="cm-her-t">Heridas críticas</h4>
+        ${HK.length ? `<ul class="cm-her-lista">${HK.map((h, i) => `<li class="cm-her${h.temporal ? " temporal" : ""}"><b>${esc(h.n)}</b><small>${esc(String(h.z || "").toLowerCase())}${h.temporal ? " · temporal, quedan " + num(h.rot) + " rot." : ""}</small>
+          <span>${esc(h.efecto || "")}</span>${h.remedio || h.trat ? `<span class="trat">Remedio rápido: ${esc(h.remedio || "—")} · Tratamiento: ${esc(h.trat || "—")}</span>` : ""}
+          ${vivoYo ? "" : `<button type="button" class="btn fina" data-cm="herida-curar" data-i="${i}" aria-label="Marcar ${esc(h.n)} como curada">Curada</button>`}</li>`).join("")}</ul>`
+          : `<p class="cm-vacio">Ninguna. Se apuntan desde la tabla de heridas críticas (abajo) o las pone el máster en el combate.</p>`}
+        ${vivoYo && HK.length ? `<p class="cm-nota">Estás en el combate del máster: él marca las heridas como curadas.</p>` : ""}
+        ${String(D["f-heridas"] || "").trim() ? `<div class="cm-her-notas"><small>Notas de heridas de antes</small><p>${esc(D["f-heridas"]).replace(/\n/g, "<br>")}</p><button type="button" class="btn fina" data-cm="heridas-notas-quitar">Quitar notas</button></div>` : ""}
       </section>
     <div class="cm-tiles">
       <div class="cm-tile cb" title="${esc("Solo cuenta la mayor fuente:\n" + (cb.fuentes.map(f => f.n + ": " + f.v).join("\n") || "ninguna") + "\nCada vez que recibes daño baja 1.")}"><small>CB</small><b>${cb.v}</b><span>${cb.v ? esc(cb.n.replace(/ \(.*\)$/, "")) : "sin blindaje"}${cb.menos ? " · −" + cb.menos + " por daño" : ""}</span>
@@ -7694,13 +7806,15 @@ function accionCombate(b){
     case "critica": {
       const h = (HERIDAS_CRITICAS[b.dataset.z] || []).find(x => x[0] === n);
       if(!h) return;
-      const linea = h[1] + " (" + b.dataset.z.toLowerCase() + "): " + h[2] + " Remedio rápido: " + h[3] + ". Tratamiento: " + h[4] + ".";
-      D["f-heridas"] = (String(D["f-heridas"] || "").trim() ? String(D["f-heridas"]).trim() + "\n" : "") + linea;
-      const f = $("#f-heridas"); if(f) f.value = D["f-heridas"];
+      if(K.heridas.some(x => x.n === h[1] && !x.temporal)){ toast("Ya tienes " + h[1]); return; }
+      K.heridas = K.heridas.filter(x => x.n !== h[1]);
+      K.heridas.push({z:b.dataset.z, n:h[1], efecto:h[2], remedio:h[3], trat:h[4]});
       toast("Apuntada: " + h[1]);
       break;
     }
     case "reponer": delete K.cont[b.dataset.k]; break;
+    case "herida-curar": { const x = K.heridas.splice(num(b.dataset.i), 1)[0]; if(x) toast(x.n + ": curada"); break; }
+    case "heridas-notas-quitar": confirmar("Se borran las notas de heridas que escribiste a mano antes. Las heridas de la lista no se tocan.", "Quitar notas").then(ok => { if(!ok) return; delete D["f-heridas"]; guardar(); pintarCombate(); }); return;
     case "muerte": K.muerte = n ? num(K.muerte) + 1 : 0; break;
     case "cb-reparar": K.cbMenos = n ? Math.max(0, num(K.cbMenos) - n) : 0; break;
     case "estado":
@@ -7716,11 +7830,12 @@ function accionCombate(b){
     case "estado-otro": { const nm = ($("#cmEstadoN") || {}).value || ""; const r = Math.max(1, num(($("#cmEstadoR") || {}).value) || 1);
       if(nm.trim()) K.estados.push({n:nm.trim().slice(0, 40), rot:r}); break; }
     case "estado-quitar": K.estados.splice(num(b.dataset.i), 1); break;
-    case "rotacion": K.estados.forEach(s => { if(!s.fijo) s.rot = num(s.rot) - 1; }); K.estados = K.estados.filter(s => s.fijo || s.rot > 0); break;
+    case "rotacion": K.estados.forEach(s => { if(!s.fijo) s.rot = num(s.rot) - 1; }); K.estados = K.estados.filter(s => s.fijo || s.rot > 0);
+      K.heridas.forEach(h => { if(h.temporal) h.rot = num(h.rot) - 1; }); K.heridas = K.heridas.filter(h => !h.temporal || h.rot > 0); break;
     case "fin":
       confirmar("Se recupera toda la RAM, vuelven los usos «por combate», se borran los estados temporales, la iniciativa y la penalización de la salvación. La vida, la munición, las cargas y la CB perdida no cambian.", "Terminar combate", "Fin del combate")
         .then(ok => { if(!ok) return; const K2 = datosCombate();
-          K2.ram = calcular().ram; K2.cartas = MANO_CARTAS; K2.estados = []; K2.ini = ""; K2.muerte = 0;
+          K2.ram = calcular().ram; K2.cartas = MANO_CARTAS; K2.estados = []; K2.ini = ""; K2.muerte = 0; K2.heridas = K2.heridas.filter(h => !h.temporal);
           Object.keys(K2.cont).forEach(k => { if(/:usos$/.test(k) && usoPorCombate(k)) delete K2.cont[k]; });
           guardar(); pintarCombate(); });
       return;
@@ -7747,7 +7862,7 @@ function iniciarCombate(){
   caja.addEventListener("input", ev => {
     const t = ev.target;
     if(t.id === "cmIni"){ datosCombate().ini = t.value.replace(/[^\d−-]/g, "").slice(0, 4); guardar(); }
-    if(t.id === "cmHeridas"){ D["f-heridas"] = t.value; const f = $("#f-heridas"); if(f) f.value = t.value; guardar(); }
+
   });
   caja.addEventListener("keydown", ev => {
     if(ev.key === "Enter" && ev.target.id === "cmVidaN"){ ev.preventDefault(); const v = Math.abs(num(ev.target.value)); if(v) cambiarVida(-v); }
