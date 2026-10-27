@@ -773,6 +773,15 @@
   .cw-fbc{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 4px;width:100%}
   .cw-escena.enfocada .cw-fbc{display:none}
   .cw-mej-btn{margin-top:8px}
+  .hk-dic{display:grid;gap:6px;margin:6px 0 12px}
+  .hk-dic-f{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+  .hk-dic-f dt{display:flex;flex-direction:column;gap:2px;margin:0}
+  .hk-dic-f dt code{font-weight:700;color:var(--cian)}
+  .hk-dic-f dt span{font-size:12px;color:var(--sec)}
+  .hk-dic-f dd{margin:0;font-size:13.5px;line-height:1.45}
+  #hkDiccionario h4{margin:12px 0 2px}
+  .hk-dic-nota{font-size:13px;color:var(--sec)}
+  @media (max-width:600px){ .hk-dic-f{grid-template-columns:1fr} .hk-dic-f dt{flex-direction:row;gap:8px;align-items:baseline} }
   .cw-amp-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
   .cw-amp-btns .cw-pick{width:auto}
   .mej-linea{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 0}
@@ -1118,11 +1127,8 @@
     <div class="hk-botonera"><button type="button" class="btn fina principal" id="hkNuevo">Construir hackeo</button>
       <button type="button" class="btn fina" onclick="anyadirFila('hackeos')">Escribir a mano</button></div>
     <div id="hkConstructor" class="hk-constructor" hidden></div>
-    <details class="ayuda"><summary>Diccionario de hackeos</summary>
-      <p><b>Verbos:</b> READ 1 · BLOCK 2 · FORCE 3 · DESTROY 3 (2d6 ignorando blindaje) · PATCH 4 · OWN 6.</p>
-      <p><b>Objetivos:</b> obj +0 (VD13) · self +0 · target +2 (defiende con Inteligencia + Tecnomancia + Carta) · zone +4 (3×3) · all +8.</p>
-      <p><b>Parámetros:</b> far=N +1 (10 casillas por punto) · hold ×2 · quiet +2 · wait +1 · amp=N +2 · chain +3.</p>
-      <p><b>Baraja:</b> PULL 2 · PEEK 2 · FLUSH 3 · PUSH 4 · KILL 5 · BOOST=N +2. Objetivos: self +0 · target +0 · flux +4.</p>
+    <details class="ayuda" id="hkDic"><summary>Diccionario de hackeos</summary>
+      <div id="hkDiccionario"></div>
     </details>
   </div>
 
@@ -5926,7 +5932,7 @@ const HK_VERBOS = {
   KILL:   {g:"baraja", c:5, d:"Anulas una carta."},
   BOOST:  {g:"baraja", c:2, porPunto:true, d:"+1 al valor de la carta que elijas del objetivo por cada punto."},
   ICE:    {g:"hielo", c:4, d:"Hielo: programa defensivo automático. Cada ICE es un muro que hay que romper antes de que un hackeo te alcance."},
-  "BLACK.ICE":{g:"ice", c:3, d:"Hackeo defensivo: no se ejecuta, se arma y salta solo contra quien falle al hackearte."}
+  "BLACK.ICE":{g:"ice", c:4, d:"Hackeo defensivo: no se ejecuta, se arma y salta solo contra quien falle al hackearte."}
 };
 const HK_OBJETIVOS = {
   realidad:{obj:{c:0, n:"Objeto", d:"un objeto o dispositivo (dificultad 13)"}, self:{c:0, n:"Tú mismo", d:"tú mismo (siempre funciona)"},
@@ -5936,7 +5942,7 @@ const HK_OBJETIVOS = {
   baraja:{self:{c:0, n:"Tu mano", d:"tu mano"}, target:{c:0, n:"Otra mano", d:"la mano de otro personaje"}, flux:{c:4, n:"La pila", d:"la pila"}},
   hielo:{self:{c:0, n:"Tú mismo", d:"te protege a ti"}},
   // BLACK.ICE: el «objetivo» es la carga, lo que le hace al atacante (siempre va contra quien te ataca)
-  ice:{destroy:{c:3, n:"DESTROY", d:"daño eléctrico al atacante"}, burn:{c:3, n:"BURN", d:"el atacante queda Ardiendo"}, block:{c:2, n:"BLOCK", d:"le bloquea los hackeos al atacante"},
+  ice:{destroy:{c:3, n:"DESTROY", d:"daño eléctrico al atacante"}, burn:{c:3, n:"BURN", d:"el atacante queda Ardiendo"}, block:{c:2, n:"BLOCK", d:"deshabilita una pieza de ciberware del atacante al azar"},
     read:{c:1, n:"READ", d:"lees al atacante"}, fry:{c:2, n:"FRY", d:"el atacante pierde RAM"}}
 };
 const HK_PARAMS = [
@@ -5999,7 +6005,7 @@ function lineaSpec(s){
 function cargaIce(s){
   const a = s.amp || 0;
   return {destroy:(2 + a) + "d6 de daño eléctrico que ignora la armadura (+1d6 si es vulnerable al daño eléctrico, +1d6 con 5 piezas o más, +1d6 con borgware)",
-    burn:"queda Ardiendo 3 turnos (" + (1 + a) + "d6 por turno)", block:"no puede hackear hasta que acabe su próximo turno (le bloquea el ciberterminal y los chips)",
+    burn:"queda Ardiendo 3 turnos (" + (1 + a) + "d6 por turno)", block:"una pieza de su ciberware, al azar, queda deshabilitada durante 1 turno",
     read:"le lees: ves su ficha rápida", fry:"pierde " + (1 + a) + "d6 de RAM"}[s.obj] || "";
 }
 function efectoSpec(s){
@@ -6173,6 +6179,43 @@ function abrirConstructorFicha(i){
   try{ cont.scrollIntoView({block:"nearest"}); }catch(e){}
 }
 function cerrarConstructorFicha(){ const cont = document.getElementById("hkConstructor"); if(cont){ cont.hidden = true; cont.innerHTML = ""; } }
+/* ---------- Diccionario de hackeos: qué hace cada verbo, objetivo, carga y parámetro, con su coste ---------- */
+const DICC_HK = {
+  READ:"Sacas información del objetivo: vida, CB, defensa, resistencia a hackeos, estados, heridas, armas, ciberware, rasgos de raza y muros de Hielo. Si le alcanza, detectas su BLACK.ICE; superando su defensa por 5, ves también qué carga lleva.",
+  BLOCK:"Inutilizas una cosa a elegir hasta que acabe su próximo turno (+1 turno por hold): un arma, una pieza de ciberware o su ciberterminal. Las piezas inmunes a los hackeos no se pueden elegir; las de un miembro con revestimiento anti electromagnético resisten con +2.",
+  DESTROY:"2d6 de daño eléctrico que ignora la CB (y la CB no baja). +1d6 si es vulnerable al daño eléctrico, +1d6 si lleva 5 piezas de ciberware o más y +1d6 si lleva borgware. Con dos o más 6, crítico: +5 de daño y una herida crítica, solo en partes con ciberware.",
+  BURN:"El objetivo queda Ardiendo 3 turnos (+1 por hold): 1d6 de daño al inicio de cada uno de sus turnos, ignorando la mitad de su CB, hasta que se apague.",
+  PATCH:"Reescribes una propiedad física de lo que tocas: fricción, temperatura, densidad del aire… Además puedes ponerle un estado, que dura 1 turno más por hold.",
+  OWN:"Control total: le haces hacer una acción ahora mismo, sin gastar la suya (puede atacarse a sí mismo). Sus ataques con piezas inmunes a los hackeos no se pueden forzar.",
+  ICE:"Programa defensivo automático: no se ejecuta ni gasta RAM al usarse. Cada ICE cargado es un muro de nivel 13 + tu Tecnomancia; quien quiera hackearte tiene que romper cada muro antes, con una Acción de Tecnomancia (Inteligencia + Tecnomancia + Carta contra el nivel). Máximo 3 muros, contando el BLACK.ICE.",
+  "BLACK.ICE":"Hackeo defensivo: no se ejecuta, se arma (reserva su RAM mientras está armado) y salta solo contra quien falle al hackearte (con hunt, también cuando acierta). Tirada enfrentada de Inteligencia + Tecnomancia + Carta: si gana, aplica su carga; salte como salte, se desarma. Cuenta como un muro de Hielo. Se detecta con READ y se desarma contra 13 + su coste (si fallas, salta).",
+  PULL:"Robas una carta, sin pasar de tu mano máxima.", PEEK:"Miras 3 cartas de la mano del objetivo.", FLUSH:"Descartas tu mano entera y vuelves a robar.",
+  PUSH:"Pones una carta tuya en el objetivo.", KILL:"Anulas una carta.", BOOST:"+1 al valor de la carta que elijas del objetivo por cada punto (BOOST=N)."
+};
+const DICC_CARGA = {
+  destroy:"2d6 de daño eléctrico al atacante que ignora la CB, con los mismos dados extra que DESTROY (+1d6 por amp).",
+  burn:"El atacante queda Ardiendo 3 turnos (1d6 por turno, +1d6 por amp).",
+  block:"Deshabilita una pieza de ciberware del atacante, al azar, durante 1 turno (también las inmunes a los hackeos).",
+  read:"Lees al atacante: ves su ficha rápida.", fry:"El atacante pierde 1d6 de RAM (+1d6 por amp)."
+};
+function htmlDiccionario(){
+  const c = n => n ? "+" + n : "+0";
+  const fila = (k, coste, d) => `<div class="hk-dic-f"><dt><code>${esc(k)}</code><span>${esc(coste)}</span></dt><dd>${esc(d)}</dd></div>`;
+  const verbos = g => Object.keys(HK_VERBOS).filter(k => HK_VERBOS[k].g === g || (g === "realidad" && HK_VERBOS[k].g === "hielo") || (g === "realidad" && k === "BLACK.ICE"));
+  const obj = g => Object.keys(HK_OBJETIVOS[g]).map(k => fila(k, c(HK_OBJETIVOS[g][k].c), HK_OBJETIVOS[g][k].d.charAt(0).toUpperCase() + HK_OBJETIVOS[g][k].d.slice(1) + "."));
+  const costeV = k => { const V = HK_VERBOS[k]; return V.porPunto ? V.c + " por punto" : k === "BLACK.ICE" ? V.c + " + carga" : String(V.c); };
+  const params = HK_PARAMS.map(p => fila(p.k + (p.num ? "=N" : ""), p.k === "hold" ? "+4 por punto" : p.num ? "+" + p.c + " por punto" : "+" + p.c,
+    (p.d.charAt(0).toUpperCase() + p.d.slice(1)).replace(/\.?$/, ".") + (p.k === "hunt" ? " Solo BLACK.ICE." : "")));
+  return `<p class="hk-dic-nota">Coste en RAM = verbo + objetivo + parámetros. Compilar: Inteligencia + Tecnomancia + Carta contra 13 + coste, 1 hora por punto. amp sube 1d6 el daño en los que hacen daño (DESTROY, BURN) y +2 la dificultad de resistir en el resto.</p>
+    <h4>Verbos</h4><dl class="hk-dic">${verbos("realidad").map(k => fila(k, costeV(k), DICC_HK[k] || HK_VERBOS[k].d)).join("")}</dl>
+    <h4>Objetivos</h4><dl class="hk-dic">${obj("realidad").join("")}</dl>
+    <h4>Cargas del BLACK.ICE <small>(en lugar de objetivo)</small></h4><dl class="hk-dic">${Object.keys(HK_OBJETIVOS.ice).map(k => fila(k.toUpperCase(), c(HK_OBJETIVOS.ice[k].c), DICC_CARGA[k] || HK_OBJETIVOS.ice[k].d)).join("")}</dl>
+    <h4>Parámetros</h4><dl class="hk-dic">${params.join("")}</dl>
+    <h4>Baraja</h4><dl class="hk-dic">${verbos("baraja").map(k => fila(k + (HK_VERBOS[k].porPunto ? "=N" : ""), costeV(k), DICC_HK[k] || HK_VERBOS[k].d)).join("")}</dl>
+    <h4>Objetivos de baraja</h4><dl class="hk-dic">${obj("baraja").join("")}</dl>`;
+}
+function pintarDiccionario(){ const el = document.getElementById("hkDiccionario"); if(el && !el.dataset.listo){ el.innerHTML = htmlDiccionario(); el.dataset.listo = "1"; } }
+document.addEventListener("toggle", ev => { if(ev.target && ev.target.id === "hkDic") pintarDiccionario(); }, true);
 document.addEventListener("click", ev => {
   const b = ev.target.closest && ev.target.closest("#hkNuevo, [data-hk-editar]");
   if(!b) return;
