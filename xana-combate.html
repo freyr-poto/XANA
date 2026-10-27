@@ -731,6 +731,7 @@
   .cm-estados-mandos{display:flex;flex-wrap:wrap;gap:6px}
   .cm-estados-mandos .btn{padding:4px 9px;min-height:30px;font-size:12.5px}
   .cm-estados-mandos input{width:120px;padding:4px 6px;font-size:13px} .cm-estados-mandos #cmEstadoR{width:52px;text-align:center}
+  .cm-tag.ice-on{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid #b06cff;color:#c99bff;background:rgba(176,108,255,.1);margin-right:4px}
   .cm-her-t{margin:12px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
   .cm-her-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
   .cm-her{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;border:1px solid rgba(255,46,46,.5);background:rgba(255,46,46,.07);border-radius:8px;padding:7px 10px;font-size:13px;line-height:1.35}
@@ -1298,6 +1299,17 @@
   .atq-fila > span{font-size:12.5px;color:var(--apagado);padding-top:10px}
   .atq-seg{display:flex;flex-wrap:wrap;gap:6px}
   .tk-enf{display:grid;gap:8px;margin:10px 0}
+  .tk-tag.ice-on{color:#c99bff;border-color:#b06cff;background:rgba(176,108,255,.1)}
+  .hk-ice{display:inline-flex;align-items:center;gap:6px;color:#c99bff}
+  .tk-lectura{display:grid;gap:4px;margin:8px 0;font-size:13.5px}
+  .tk-lectura > div{display:grid;grid-template-columns:170px minmax(0,1fr);gap:8px;border-bottom:1px solid var(--linea, #2a3340);padding:4px 0}
+  .tk-lectura dt{color:var(--apagado)} .tk-lectura dd{margin:0}
+  .atq-baraja{margin:8px 0;border:1px dashed var(--linea, #2a3340);border-radius:8px;padding:6px 10px}
+  .atq-baraja summary{cursor:pointer;font-weight:600}
+  .atq-baraja-f{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0;font-size:13px}
+  .tk-armados .tk-armado{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--cian, #35d6e8);border-radius:8px;padding:6px 9px;margin:4px 0}
+  .tk-armado > div{flex:1;min-width:160px} .tk-armado small{display:block;color:var(--apagado)}
+  .atq-campos label.ancho{flex:1 1 100%}
   .tk-enf-l{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 10px;border:1px solid var(--linea, #2a3340);border-radius:8px}
   .tk-enf-l small{color:var(--apagado)}
   .tk-enf-l label{display:inline-flex;align-items:center;gap:6px}
@@ -5540,34 +5552,41 @@ TERMINAL_LISTO = true;
    Coste: verbo + objetivo + parámetros; hold multiplica el total por 2. */
 const HK_VERBOS = {
   READ:   {g:"realidad", c:1, d:"Sacas información del objetivo."},
-  BLOCK:  {g:"realidad", c:2, d:"Inutilizas algo durante 1 turno.", estado:"Bloqueado por un hackeo"},
+  BLOCK:  {g:"realidad", c:2, d:"Inutilizas algo durante 1 turno: un arma, una pieza de ciberware o su ciberterminal."},
   FORCE:  {g:"realidad", c:3, d:"Obligas a algo a activarse o a hacer lo contrario de su función."},
-  DESTROY:{g:"realidad", c:3, d:"2d6 de daño ignorando la armadura.", danyo:2},
+  DESTROY:{g:"realidad", c:3, d:"2d6 de daño eléctrico ignorando la armadura (+1d6 si es vulnerable al daño eléctrico, +1d6 con 5 piezas de ciberware o más, +1d6 con borgware).", danyo:2},
+  BURN:   {g:"realidad", c:3, d:"El objetivo queda Ardiendo 3 turnos."},
   PATCH:  {g:"realidad", c:4, d:"Reescribes una propiedad física: fricción, temperatura, densidad del aire…"},
-  OWN:    {g:"realidad", c:6, d:"Control total del objetivo durante 1 turno.", estado:"Controlado por un hackeo"},
+  OWN:    {g:"realidad", c:6, d:"Control total del objetivo: le haces hacer una acción ahora mismo (puede atacarse a sí mismo)."},
   PULL:   {g:"baraja", c:2, d:"Robas una carta, sin pasar de tu mano máxima."},
   PEEK:   {g:"baraja", c:2, d:"Miras 3 cartas del objetivo."},
   FLUSH:  {g:"baraja", c:3, d:"Descartas tu mano entera y vuelves a robar."},
   PUSH:   {g:"baraja", c:4, d:"Pones una carta tuya en el objetivo."},
   KILL:   {g:"baraja", c:5, d:"Anulas una carta."},
-  BOOST:  {g:"baraja", c:2, porPunto:true, d:"+1 al valor de la carta que elijas del objetivo por cada punto."}
+  BOOST:  {g:"baraja", c:2, porPunto:true, d:"+1 al valor de la carta que elijas del objetivo por cada punto."},
+  "BLACK.ICE":{g:"ice", c:3, d:"Hackeo defensivo: no se ejecuta, se arma y salta solo contra quien falle al hackearte."}
 };
 const HK_OBJETIVOS = {
   realidad:{obj:{c:0, n:"Objeto", d:"un objeto o dispositivo (dificultad 13)"}, self:{c:0, n:"Tú mismo", d:"tú mismo (siempre funciona)"},
     target:{c:2, n:"Persona", d:"una persona (se defiende con Inteligencia + Tecnomancia + Carta)"},
     zone:{c:4, n:"Zona 3×3", d:"un área de 3×3 casillas (cada afectado se defiende por separado)"},
     all:{c:8, n:"Todos", d:"todo enemigo a la vista (cada uno se defiende por separado)"}},
-  baraja:{self:{c:0, n:"Tu mano", d:"tu mano"}, target:{c:0, n:"Otra mano", d:"la mano de otro personaje"}, flux:{c:4, n:"La pila", d:"la pila"}}
+  baraja:{self:{c:0, n:"Tu mano", d:"tu mano"}, target:{c:0, n:"Otra mano", d:"la mano de otro personaje"}, flux:{c:4, n:"La pila", d:"la pila"}},
+  // BLACK.ICE: el «objetivo» es la carga, lo que le hace al atacante (siempre va contra quien te ataca)
+  ice:{destroy:{c:3, n:"DESTROY", d:"daño eléctrico al atacante"}, burn:{c:3, n:"BURN", d:"el atacante queda Ardiendo"}, block:{c:2, n:"BLOCK", d:"le bloquea los hackeos al atacante"},
+    read:{c:1, n:"READ", d:"lees al atacante"}, fry:{c:2, n:"FRY", d:"el atacante pierde RAM"}}
 };
 const HK_PARAMS = [
   {k:"far", num:true, c:1, n:"far", d:"10 casillas de alcance por punto"},
-  {k:"amp", num:true, c:2, n:"amp", d:"+1d6 de daño o +2 a la dificultad de resistir por punto", soloRealidad:true},
-  {k:"hold", c:"×2", n:"hold", d:"dura toda la rotación en vez de un turno", soloRealidad:true},
-  {k:"quiet", c:2, n:"quiet", d:"el objetivo no se entera de que lo has hackeado"},
-  {k:"wait", c:1, n:"wait", d:"salta cuando se cumpla una condición que pongas"},
-  {k:"chain", c:3, n:"chain", d:"al acertar, salta a un segundo objetivo a 5 casillas con la mitad del efecto", soloRealidad:true}
+  {k:"amp", num:true, c:2, n:"amp", d:"+1d6 de daño o +2 a la dificultad de resistir por punto", g:["realidad", "ice"]},
+  {k:"hold", c:"×2", n:"hold", d:"dura toda la rotación en vez de un turno", g:["realidad"]},
+  {k:"quiet", c:2, n:"quiet", d:"el objetivo no se entera de que lo has hackeado (un BLACK.ICE con quiet solo se detecta con un READ que supere por 5)", g:["realidad", "baraja", "ice"]},
+  {k:"wait", c:1, n:"wait", d:"salta cuando se cumpla una condición que pongas", g:["realidad", "baraja"]},
+  {k:"chain", c:3, n:"chain", d:"al acertar, salta a un segundo objetivo a 5 casillas con la mitad del efecto", g:["realidad"]},
+  {k:"hunt", c:3, n:"hunt", d:"el BLACK.ICE también salta cuando el atacante acierta", g:["ice"]}
 ];
-const specVacio = () => ({nombre:"", verbo:"BLOCK", n:1, obj:"obj", far:0, amp:0, hold:false, quiet:false, wait:false, chain:false});
+HK_PARAMS.forEach(p => { if(p.k === "far") p.g = ["realidad", "baraja"]; });
+const specVacio = () => ({nombre:"", verbo:"BLOCK", n:1, obj:"obj", far:0, amp:0, hold:false, quiet:false, wait:false, chain:false, hunt:false});
 const grupoHk = s => (HK_VERBOS[s.verbo] || HK_VERBOS.READ).g;
 /* Deja la especificación en valores válidos (objetivo y parámetros según el grupo del verbo) */
 function normalizarSpec(s){
@@ -5577,9 +5596,11 @@ function normalizarSpec(s){
   if(!HK_OBJETIVOS[g][o.obj]) o.obj = Object.keys(HK_OBJETIVOS[g])[0];
   o.n = Math.max(1, Math.min(10, num(o.n) || 1));
   o.far = Math.max(0, Math.min(10, num(o.far)));
-  o.amp = g === "realidad" ? Math.max(0, Math.min(10, num(o.amp))) : 0;
-  ["hold", "quiet", "wait", "chain"].forEach(k => { o[k] = !!o[k]; });
+  o.amp = g === "realidad" || g === "ice" ? Math.max(0, Math.min(10, num(o.amp))) : 0;
+  ["hold", "quiet", "wait", "chain", "hunt"].forEach(k => { o[k] = !!o[k]; });
   if(g !== "realidad"){ o.hold = false; o.chain = false; }
+  if(g !== "ice") o.hunt = false;
+  if(g === "ice"){ o.far = 0; o.wait = false; }
   o.nombre = String(o.nombre || "").replace(/::|\/\//g, "").trim().toUpperCase().slice(0, 24);
   return o;
 }
@@ -5595,19 +5616,29 @@ function costeSpec(s){
   if(s.quiet){ t += 2; des.push("quiet +2"); }
   if(s.wait){ t += 1; des.push("wait +1"); }
   if(s.chain){ t += 3; des.push("chain +3"); }
+  if(s.hunt){ t += 3; des.push("hunt +3"); }
   if(s.hold){ des.push("hold ×2"); t *= 2; }
   return {v:t, desglose:des};
 }
 function lineaSpec(s){
   s = normalizarSpec(s);
-  const p = [s.far ? "far=" + s.far : "", s.amp ? "amp=" + s.amp : "", s.hold ? "hold" : "", s.quiet ? "quiet" : "", s.wait ? "wait" : "", s.chain ? "chain" : ""].filter(Boolean);
-  return (s.nombre || "HACKEO") + " :: " + s.verbo + (HK_VERBOS[s.verbo].porPunto ? "=" + s.n : "") + "(" + s.obj + ")" + (p.length ? " " + p.join(" ") : "") + " // " + costeSpec(s).v;
+  const p = [s.far ? "far=" + s.far : "", s.amp ? "amp=" + s.amp : "", s.hold ? "hold" : "", s.quiet ? "quiet" : "", s.wait ? "wait" : "", s.chain ? "chain" : "", s.hunt ? "hunt" : ""].filter(Boolean);
+  return (s.nombre || "HACKEO") + " :: " + s.verbo + (HK_VERBOS[s.verbo].porPunto ? "=" + s.n : "") + "(" + (grupoHk(s) === "ice" ? s.obj.toUpperCase() : s.obj) + ")" + (p.length ? " " + p.join(" ") : "") + " // " + costeSpec(s).v;
 }
 /* Lo que hace, en una frase corta, para la columna «Efecto» */
+/* Lo que hace la carga de un BLACK.ICE al atacante */
+function cargaIce(s){
+  const a = s.amp || 0;
+  return {destroy:(2 + a) + "d6 de daño eléctrico que ignora la armadura (+1d6 si es vulnerable al daño eléctrico, +1d6 con 5 piezas o más, +1d6 con borgware)",
+    burn:"queda Ardiendo 3 turnos", block:"no puede hackear hasta que acabe su próximo turno (le bloquea el ciberterminal y los chips)",
+    read:"le lees: ves su ficha rápida", fry:"pierde " + (1 + a) + "d6 de RAM"}[s.obj] || "";
+}
 function efectoSpec(s){
   s = normalizarSpec(s);
+  if(grupoHk(s) === "ice") return "BLACK.ICE: se arma al empezar el combate y reserva su RAM. Si alguien falla un hackeo contra ti o contra tus muros" + (s.hunt ? " (o acierta: hunt)" : "") +
+    ", salta: tu Inteligencia + Tecnomancia + Carta contra la suya" + (s.amp && !["destroy", "fry"].includes(s.obj) ? " +" + 2 * s.amp + " de amp" : "") + "; si ganas, " + cargaIce(s) + ". Salta una vez y se desarma." + (s.quiet ? " quiet: no sabe de dónde le viene; solo se detecta con un READ que supere por 5." : "");
   const V = HK_VERBOS[s.verbo], O = HK_OBJETIVOS[grupoHk(s)][s.obj];
-  let ef = s.verbo === "DESTROY" ? (2 + s.amp) + "d6 de daño ignorando la armadura." : s.verbo === "BOOST" ? "+" + s.n + " al valor de la carta que elijas del objetivo." : V.d;
+  let ef = s.verbo === "DESTROY" ? (2 + s.amp) + "d6 de daño eléctrico ignorando la armadura (+1d6 si es vulnerable al daño eléctrico, +1d6 con 5 piezas de ciberware o más, +1d6 con borgware)." : s.verbo === "BOOST" ? "+" + s.n + " al valor de la carta que elijas del objetivo." : V.d;
   if(s.hold) ef = ef.replace("durante 1 turno", "durante toda la rotación");
   const extra = [O ? "Objetivo: " + O.d : "", s.far ? "alcance " + s.far * 10 + " casillas" : "",
     s.hold && !/rotación/.test(ef) ? "dura toda la rotación" : "", s.quiet ? "no se entera" : "", s.wait ? "salta con la condición que pongas" : "",
@@ -5619,13 +5650,14 @@ function resolucionSpec(s){
   s = normalizarSpec(s);
   const sube = s.amp && s.verbo !== "DESTROY" ? 2 * s.amp : 0;
   if(grupoHk(s) === "baraja") return "Manipula las cartas: no hay tirada de defensa.";
+  if(grupoHk(s) === "ice") return "No se ejecuta: salta solo. Se detecta con READ y se desarma con Inteligencia + Tecnomancia + Carta contra " + (13 + costeSpec(s).v) + " (si falla, salta).";
   if(s.obj === "self") return "Sobre ti mismo: siempre funciona.";
   if(s.obj === "obj") return "Contra dificultad " + (13 + sube) + (sube ? " (13 + " + sube + " de amp)" : "") + ".";
   return "Contra Inteligencia + Tecnomancia + Carta de cada objetivo" + (sube ? ", +" + sube + " de amp" : "") + ".";
 }
 /* Lee una línea escrita a mano en sintaxis XANA//SHELL; null si no se entiende */
 function parseHackeo(txt){
-  const m = String(txt || "").match(/^\s*([^:]*?)\s*::\s*([A-Za-z]+)(?:\s*=\s*(\d+))?\s*\(\s*(\w+)\s*\)\s*([^/]*?)\s*(?:\/\/\s*(\d+))?\s*$/);
+  const m = String(txt || "").match(/^\s*([^:]*?)\s*::\s*([A-Za-z]+(?:\.[A-Za-z]+)?)(?:\s*=\s*(\d+))?\s*\(\s*(\w+)\s*\)\s*([^/]*?)\s*(?:\/\/\s*(\d+))?\s*$/);
   if(!m) return null;
   const verbo = m[2].toUpperCase();
   if(!HK_VERBOS[verbo]) return null;
@@ -5635,7 +5667,7 @@ function parseHackeo(txt){
   String(m[5] || "").replace(/[\[\],]/g, " ").split(/\s+/).filter(Boolean).forEach(tk => {
     const p = tk.toLowerCase().match(/^(far|amp)=(\d+)$/);
     if(p) s[p[1]] = num(p[2]);
-    else if(["hold", "quiet", "wait", "chain"].includes(tk.toLowerCase())) s[tk.toLowerCase()] = true;
+    else if(["hold", "quiet", "wait", "chain", "hunt"].includes(tk.toLowerCase())) s[tk.toLowerCase()] = true;
   });
   return normalizarSpec(s);
 }
@@ -5656,14 +5688,14 @@ function compilarSpec(s){
 function htmlConstructor(S, o){
   const g = grupoHk(S), objs = HK_OBJETIVOS[g];
   const optVerbo = gr => Object.keys(HK_VERBOS).filter(k => HK_VERBOS[k].g === gr).map(k => `<option value="${k}"${k === S.verbo ? " selected" : ""}>${k} · ${HK_VERBOS[k].c} RAM${HK_VERBOS[k].porPunto ? " por punto" : ""}</option>`).join("");
-  const params = HK_PARAMS.filter(p => !(p.soloRealidad && g !== "realidad")).map(p => p.num
+  const params = HK_PARAMS.filter(p => !p.g || p.g.includes(g)).map(p => p.num
     ? `<label class="hk-num" title="${esc(p.d)}">${p.n} <input type="number" min="0" max="10" data-hk="${p.k}" value="${S[p.k]}"><small>+${p.c} por punto</small></label>`
     : `<label class="hk-chk" title="${esc(p.d)}"><input type="checkbox" data-hk="${p.k}"${S[p.k] ? " checked" : ""}> ${p.n} <small>${p.c === "×2" ? "×2" : "+" + p.c}</small></label>`).join("");
   return `<div class="hk-form">
       <label>Nombre<input data-hk="nombre" value="${esc(S.nombre)}" placeholder="p. ej. LOCK" maxlength="24"></label>
-      <label>Verbo<select data-hk="verbo"><optgroup label="Realidad">${optVerbo("realidad")}</optgroup><optgroup label="Baraja">${optVerbo("baraja")}</optgroup></select></label>
+      <label>Verbo<select data-hk="verbo"><optgroup label="Realidad">${optVerbo("realidad")}</optgroup><optgroup label="Baraja">${optVerbo("baraja")}</optgroup><optgroup label="Defensa">${optVerbo("ice")}</optgroup></select></label>
       ${HK_VERBOS[S.verbo].porPunto ? `<label class="hk-num">Puntos<input type="number" min="1" max="10" data-hk="n" value="${S.n}"></label>` : ""}
-      <label>Objetivo<select data-hk="obj">${Object.keys(objs).map(k => `<option value="${k}"${k === S.obj ? " selected" : ""}>${k} · ${esc(objs[k].n)}${objs[k].c ? " +" + objs[k].c : ""}</option>`).join("")}</select></label>
+      <label>${g === "ice" ? "Carga" : "Objetivo"}<select data-hk="obj">${Object.keys(objs).map(k => `<option value="${k}"${k === S.obj ? " selected" : ""}>${g === "ice" ? esc(objs[k].n + " · " + objs[k].d) : k + " · " + esc(objs[k].n)}${objs[k].c ? " +" + objs[k].c : ""}</option>`).join("")}</select></label>
     </div>
     <div class="hk-params">${params}</div>
     <div class="hk-previa"></div>
@@ -5690,6 +5722,34 @@ function montarConstructor(cont, o){
     if(b.dataset.hkAcc === "guardar"){ if(!S.nombre){ S.nombre = "HACKEO"; } o.alGuardar(normalizarSpec(S)); }
   };
   pintarTodo();
+}
+/* ---------- BLACK.ICE armado (de la ficha que está en D) ----------
+   D.combate.ice = [{acc, nombre, ram, spec, detectado:[ids de quien lo ha detectado con READ], revelado:[ids que ven su carga]}].
+   Armarlo reserva su RAM: la RAM máxima baja en lo reservado hasta que salta o se desarma. */
+function iceArmados(){ const K = datosCombate(); if(!Array.isArray(K.ice)) K.ice = []; return K.ice; }
+function ramReservada(){ return (D && D.combate && Array.isArray(D.combate.ice) ? D.combate.ice : []).reduce((a, x) => a + num(x && x.ram), 0); }
+function armarIce(accId){
+  const M = modeloCombate(), K = datosCombate(), L = iceArmados();
+  const a = M.acciones.tecno.find(x => x.id === accId && x.ice);
+  if(!a) return {ok:false, motivo:"Ese BLACK.ICE no está cargado."};
+  if(L.some(x => x.acc === accId)) return {ok:false, motivo:"Ya está armado."};
+  if(a.ram !== null && a.ram > M.ram.actual) return {ok:false, motivo:"No llega la RAM: tiene " + M.ram.actual + " y reserva " + a.ram + "."};
+  K.ram = M.ram.actual - num(a.ram);
+  L.push({acc:accId, nombre:String(a.nombre || "").split(" ::")[0], ram:num(a.ram), spec:a.hk, detectado:[], revelado:[]});
+  return {ok:true, a};
+}
+/* Lo quita (salta, se desarma o lo quita su dueño): la RAM reservada vuelve */
+function quitarIce(i){
+  const K = datosCombate(), L = iceArmados();
+  const x = L.splice(i, 1)[0];
+  if(x) K.ram = num(K.ram) + num(x.ram);
+  return x || null;
+}
+/* Arma todos los BLACK.ICE cargados que quepan en la RAM (al empezar el combate) */
+function armarIceInicial(){
+  const M = modeloCombate(), hechos = [];
+  M.acciones.tecno.filter(a => a.ice && !a.motivo).forEach(a => { const r = armarIce(a.id); if(r.ok) hechos.push(r.a); });
+  return hechos;
 }
 /* Fila de la tabla de hackeos de la ficha a partir de una especificación */
 const filaDeSpec = (s, antes) => Object.assign({}, antes || {}, {nombre:lineaSpec(s), efecto:efectoSpec(s), hk:normalizarSpec(s), donde:(antes && antes.donde) || "ranura"});
@@ -6413,6 +6473,7 @@ var ESTADOS_DEF = {
   "Agarrado":{fijo:true, d:"−2 a todas las acciones y no puede usar su Movimiento. Para escapar usa la acción Agarrar (Lucha contra Lucha)."},
   "Agarrando":{fijo:true, d:"−2 a todas las acciones. Al moverse arrastra a quien agarra; puede soltarlo o lanzarlo."},
   "Corriendo":{d:"Ha usado la acción Correr: su Movimiento cuenta doble este turno."},
+  "Bloqueado por un hackeo":{finTurno:true, d:"Un hackeo (BLOCK) le ha inutilizado algo hasta que acabe su próximo turno."},
   "Corazón agotado":{fijo:true, d:"−2 a todo durante una hora, por mantener el Corazón Sobrealimentado más de 40 turnos seguidos."}
 };
 /* Los que se pueden poner a mano (Cegado ya no es un estado: es la herida temporal Ojo dañado; «A cubierto» se aplica según el mapa) */
@@ -6430,11 +6491,13 @@ function ponerEstado(n, rot, extra){
 }
 function quitarEstado(n){ const K = datosCombate(); const antes = K.estados.length; K.estados = K.estados.filter(s => s.n !== n); return antes !== K.estados.length; }
 function tieneEstadoD(n){ return datosCombate().estados.some(s => s.n === n); }
-/* Piezas apagadas por un PEM (ids de implante) */
-function piezasApagadas(){
-  const K = D && D.combate && Array.isArray(D.combate.estados) ? D.combate.estados : [];
-  return new Set([].concat(...K.filter(s => s.n === "PEM" && Array.isArray(s.piezas)).map(s => s.piezas)));
-}
+/* Piezas apagadas por un PEM o bloqueadas por un hackeo (ids de implante) */
+function estadosDeD(){ return D && D.combate && Array.isArray(D.combate.estados) ? D.combate.estados : []; }
+function piezasApagadas(){ return new Set([].concat(...estadosDeD().filter(s => Array.isArray(s.piezas)).map(s => s.piezas))); }
+function piezasBloqueadas(){ return new Set([].concat(...estadosDeD().filter(s => s.n !== "PEM" && Array.isArray(s.piezas)).map(s => s.piezas))); }
+/* Armas (ids de la lista de armamento) y ciberterminal bloqueados por un hackeo */
+function armasBloqueadas(){ return new Set([].concat(...estadosDeD().filter(s => Array.isArray(s.armas)).map(s => s.armas))); }
+function terminalBloqueado(){ return estadosDeD().some(s => s.terminal); }
 /* Piezas encendidas ahora (activadas en combate, con su duración) */
 function piezasEncendidas(){
   const K = D && D.combate && Array.isArray(D.combate.estados) ? D.combate.estados : [];
@@ -6482,6 +6545,7 @@ function textoEstadoPuesto(x){
   let t = def ? def.d : "";
   if(x.n === "PEM" && (x.apaga || x.heridas)) t = (x.apaga && x.apaga.length ? "Apagadas: " + x.apaga.join(", ") + ". " : "No apagó ninguna pieza. ") +
     (x.heridas && x.heridas.length ? "Heridas temporales: " + x.heridas.join(", ") + ". " : "") + "1 minuto (20 turnos).";
+  if(x.n === "Bloqueado por un hackeo" && x.que) t = "Bloqueado: " + x.que + (x.hasta ? ", hasta el próximo turno de " + x.deQuien + "." : ", hasta que acabe su próximo turno.");
   if(x.sobrecarga && !x.sobrecargaHecha) t = (t ? t + " " : "") + "Encendido " + num(x.seguidos) + " de " + x.sobrecarga.max + " turnos seguidos: al pasar de ahí, " + x.sobrecarga.dados + "d6 de daño que ignora la armadura y −" + x.sobrecarga.penal + " a todo.";
   return t;
 }
@@ -6559,16 +6623,20 @@ function pemTirada(n, rot, azar){
     const h = heridaPEM(x, rot);
     if(h && !heridas.some(o => o.n === h.n)) heridas.push(h);
   });
+  const E = dadosElectricos(lista);
+  return {ids:[...ids], apaga, heridas, dados:lista.length ? 1 + E.extra : 0, motivos:lista.length ? ["lleva ciberware"].concat(E.motivos) : [], resiste:E.resiste, protegidas:[...prot.keys()], total:lista.length};
+}
+/* Dados extra del daño eléctrico (PEM y DESTROY): +1d6 si es vulnerable al daño eléctrico, con 5 piezas o más y con borgware;
+   y si su raza lo resiste o es inmune. Con la ficha en D. */
+function dadosElectricos(lista){
+  lista = lista || piezasInstaladas().filter(x => !x.conflicto);
   const rasgos = rasgosRazaTexto(), motivos = [];
-  let dados = 0;
-  if(lista.length){
-    dados = 1; motivos.push("lleva ciberware");
-    if(/50% de daño adicional de daño[^.]*el[eé]ctrico/i.test(rasgos)){ dados++; motivos.push("vulnerable al daño eléctrico"); }
-    if(lista.length >= 5){ dados++; motivos.push(lista.length + " piezas"); }
-    if(lista.some(x => x.p.z === "borg")){ dados++; motivos.push("borgware"); }
-  }
+  let extra = 0;
+  if(/50% de daño adicional de daño[^.]*el[eé]ctrico/i.test(rasgos)){ extra++; motivos.push("vulnerable al daño eléctrico"); }
+  if(lista.length >= 5){ extra++; motivos.push(lista.length + " piezas"); }
+  if(lista.some(x => x.p.z === "borg")){ extra++; motivos.push("borgware"); }
   const resiste = /inmunidad al daño[^.]*el[eé]ctrico/i.test(rasgos) ? "inmune" : /resistencia del 50% al daño[^.]*el[eé]ctrico/i.test(rasgos) ? "mitad" : "";
-  return {ids:[...ids], apaga, heridas, dados, motivos, resiste, protegidas:[...prot.keys()], total:lista.length};
+  return {extra, motivos, resiste};
 }
 
 /* ---------- Activación de piezas ----------
@@ -6833,9 +6901,9 @@ function entradasRol(){
 function modeloCombate(){
   const C = calcular(), E = estado(), K = datosCombate();
   const an = C.an, r = C.r;
-  const apagadasPEM = piezasApagadas();
+  const apagadasPEM = piezasApagadas(), bloqueadasHk = piezasBloqueadas(), armasHk = armasBloqueadas(), terminalHk = terminalBloqueado();
   const conflicto = Object.assign({}, E.confRec);
-  apagadasPEM.forEach(id => { conflicto[id] = ["Apagada por un PEM."]; });
+  apagadasPEM.forEach(id => { conflicto[id] = [bloqueadasHk.has(id) ? "Bloqueada por un hackeo." : "Apagada por un PEM."]; });
   // M.no: lo que el personaje no puede hacer (no se pinta). Lo gastado (sin usos, sin munición, sin RAM) se queda en su sitio con «agotada».
   const M = {C, acciones:{ataques:[], movimiento:[], turno:[], tecno:[], activables:[], rol:[]}, defensa:[], pasivas:[], condicionales:[], rasgos:[], no:[], sinEquipar:[], faltan:[], fueraCombate:0};
   const contador = (clave, total, por, etiqueta, rec) => total ? {clave, total, usados:Math.min(total, num(K.cont[clave])), por, etiqueta} : null;
@@ -6843,14 +6911,14 @@ function modeloCombate(){
 
   // ---- vida, recursos y estados
   const vidaMax = C.vidaMax, vida = Math.max(0, Math.min(vidaMax, C.vida));
-  const ramMax = C.ram;
+  const ramRes = ramReservada(), ramMax = Math.max(0, C.ram - ramRes);      // un BLACK.ICE armado reserva su RAM
   if(K.ram === undefined || K.ram === null || K.ram === "") K.ram = ramMax;
   K.ram = Math.max(0, Math.min(ramMax, num(K.ram)));
   if(K.cartas === undefined || K.cartas === null) K.cartas = MANO_CARTAS;
   K.cartas = Math.max(0, Math.min(MANO_CARTAS, num(K.cartas)));
   M.vida = {actual:vida, max:vidaMax, estado:C.estado, penal:C.penal, menosMov:C.menosMov,
     nivel:vida <= 1 ? "mortal" : vida < Math.ceil(vidaMax / 2) ? "grave" : "leve", umbralGrave:Math.ceil(vidaMax / 2)};
-  M.ram = {actual:K.ram, max:ramMax, desglose:C.desglose.ram};
+  M.ram = {actual:K.ram, max:ramMax, reservada:ramRes, desglose:C.desglose.ram.concat(ramRes ? ["−" + ramRes + " reservada por BLACK.ICE armado"] : [])};
   M.cartas = K.cartas;
 
   // ---- CB universal: la mayor fuente, con lo que haya perdido por daño
@@ -6918,7 +6986,7 @@ function modeloCombate(){
     else if(!tipo) acc.aviso = "Indica qué tipo de arma es para saber qué tirada usa.";
     else if(T.dist && !va.cargador && tipo !== "lanzar") acc.aviso = "Escribe la capacidad del cargador en la Ficha para llevar la cuenta de la munición.";
     if(!va.equipada){ M.sinEquipar.push({id:va.id, nombre:va.nombre}); return; }     // se puede equipar, pero no atacar con ella
-    const motivo = va.perdida ? "Su definición ya no está en el catálogo de armas." : t && t.falta ? t.falta : "";
+    const motivo = va.perdida ? "Su definición ya no está en el catálogo de armas." : armasHk.has(va.id) ? "Bloqueada por un hackeo." : t && t.falta ? t.falta : "";
     if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
     // sin munición sigue en su sitio, en rojo, para poder recargar ahí mismo
     if(mun && mun.n <= 0) acc.agotada = true;
@@ -6960,7 +7028,7 @@ function modeloCombate(){
     const lugar = x.zona || "";
     const origen = nombrePieza(p, rec) + (lugar ? " · " + lugar : "") + (rec.fbc ? " · " + ({cuerpo:"FBC", incluido:"integrado en el FBC", gratis:"gratis con el FBC", exento:"FBC"})[rec.fbc] : "");
     const base = {id:"rec" + rec.id, rec:rec.id, nombre:nombrePieza(p, rec), origen, e:x.e, fbc:rec.fbc || ""};
-    const motivoConf = x.apagada ? "Apagada por un PEM: no funciona mientras dure." : conflicto[rec.id] ? "La pieza no cumple sus requisitos o su sitio: " + conflicto[rec.id].join(" ") : "";
+    const motivoConf = x.apagada ? (bloqueadasHk.has(rec.id) ? "Bloqueada por un hackeo: no funciona mientras dure." : "Apagada por un PEM: no funciona mientras dure.") : conflicto[rec.id] ? "La pieza no cumple sus requisitos o su sitio: " + conflicto[rec.id].join(" ") : "";
     const usos = usosDe(x.e);
     const at = ataqueDeTexto(x.e);
     if(at){
@@ -7045,15 +7113,22 @@ function modeloCombate(){
     const ce = costeEfectivo(h, TA), coste = ce.v;
     const notas = [ce.txt ? "Coste " + ce.txt + "." : "", donde === "ranura" && TA && TA.cuenta("antena") ? "far=1 gratis (Antena de largo alcance)." : ""].filter(Boolean).join(" ");
     const hk = specDeFila(h);
-    const acc = {id:"hack" + i, clase:"hackeo", nombre:h.nombre, origen:donde === "chip" ? "Hackeo rápido (chip)" : TA ? TA.n : "Ciberterminal", e:h.efecto || (hk ? efectoSpec(hk) : ""), tirada:tTec, ram:coste, notas, hk,
+    const acc = {id:"hack" + i, clase:"hackeo", nombre:h.nombre, origen:donde === "chip" ? "Hackeo rápido (chip)" : TA ? TA.n : "Ciberterminal", e:hk ? efectoSpec(hk) : h.efecto || "", tirada:tTec, ram:coste, notas, hk,
       coste:neuropuerto ? "Acción de Tecnomancia (con el Neuropuerto, aparte de tu Acción)" : "Acción (Tecnomancia)",
       resolucion:hk ? resolucionSpec(hk) : "Contra VD13 si es un objeto, o contra Inteligencia + Tecnomancia + Carta del objetivo."};
-    const motivo = donde === "chip" ? tTec.falta || ""
+    const motivo = terminalHk ? "Tus hackeos están bloqueados por un hackeo."
+      : donde === "chip" ? tTec.falta || ""
       : !TA ? "Necesitas un ciberterminal: elígelo en la Ficha, en «Ciberterminal y hackeos»."
+      : terminalHk ? "Tu ciberterminal está bloqueado por un hackeo."
       : !TA.caben.has(i) ? "No cabe en las ranuras de tu terminal (" + TA.usado + " / " + TA.total + ")."
       : tTec.falta || "";
+    if(hk && grupoHk(hk) === "ice"){
+      // BLACK.ICE: no se ejecuta; se arma (reserva su RAM) y salta solo
+      const iA = (Array.isArray(K.ice) ? K.ice : []).findIndex(x => x.acc === acc.id);
+      Object.assign(acc, {ice:true, armado:iA >= 0 ? iA : null, coste:"Se arma: reserva su RAM (en combate, con una Acción)", resolucion:resolucionSpec(hk)});
+    }
     if(motivo){ M.no.push(Object.assign(acc, {motivo})); return; }
-    if(coste !== null && coste > K.ram) acc.agotada = true;          // sin RAM suficiente ahora: en rojo, en su sitio
+    if(coste !== null && coste > K.ram && !(acc.ice && acc.armado !== null)) acc.agotada = true;          // sin RAM suficiente ahora: en rojo, en su sitio
     M.acciones.tecno.push(acc);
   });
 
@@ -7201,7 +7276,9 @@ function htmlAccion(a, M){
   const rafaga = "";
   const dist = a.fila && DIFICULTAD_DISTANCIA[a.fila] ? `<table class="cm-dist" aria-label="Dificultad según la distancia (${esc(a.fila)})"><tr><th>casillas</th>${TRAMOS.map(x => `<th>${x}</th>`).join("")}</tr>
     <tr><th>dificultad</th>${DIFICULTAD_DISTANCIA[a.fila].map(v => `<td${v === null ? ' class="x"' : ""}>${v === null ? "×" : v}</td>`).join("")}</tr></table>` : "";
-  const ramBtn = a.clase === "hackeo" && a.ram ? `<button type="button" class="btn fina" data-cm="ram-gastar" data-n="${a.ram}" ${a.motivo || a.ram > M.ram.actual ? "disabled" : ""}>Gastar ${a.ram} RAM</button>` : "";
+  const ramBtn = a.ice ? (a.armado !== null ? `<span class="cm-tag ice-on">Armado · reserva ${a.ram} RAM</span><button type="button" class="btn fina" data-cm="ice-desarmar" data-i="${a.armado}">Desarmar</button>`
+      : `<button type="button" class="btn fina" data-cm="ice-armar" data-acc="${esc(a.id)}" ${a.motivo || a.ram > M.ram.actual ? "disabled" : ""}>Armar (reserva ${a.ram} RAM)</button>`)
+    : a.clase === "hackeo" && a.ram ? `<button type="button" class="btn fina" data-cm="ram-gastar" data-n="${a.ram}" data-hk-nom="${esc(String(a.nombre || "").split(" ::")[0])}" data-hk-res="${esc(a.resolucion || "")}" ${a.motivo || a.ram > M.ram.actual ? "disabled" : ""}>Ejecutar (−${a.ram} RAM)</button>` : "";
   return `<article class="cm-acc ${a.motivo ? "no" : ""}${a.agotada ? " agotada" : ""}" data-acc="${esc(a.id)}"${a.rec ? ` data-rec="${esc(a.rec)}"` : ""}>
     <div class="cm-acc-cab">${a.nombre ? `<h5>${esc(a.nombre)}</h5>` : `<h5 class="sin">${esc(a.origen)}</h5>`}<div class="cm-chips">${chips.join("")}</div></div>
     ${textoVisible && a.e ? `<p class="cm-texto">${esc(a.e)}</p>` : ""}
@@ -7369,8 +7446,10 @@ function accionCombate(b){
     case "vida": cambiarVida(n); return;
     case "vida-quitar": { const v = leerN(); if(v) cambiarVida(-v); return; }
     case "vida-curar": { const v = leerN(); if(v) cambiarVida(v); return; }
-    case "ram": K.ram = Math.max(0, Math.min(calcular().ram, num(K.ram) + n)); break;
-    case "ram-gastar": if(num(K.ram) >= n) K.ram = num(K.ram) - n; break;
+    case "ram": K.ram = Math.max(0, Math.min(calcular().ram - ramReservada(), num(K.ram) + n)); break;
+    case "ice-armar": { const r = armarIce(b.dataset.acc); toast(r.ok ? r.a.nombre.split(" ::")[0] + " armado: reserva " + r.a.ram + " RAM" : r.motivo); break; }
+    case "ice-desarmar": { const x = quitarIce(num(b.dataset.i)); if(x) toast(x.nombre + " desarmado: vuelven " + x.ram + " RAM"); break; }
+    case "ram-gastar": if(num(K.ram) >= n){ K.ram = num(K.ram) - n; if(b.dataset.hkNom) toast("Ejecutas " + b.dataset.hkNom + " (−" + n + " RAM). " + (b.dataset.hkRes || "") + " Si estás en el combate del máster, lo resuelve él en el tracker.", 6000); } break;
     case "carta": K.cartas = num(K.cartas) - 1; if(K.cartas <= 0){ K.cartas = MANO_CARTAS; toast("Gastas la última carta: repones " + MANO_CARTAS); } break;
     case "cartas-reponer": K.cartas = MANO_CARTAS; break;
     case "gastar": K.cont[b.dataset.k] = num(K.cont[b.dataset.k]) + (n || 1); break;
@@ -7410,7 +7489,7 @@ function accionCombate(b){
     case "fin":
       confirmar("Se recupera toda la RAM, vuelven los usos «por combate», se borran los estados temporales, la iniciativa y la penalización de la salvación. La vida, la munición, las cargas y la CB perdida no cambian.", "Terminar combate", "Fin del combate")
         .then(ok => { if(!ok) return; const K2 = datosCombate();
-          K2.ram = calcular().ram; K2.cartas = MANO_CARTAS; K2.estados = []; K2.ini = ""; K2.muerte = 0; K2.heridas = K2.heridas.filter(h => !h.temporal);
+          K2.ice = []; K2.ram = calcular().ram; K2.cartas = MANO_CARTAS; K2.estados = []; K2.ini = ""; K2.muerte = 0; K2.heridas = K2.heridas.filter(h => !h.temporal);
           Object.keys(K2.cont).forEach(k => { if(/:usos$/.test(k) && usoPorCombate(k)) delete K2.cont[k]; });
           guardar(); pintarCombate(); });
       return;
@@ -7488,8 +7567,9 @@ function sanearTracker(t){
         id:p.id, tipo:p.tipo === "pj" ? "pj" : "pnj", ref:String(p.ref || ""), nombre:String(p.nombre || "?"), ficha:fichaAlDia(sanear(p.ficha)),
         carta:p.carta === undefined || p.carta === null ? "" : String(p.carta).slice(0, 3), fuera:!!p.fuera, notas:String(p.notas || ""), foto:typeof p.foto === "string" ? p.foto : "",
         heridas:(Array.isArray(p.heridas) ? p.heridas : []).filter(h => obj(h) && HERIDAS_CRITICAS[h.z]).map(h => Object.assign({z:h.z, n:String(h.n || ""), efecto:String(h.efecto || ""), remedio:String(h.remedio || ""), trat:String(h.trat || "")}, h.temporal ? {temporal:true, rot:Math.max(0, num(h.rot))} : {})),
-        ultimoObjetivo:typeof p.ultimoObjetivo === "string" ? p.ultimoObjetivo : undefined, murosRotos:Math.max(0, num(p.murosRotos)) || undefined})),
-      registro:(Array.isArray(c.registro) ? c.registro : []).filter(r => obj(r)).slice(-300).map(r => ({r:num(r.r), t:String(r.t || ""), k:String(r.k || "otro")}))};
+        ultimoObjetivo:typeof p.ultimoObjetivo === "string" ? p.ultimoObjetivo : undefined, murosRotos:Math.max(0, num(p.murosRotos)) || undefined,
+        armados:Array.isArray(p.armados) && p.armados.length ? p.armados.filter(a => obj(a) && typeof a.acc === "string").map(a => ({acc:a.acc, nombre:String(a.nombre || ""), cond:String(a.cond || ""), linea:String(a.linea || "")})).slice(0, 20) : undefined})),
+      registro:(Array.isArray(c.registro) ? c.registro : []).filter(r => obj(r)).slice(-300).map(r => Object.assign({r:num(r.r), t:String(r.t || ""), k:String(r.k || "otro")}, r.o ? {o:true} : {}))};
   }
   return out;
 }
@@ -7510,7 +7590,7 @@ function sanearPnj(p){
     .filter((c, i, l) => l.findIndex(x => x.k === c.k) === i)
     .map(c => { const pz = PIEZAS[c.k]; const o = {k:c.k}; if(esConfigurable(pz)) o.valor = Math.max(pz.config.min, Math.min(pz.config.max, num(c.valor) || pz.config.min)); return o; });
   const hackeos = (Array.isArray(p.hackeos) ? p.hackeos : []).filter(x => typeof x === "string" && x.trim()).map(x => x.trim().slice(0, 140)).slice(0, 12);
-  return {id:String(p.id), nombre:String(p.nombre || "PNJ").slice(0, 60), raza:RAZAS[p.raza] ? p.raza : "", stats:st, comps, cb:Math.max(0, num(p.cb)), armas, ciber:ciber.concat(propio), hackeos, notas:String(p.notas || "")};
+  return {id:String(p.id), nombre:String(p.nombre || "PNJ").slice(0, 60), raza:RAZAS[p.raza] ? p.raza : "", stats:st, comps, cb:Math.max(0, num(p.cb)), armas, ciber:ciber.concat(propio), hackeos, notas:String(p.notas || ""), sinIce:!!p.sinIce || undefined};
 }
 function guardarTracker(){
   // las heridas de cada combatiente van también en su ficha (así las lleva la ficha del jugador y el siguiente combate)
@@ -7609,6 +7689,9 @@ const COMPS_PNJ = {
   "Trato con los jugadores":["Intimidación","Conversación","Persuasión","Interrogatorio","Percepción Humana",
     "Comerciar","Conocimiento de calle","Estilo y Arreglo Personal","Cooperación"]
 };
+const ICE_DE_SERIE = "CERBERO :: BLACK.ICE(DESTROY) // 6";
+const ICE_UMBRAL = 6;      // Tecnomancia desde la que un PNJ lleva BLACK.ICE de serie
+function iceDeSerie(t){ return num(t && t.comps && t.comps["Tecnomancia"]) >= ICE_UMBRAL && !t.sinIce && !(t.hackeos || []).some(l => /BLACK\.ICE/i.test(l)); }
 const PNJ_VACIO = () => ({id:"", nombre:"", raza:"", stats:{cuerpo:3, destreza:3, inteligencia:2, tecnologia:2, temple:2, reflejos:3}, comps:{}, cb:0, armas:[], ciber:[], hackeos:[], notas:""});
 
 /* ---------- Ciberware para PNJ: solo las piezas de más impacto en combate ----------
@@ -7720,6 +7803,8 @@ function fichaDePnj(t){
   if(t.notas) d.notasPnj = t.notas;
   // los hackeos de un PNJ van como hackeos rápidos (chips): sin terminal ni ranuras
   if(t.hackeos && t.hackeos.length) d.hackeos = t.hackeos.map(l => { const s = parseHackeo(l); return Object.assign({nombre:l, donde:"chip"}, s ? {hk:s, efecto:efectoSpec(s)} : {}); });
+  // los tecnomantes de nivel alto (Tecnomancia 6 o más) llevan un BLACK.ICE de serie, salvo que se le quite o ya lleve uno
+  if(iceDeSerie(t)){ const s = parseHackeo(ICE_DE_SERIE); d.hackeos = (d.hackeos || []).concat([{nombre:ICE_DE_SERIE, donde:"chip", hk:s, efecto:efectoSpec(s), deSerie:true}]); }
   const propias = (t.ciber || []).filter(c => c.propio);
   if(propias.length) d.ciberPropio = propias.map(c => ({n:c.n, e:c.e}));
   const dd = sanear(d);
@@ -7811,7 +7896,9 @@ function generarPnj(nivelId, tipoId, base){
 const C_ = () => T.combate;
 function participante(id){ return T.combate ? T.combate.participantes.find(p => p.id === id) : null; }
 /* Registro: cada entrada lleva su rotación y su tipo (turno, ronda, ataque, daño, cura, herida, estado, munición, recurso, combate…) */
-function anotar(t, tipo){ if(!T.combate) return; T.combate.registro.push({r:T.combate.rot, t, k:tipo || "otro"}); if(T.combate.registro.length > 300) T.combate.registro.shift(); }
+/* ANOTAR_OCULTO: lo que se apunta mientras está activo (hackeos con quiet) solo lo ve el máster, no llega a las fichas */
+var ANOTAR_OCULTO = false;
+function anotar(t, tipo){ if(!T.combate) return; T.combate.registro.push(Object.assign({r:T.combate.rot, t, k:tipo || "otro"}, ANOTAR_OCULTO ? {o:true} : {})); if(T.combate.registro.length > 300) T.combate.registro.shift(); }
 /* ---------- Deshacer: copia del combate antes de cada operación (solo en esta sesión; se deshace en orden inverso) ---------- */
 const HIST = [];
 function antes(desc){ if(!T.combate) return; HIST.push({desc, c:JSON.stringify(T.combate)}); if(HIST.length > 40) HIST.shift(); }
@@ -7857,9 +7944,17 @@ function anyadirPj(pj){
   const heridas = (Array.isArray(cmb.heridas) ? cmb.heridas : []).filter(h => h && h.n && !h.temporal && HERIDAS_CRITICAS[h.z]).map(h => Object.assign({}, h));
   ficha.combate = {cont:cmb.cont || {}, estados:[], muerte:0, heridas};
   reponerPorCombate(ficha);
+  const iceA = conFicha(ficha, () => armarIceInicial());
   const p = {id:nuevoIdT("c"), tipo:"pj", ref:pj.id, nombre:pj.nombre, ficha, carta:"", fuera:false, notas:String(ficha["f-heridas"] || ""), foto:pj.foto || "", heridas:heridas.map(h => Object.assign({}, h))};
   T.combate.participantes.push(p);
+  anotarIceArmado(p, iceA);
   return p;
+}
+/* Lo que lleva armado cada uno solo lo ve el máster */
+function anotarIceArmado(p, l){
+  if(!l || !l.length) return;
+  ANOTAR_OCULTO = true;
+  try{ anotar(p.nombre + " arma " + l.map(a => String(a.nombre).split(" ::")[0] + " (reserva " + a.ram + " RAM)").join(", ") + ".", "recurso"); } finally { ANOTAR_OCULTO = false; }
 }
 function anyadirPnj(t, n){
   const out = [];
@@ -7871,6 +7966,7 @@ function anyadirPnj(t, n){
     const p = {id:nuevoIdT("c"), tipo:"pnj", ref:t.id, nombre, ficha, carta:"", fuera:false, notas:"", foto:"", heridas:[]};     // sus notas fijas salen aparte
     cartaPnj(p);
     T.combate.participantes.push(p);
+    anotarIceArmado(p, conFicha(ficha, () => armarIceInicial()));
     out.push(p);
   }
   return out;
@@ -7901,19 +7997,33 @@ function pasarTurno(dir){
   // quién ha actuado en esta rotación: se apunta al pasar su turno (y «Anterior» lo devuelve a pendiente)
   if(i < 0){ c.turno = l[0].id; inicioTurno(l[0]); }
   else if(dir < 0){ c.turno = l[i - 1].id; c.hechos = c.hechos.filter(x => x !== c.turno); anotar("Vuelve el turno a " + l[i - 1].nombre + ".", "turno"); }
-  else if(i + 1 < l.length){ if(!c.hechos.includes(c.turno)) c.hechos.push(c.turno); c.turno = l[i + 1].id; inicioTurno(l[i + 1]); }
-  else { nuevaRotacion(); c.hechos = []; c.turno = vivos()[0].id; inicioTurno(vivos()[0]); }
+  else if(i + 1 < l.length){ finTurno(l[i]); if(!c.hechos.includes(c.turno)) c.hechos.push(c.turno); c.turno = l[i + 1].id; inicioTurno(l[i + 1]); }
+  else { finTurno(l[i]); nuevaRotacion(); c.hechos = []; c.turno = vivos()[0].id; inicioTurno(vivos()[0]); }
   c.sel = c.turno;
   guardarTracker(); pintar();
 }
+/* Al acabar su turno: los estados que duran «hasta que acabe su próximo turno» (BLOCK) bajan 1 */
+function finTurno(p){
+  const K = p.ficha.combate;
+  if(!K || !Array.isArray(K.estados)) return;
+  const cuenta = s => !s.fijo && !s.hasta && (ESTADOS_DEF[s.n] || {}).finTurno, fin = [];
+  K.estados.forEach(s => { if(cuenta(s)){ s.rot = num(s.rot) - 1; if(s.rot <= 0) fin.push(s.n); } });
+  K.estados = K.estados.filter(s => !cuenta(s) || s.rot > 0);
+  if(fin.length) anotar(p.nombre + ": se le pasa " + fin.join(", ") + ".", "estado");
+}
 function inicioTurno(p){
   const msg = [];
+  // lo que dura hasta el próximo turno de quien lo puso (BLOCK con hold: toda la rotación)
+  T.combate.participantes.forEach(q => { const K = q.ficha.combate; if(!K || !Array.isArray(K.estados)) return;
+    const fin = K.estados.filter(s => s.hasta === p.id);
+    if(fin.length){ K.estados = K.estados.filter(s => s.hasta !== p.id); anotar(q.nombre + ": se le pasa " + fin.map(s => s.n).join(", ") + ".", "estado"); } });
   p.ficha.combate = p.ficha.combate || {cont:{}, estados:[]};
   p.ficha.combate.turno = {usado:0, extra:0, mov:false};       // turno nuevo: Movimiento y Acción enteros
   efectosInicioTurno(p, msg);
   conFicha(p.ficha, () => {
     const C = calcular(), K = datosCombate();
-    if(K.ram !== undefined && K.ram !== null && K.ram !== "" && num(K.ram) < C.ram){ const rec = ramPorTurno(); K.ram = Math.min(C.ram, num(K.ram) + rec); msg.push("+" + rec + " RAM (" + K.ram + "/" + C.ram + ")"); }
+    const ramTope = C.ram - ramReservada();
+    if(K.ram !== undefined && K.ram !== null && K.ram !== "" && num(K.ram) < ramTope){ const rec = ramPorTurno(); K.ram = Math.min(ramTope, num(K.ram) + rec); msg.push("+" + rec + " RAM (" + K.ram + "/" + ramTope + ")"); }
     if(Math.max(0, Math.min(C.vidaMax, C.vida)) <= 1) msg.push("mortalmente herido: salvación contra muerte");
   });
   anotar("Turno de " + p.nombre + (msg.length ? ": " + msg.join(" · ") : "") + ".", "turno");
@@ -7926,7 +8036,7 @@ function nuevaRotacion(){
     const K = p.ficha.combate || (p.ficha.combate = {cont:{}, estados:[]});
     // los estados fijos (agarre, tumbado, piezas encendidas hasta apagarlas) no caducan
     // los que cuentan por los turnos de quien los sufre (Aturdido, Envenenado…) bajan al empezar su turno, no aquí
-    const porTurno = s => !!(ESTADOS_DEF[s.n] || {}).porTurno;
+    const porTurno = s => !!((ESTADOS_DEF[s.n] || {}).porTurno || (ESTADOS_DEF[s.n] || {}).finTurno || s.hasta);
     (K.estados || []).forEach(s => { if(s.fijo || porTurno(s)) return; s.rot = num(s.rot) - 1; if(s.rot <= 0) fin.push(p.nombre + ": " + s.n + (s.rec ? " se apaga" : "")); });
     K.estados = (K.estados || []).filter(s => s.fijo || porTurno(s) || s.rot > 0);
     // piezas que castigan si se mantienen encendidas demasiado (Corazón Sobrealimentado: más de 40 turnos seguidos)
@@ -8083,7 +8193,7 @@ function resolverAtaque(S){
   const necesita = rafaga ? 10 : 1;
   const tA = turnoDe(p), coste = costeAtaque(A.a, S.modo);
   R.coste = coste;
-  if(accQueda(tA) < coste){ R.error = accQueda(tA) <= 0 ? p.nombre + " ya ha usado su Acción este turno." :
+  if(!S.forzado && accQueda(tA) < coste){ R.error = accQueda(tA) <= 0 ? p.nombre + " ya ha usado su Acción este turno." :
     "Le queda " + fraccion(accQueda(tA)) + ": " + (coste === UNID ? "este ataque necesita la Acción entera." : "no llega para otro ataque con este arma (cadencia " + cadenciaDe(A.a) + ")."); return R; }
   if(A.quedan !== null && A.quedan < necesita){ R.error = rafaga ? "La ráfaga necesita 10 balas en el cargador (quedan " + A.quedan + ")." : "Sin munición: recarga primero."; return R; }
   let total = rafaga ? A.auto.total : A.total;
@@ -8226,14 +8336,14 @@ function aplicarAtaque(S, R){
   const modoTxt = {normal:"", cabeza:" (preciso a la cabeza)", pierna:" (preciso a la pierna)", mano:" (preciso a la mano)", rafaga:" (ráfaga)"}[S.modo];
   // la Acción (según la cadencia) y la munición o cargas
   const tA = turnoDe(p);
-  tA.usado = num(tA.usado) + R.coste;
+  if(!S.forzado) tA.usado = num(tA.usado) + R.coste;
   conFicha(p.ficha, () => {
     const n = S.modo === "rafaga" ? 10 : 1;
     if(A.arma && A.quedan !== null){ if(armGastar(A.arma, n)) anotar(p.nombre + ": " + A.nombre + " gasta " + n + (n > 1 ? " balas" : " bala") + " (quedan " + (A.quedan - n) + ").", "municion"); }
     else if(A.cont){ const K = datosCombate(); K.cont[A.cont.clave] = num(K.cont[A.cont.clave]) + n; anotar(p.nombre + ": " + A.nombre + " gasta " + n + " " + A.cont.etiqueta + ".", "municion"); }
   });
   if(A.unUso && A.arma){ const quedan = conFicha(p.ficha, () => armConsumir(A.arma)); anotar(p.nombre + ": lanza " + A.nombre + (quedan ? " (le quedan " + quedan + ")" : " (era la última)") + ".", "municion"); }
-  const cab = p.nombre + " → " + q.nombre + " · " + A.nombre + (A.municionNombre ? " con " + A.municionNombre : "") + modoTxt + " (" + fraccion(R.coste) + "; " + textoAcciones(tA).toLowerCase() + "): " + R.total + " + carta " + R.cartaA + " = " + R.final + " contra " + R.dif + (R.difTxt ? " (" + R.difTxt + ")" : "");
+  const cab = (S.forzado ? "[controlado por " + S.forzado + "] " : "") + p.nombre + " → " + (q.id === p.id ? "sí mismo" : q.nombre) + " · " + A.nombre + (A.municionNombre ? " con " + A.municionNombre : "") + modoTxt + " (" + fraccion(R.coste) + "; " + textoAcciones(tA).toLowerCase() + "): " + R.total + " + carta " + R.cartaA + " = " + R.final + " contra " + R.dif + (R.difTxt ? " (" + R.difTxt + ")" : "");
   if(!R.impacta){ anotar(cab + " → falla.", "ataque"); return; }
   anotar(cab + " → impacta. " + R.lineasDanyo.join("; ") + ".", "ataque");
   if(R.danyoFinal) cambiarVidaP(q, -R.danyoFinal, R.danyoFinal + " de daño de " + p.nombre);
@@ -8251,16 +8361,18 @@ function aplicarAtaque(S, R){
   else if(S.modo === "pierna" && R.piernaInmune) anotar(q.nombre + ": inmune a Pierna rota (" + R.piernaInmune + ").", "herida");
   R.avisos.forEach(a => anotar(a, "ataque"));
 }
-function abrirAtaque(atkId, accId){
+function abrirAtaque(atkId, accId, opc){
+  opc = opc || {};
   const c = T.combate, p = participante(atkId);
   if(!p) return;
   const A = datosAtaque(p, accId);
   if(!A){ toast("Ese ataque no está disponible"); return; }
   // objetivo por defecto: el último al que atacó, o el primero del otro bando que siga en pie
-  const otros = c.participantes.filter(x => x.id !== p.id && !x.fuera);
+  // un ataque forzado por OWN: no gasta la Acción del objetivo y puede atacarse a sí mismo
+  const otros = c.participantes.filter(x => (x.id !== p.id || opc.forzado) && !x.fuera);
   const prev = otros.find(x => x.id === p.ultimoObjetivo);
-  const S = {atk:p.id, acc:accId, modo:"normal", obj:(prev || otros.find(x => x.tipo !== p.tipo) || otros[0] || {}).id || null,
-    tramo:null, esquiva:true, difManual:"", cartaA:"", cartaD:"", dados:"", danyoManual:"", crit:"", extras:[], salvCartas:{}, auto:{}};
+  const S = {atk:p.id, acc:accId, modo:"normal", obj:(opc.forzado ? p : prev || otros.find(x => x.tipo !== p.tipo) || otros[0] || {}).id || null,
+    tramo:null, esquiva:true, difManual:"", cartaA:"", cartaD:"", dados:"", danyoManual:"", crit:"", extras:[], salvCartas:{}, auto:{}, forzado:opc.forzado || ""};
   // los PNJ tiran su carta solos (d12; con 12, otro d12): la del atacante, la del defensor y las salvaciones
   const autoCarta = (campo, quien) => { const c = tirarCarta(); S[campo] = String(c.v); S.auto[campo] = quien + ": " + c.txt; };
   if(p.tipo === "pnj") autoCarta("cartaA", p.nombre);
@@ -8271,7 +8383,7 @@ function abrirAtaque(atkId, accId){
   velo.innerHTML = `<div class="modal ancho" role="dialog" aria-modal="true" aria-labelledby="atqTit"><div id="atqCuerpo"></div></div>`;
   document.body.appendChild(velo);
   const caja = velo.querySelector("#atqCuerpo");
-  const cerrar = () => { document.removeEventListener("keydown", tecla, true); velo.remove(); };
+  const cerrar = () => { document.removeEventListener("keydown", tecla, true); velo.remove(); if(opc.alCerrar) opc.alCerrar(); };
   function tecla(ev){ if(ev.key === "Escape" && !document.querySelector(".velo.dialogo")){ ev.preventDefault(); ev.stopPropagation(); cerrar(); } }
   document.addEventListener("keydown", tecla, true);
   const seg = (k, v, txt, sel, dis) => `<button type="button" class="btn${sel ? " on" : ""}" data-atq="${k}" data-v="${esc(v)}"${dis ? " disabled" : ""}>${txt}</button>`;
@@ -8282,12 +8394,12 @@ function abrirAtaque(atkId, accId){
     const modos = [["normal","Normal"],["cabeza","Preciso: cabeza"],["pierna","Preciso: pierna"],["mano","Preciso: mano"]].concat(A.auto ? [["rafaga","Ráfaga (10 balas)"]] : []);
     const tA = turnoDe(p), queda = accQueda(tA);
     const usaTabla = !A.cc && A.fila && DIFICULTAD_DISTANCIA[A.fila] && !(S.esquiva && O && O.esquivaDisparos);
-    caja.innerHTML = `<h3 id="atqTit">${esc(p.nombre)} ataca con ${esc(A.nombre)}</h3>
+    caja.innerHTML = `<h3 id="atqTit">${esc(p.nombre)} ataca con ${esc(A.nombre)}${S.forzado ? " · controlado por " + esc(S.forzado) : ""}</h3>
       <p class="atq-sub">${A.cc ? "Cuerpo a cuerpo: contra la defensa del objetivo" : "A distancia" + (A.fila ? " · " + esc(A.fila) : "")}${A.textoDanyo ? " · daño " + esc(A.textoDanyo) : ""}${A.quedan !== null ? " · quedan " + A.quedan : ""}</p>
       <p class="atq-acc${queda < costeAtaque(A.a, S.modo) ? " mal" : ""}">Este ataque gasta ${fraccion(costeAtaque(A.a, S.modo))}${S.modo === "normal" && cadenciaDe(A.a) > 1 ? " (cadencia " + cadenciaDe(A.a) + ")" : ""} · a ${esc(p.nombre)} le queda: ${esc(textoAcciones(tA).replace(/^Queda /, ""))}</p>
       <div class="atq-fila"><span>Ataque</span><div class="atq-seg">${modos.map(([k, n]) => seg("modo", k, n, S.modo === k, (k === "rafaga" && A.quedan !== null && A.quedan < 10) || (k !== "normal" && queda < UNID))).join("")}</div></div>
       ${S.modo !== "normal" && S.modo !== "rafaga" ? `<p class="atq-nota">${sgn(A.preciso.v)} para acertar${A.preciso.por ? " (" + esc(A.preciso.por) + ")" : ""} y un solo ataque. ${S.modo === "cabeza" ? "Daño tras la CB ×2 y la herida crítica sale de la tabla de la cabeza." : S.modo === "pierna" ? "Si impacta, sufre la herida crítica Pierna rota." : "Si impacta, suelta lo que tenga en la mano."}</p>` : ""}
-      <div class="atq-fila"><span>Objetivo</span><div class="atq-seg">${c.participantes.filter(x => x.id !== p.id && !x.fuera).map(x => seg("obj", x.id, esc(x.nombre), S.obj === x.id)).join("")}</div></div>
+      <div class="atq-fila"><span>Objetivo</span><div class="atq-seg">${c.participantes.filter(x => (x.id !== p.id || S.forzado) && !x.fuera).map(x => seg("obj", x.id, esc(x.nombre) + (x.id === p.id ? " (a sí mismo)" : ""), S.obj === x.id)).join("")}</div></div>
       ${A.area ? `<div class="atq-fila"><span>También en el área</span><div class="atq-seg">${c.participantes.filter(x => x.id !== S.obj && !x.fuera).map(x => `<label class="atq-chk"><input type="checkbox" data-atq-extra="${esc(x.id)}"${S.extras.includes(x.id) ? " checked" : ""}> ${esc(x.nombre)}</label>`).join("")}</div></div>` : ""}
       ${A.efImp ? `<p class="atq-nota">Al impactar: ${esc([].concat(A.efImp.auto.map(textoEfecto), A.efImp.salv ? [A.efImp.salv.txt + "; si falla: " + A.efImp.falla.map(textoEfecto).join(", ")] : []).join(" · ") || (A.efImp.sinDanyo ? "no hace daño" : ""))}${A.efImp.soloSiCB ? " (solo si le daña a través de la CB)" : ""}.</p>` : ""}
       ${!A.cc && O && O.esquivaDisparos ? `<label class="atq-check"><input type="checkbox" data-atq-check="esquiva"${S.esquiva ? " checked" : ""}> ${esc(q.nombre)} puede esquivar disparos (${esc(O.esquivaPor)}): Destreza + Evasión + carta</label>` : ""}
@@ -8297,6 +8409,7 @@ function abrirAtaque(atkId, accId){
         ${(A.cc || (!A.cc && S.esquiva && O && O.esquivaDisparos)) ? `<label>Carta de ${q ? esc(q.nombre) : "el objetivo"}<input id="atqCartaD" inputmode="numeric" value="${esc(S.cartaD)}" placeholder="2–11">${S.auto.cartaD ? `<small class="atq-auto">tirada sola · ${esc(S.auto.cartaD)} <button type="button" class="btn fina" data-atq="retirar" data-v="cartaD">Otra</button></small>` : ""}</label>` : ""}
         <label>Otra dificultad<input id="atqDif" inputmode="numeric" value="${esc(S.difManual)}" placeholder="${usaTabla || A.cc ? "opcional" : "obligatoria"}"></label>
       </div>
+      ${htmlReaccionesBaraja(S, p, q, A.cc || (!A.cc && S.esquiva && O && O.esquivaDisparos))}
       <div id="atqRes"></div>
       <div class="tk-botones"><button type="button" class="btn" data-atq="cancelar">Cancelar</button><button type="button" class="btn principal" data-atq="aplicar" id="atqAplicar">Aplicar</button></div>`;
     pintarRes();
@@ -8368,6 +8481,7 @@ function abrirAtaque(atkId, accId){
     if(k === "modo"){ S.modo = b.dataset.v; return pintarTodo(); }
     if(k === "obj"){ S.obj = b.dataset.v; S.extras = S.extras.filter(x => x !== S.obj); cartaDefensor(); return pintarTodo(); }
     if(k === "retirar"){ const quien = b.dataset.v === "cartaA" ? p.nombre : (q() || {}).nombre; autoCarta(b.dataset.v, quien); return pintarTodo(); }
+    if(k === "baraja"){ reaccionBaraja(S, b, p, q(), autoCarta, caja); return pintarTodo(); }
     if(k === "tramo"){ S.tramo = num(b.dataset.v); return pintarTodo(); }
     if(k === "tirar"){ const R = resolverAtaque(S); S.dados = tirarDados(R.nDados || 0); return pintarTodo(); }
     if(k === "tirar-crit"){ S.crit = tirarDados(2); return pintarTodo(); }
@@ -8580,7 +8694,9 @@ function tarjetaHabilidad(a, M, tipo, p){
   if(a.cont) mandos += `<span class="tk-usos${q <= 0 ? " vacio" : ""}"><b>${q}</b>/${a.cont.total} ${esc(a.cont.etiqueta)}${a.cont.por !== "recarga" ? " · por " + esc(a.cont.por) : ""}</span>
     <button type="button" class="btn" data-cm="gastar" data-k="${esc(a.cont.clave)}" data-nom="${esc(a.nombre || a.origen)}"${gasta ? ' data-accion="1"' : ""} ${q > 0 && !sinAcc ? "" : "disabled"}${sinAcc ? ' title="Gasta la Acción y ya la ha usado"' : ""}>Usar</button>
     <button type="button" class="btn fina" data-cm="reponer" data-k="${esc(a.cont.clave)}" data-nom="${esc(a.nombre || a.origen)}" ${a.cont.usados ? "" : "disabled"}>Reponer</button>`;
-  if(tipo === "tecno") mandos += `<button type="button" class="btn atq" data-t="hackear" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Ya ha usado su Acción este turno"' : ""}>Ejecutar</button>`;
+  if(tipo === "tecno" && a.ice) mandos += a.armado !== null ? `<span class="tk-tag ice-on">Armado · reserva ${a.ram} RAM</span><button type="button" class="btn fina" data-t="ice-desarmar" data-i="${a.armado}">Desarmar</button>`
+    : `<button type="button" class="btn atq" data-t="ice-armar" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Armarlo en combate gasta la Acción"' : ""}>Armar · Acción</button>`;
+  else if(tipo === "tecno") mandos += `<button type="button" class="btn atq" data-t="hackear" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Ya ha usado su Acción este turno"' : ""}>Ejecutar</button>`;
   if(a.act && a.rec){
     // pieza de ciberware que se activa: el botón gasta lo que diga, un uso, y la deja encendida su duración
     mandos = a.cont ? `<span class="tk-usos${q <= 0 ? " vacio" : ""}"><b>${q}</b>/${a.cont.total} ${esc(a.cont.etiqueta)} · por ${esc(a.cont.por)}</span>` : "";
@@ -8710,7 +8826,7 @@ function htmlDetalle(p){
         <div class="tk-rec" title="${esc(M.esquiva.tirada.desglose ? M.esquiva.tirada.desglose.join("\n") : "")}"><small>Defensa</small><b>${M.esquiva.tirada.total === null ? "falla" : M.esquiva.tirada.total}</b><span>${M.esquiva.tirada.total === null ? "sin Evasión" : "+ carta · " + (M.esquiva.disparos && !PH.noEsquiva ? "esquiva disparos (" + esc(M.esquiva.por) + ")" : "no esquiva disparos")}</span></div>
       </div>
       <div class="tk-estad">${M.stats.map(x => `<span title="${esc(x.desglose.join("\n"))}"><small>${esc(x.n)}</small><b>${x.v}</b>${x.v !== x.base ? `<i>base ${x.base}</i>` : ""}</span>`).join("")}</div>
-      ${htmlAccionesTurno(p, M)}
+      ${htmlAccionesTurno(p, M)}${htmlArmados(p)}
       <section class="tk-grupo"><h3>Ataques <span>${M.acciones.ataques.length}</span></h3>
         <div class="tk-tarjetas-ac">${M.acciones.ataques.map(a => tarjetaAtaque(a, M, p)).join("") || `<p class="cm-vacio">Sin ataques disponibles.</p>`}</div></section>
       ${habil.length ? `<section class="tk-grupo"><h3>Habilidades que se usan <span>${habil.length}</span></h3><div class="tk-tarjetas-ac">${habil.join("")}</div></section>` : ""}`;
@@ -8820,6 +8936,7 @@ function htmlCreador(){
     <h4 class="tk-h4">Hackeos</h4>
     <p class="cm-vacio">Necesitan Tecnomancia. Los PNJ los llevan como hackeos rápidos: sin terminal ni ranuras.</p>
     <div class="tk-hk-lista">${(t.hackeos || []).map((l, i) => `<div class="tk-cb-item"><code>${esc(l)}</code><button type="button" class="x" data-pnj-hk-quitar="${i}" aria-label="Quitar hackeo">×</button></div>`).join("")}</div>
+    ${num(t.comps && t.comps["Tecnomancia"]) >= ICE_UMBRAL && !(t.hackeos || []).some(l => /BLACK\.ICE/i.test(l)) ? `<label class="atq-check"><input type="checkbox" id="pnjConIce"${t.sinIce ? "" : " checked"}> BLACK.ICE de serie (Tecnomancia ${ICE_UMBRAL} o más): <code>${esc(ICE_DE_SERIE)}</code></label>` : ""}
     <div id="pnjHkCons" class="hk-constructor" hidden></div>
     <div class="tk-botones" style="justify-content:flex-start"><button type="button" class="btn" data-t="pnj-hk-nuevo">+ Construir hackeo</button></div>
     <h4 class="tk-h4">Notas y habilidades</h4>
@@ -8865,6 +8982,7 @@ function leerCreador(){
   const t = EDITANDO;
   const v = id => { const el = document.getElementById(id); return el ? el.value : ""; };
   t.nombre = v("pnjNombre").trim(); t.raza = v("pnjRaza"); t.cb = Math.max(0, num(v("pnjCB"))); t.notas = v("pnjNotas");
+  const ci = document.getElementById("pnjConIce"); if(ci) t.sinIce = !ci.checked || undefined;
 }
 
 /* ---------- Referencia ---------- */
@@ -8897,7 +9015,7 @@ function accionParticipante(b, p){
   conFicha(p.ficha, () => {
     const K = datosCombate();
     switch(a){
-      case "ram": K.ram = Math.max(0, Math.min(calcular().ram, num(K.ram) + n)); break;
+      case "ram": K.ram = Math.max(0, Math.min(calcular().ram - ramReservada(), num(K.ram) + n)); break;
       case "ram-gastar": if(num(K.ram) < n) hecho = false; if(num(K.ram) >= n){ K.ram = num(K.ram) - n; anotar(p.nombre + ": gasta " + n + " RAM (quedan " + K.ram + ").", "recurso"); } break;
       case "gastar": K.cont[b.dataset.k] = num(K.cont[b.dataset.k]) + (n || 1); anotar(p.nombre + ": gasta " + (n || 1) + " de " + (b.dataset.nom || "un contador") + ".", "recurso"); break;
       case "reponer": delete K.cont[b.dataset.k]; anotar(p.nombre + ": repone " + (b.dataset.nom || "un contador") + ".", "recurso"); break;
@@ -8949,6 +9067,16 @@ async function accion(b){
   if(b.dataset.t === "cartas-pnj" && c){ antes("cartas de los PNJ"); c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).forEach(x => cartaPnj(x)); ordenar();
     anotar("Cartas de iniciativa de los PNJ: " + c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).map(x => x.nombre + " " + x.carta).join(", ") + ".", "turno"); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "hackear" && sel){ abrirHackeo(sel.id, b.dataset.acc); return; }
+  if(b.dataset.t === "ice-armar" && sel){ const tP = turnoDe(sel); if(accQueda(tP) < UNID){ toast(sel.nombre + " ya ha usado su Acción"); return; }
+    antes("armar BLACK.ICE · " + sel.nombre); const r = conFicha(sel.ficha, () => armarIce(b.dataset.acc));
+    if(!r.ok){ HIST.pop(); toast(r.motivo); return; }
+    tP.usado = num(tP.usado) + UNID; anotarIceArmado(sel, [r.a]); guardarTracker(); pintar(); return; }
+  if(b.dataset.t === "ice-desarmar" && sel){ antes("desarmar BLACK.ICE · " + sel.nombre); const x = conFicha(sel.ficha, () => quitarIce(num(b.dataset.i)));
+    if(x){ ANOTAR_OCULTO = true; try{ anotar(sel.nombre + " desarma su " + x.nombre + " (vuelven " + x.ram + " RAM).", "recurso"); } finally { ANOTAR_OCULTO = false; } } guardarTracker(); pintar(); return; }
+  if(b.dataset.t === "hk-disparar" && sel){ const a = (sel.armados || [])[num(b.dataset.i)]; if(!a) return;
+    if(!datosHackeo(sel, a.acc)){ toast("Ese hackeo ya no está cargado en su terminal"); return; } abrirHackeo(sel.id, a.acc, {disparo:num(b.dataset.i)}); return; }
+  if(b.dataset.t === "hk-desarmar" && sel){ const a = (sel.armados || [])[num(b.dataset.i)]; if(!a) return; antes("quitar hackeo armado · " + sel.nombre);
+    sel.armados.splice(num(b.dataset.i), 1); anotar(sel.nombre + ": desarma " + a.nombre + ".", "ataque"); guardarTracker(); pintar(); return; }
   if(b.dataset.vida && sel){ antes("vida · " + sel.nombre); const n = num(b.dataset.vida); cambiarVidaP(sel, n, ""); guardarTracker(); pintar(); return; }
   if(b.dataset.cant){ const inp = document.querySelector(`[data-prep-pnj="${b.dataset.k}"]`); if(inp) inp.value = Math.max(0, num(inp.value) + num(b.dataset.cant)); return; }
   if(b.dataset.critZ){
@@ -9230,8 +9358,14 @@ async function nubeActualizarT(silencioso){
 
 /* ================= HACKEOS EN EL TRACKER =================
    «Ejecutar» en cada hackeo: objetivo (objeto, persona, zona, todos), cartas y resultado contra Inteligencia + Tecnomancia + Carta
-   de cada objetivo. Gasta la RAM y la Acción (no con el Neuropuerto, ni la vez por turno de dos Ex-Disk). DESTROY hace su daño sin
-   pasar por la CB (que no baja); BLOCK y OWN ponen un estado de 1 turno. Los muros de H.I.E.L.O se rompen antes, uno a uno. */
+   de cada objetivo. Gasta la RAM y la Acción (no con el Neuropuerto, ni la vez por turno de dos Ex-Disk). Los muros de H.I.E.L.O se rompen antes.
+   Cada verbo hace lo suyo al acertar:
+   · READ: enseña al máster la ficha rápida del objetivo y lo apunta. · BLOCK: inutiliza un arma, una pieza o su ciberterminal hasta que
+     acabe su próximo turno (con hold, hasta el próximo turno del hackeador). · FORCE: enciende o apaga una pieza, le hace soltar el arma, u otra cosa.
+   · DESTROY: daño eléctrico sin CB (que no baja), con los dados extra del PEM. · BURN: Ardiendo 3 turnos. · PATCH: lo que escribas y, si quieres, un estado.
+   · OWN: le haces hacer una acción ahora mismo (puede atacarse a sí mismo), sin gastar la suya.
+   · quiet: el registro no llega a las fichas de los jugadores. · wait: se arma ahora (gasta RAM y Acción) y se dispara cuando se cumpla la condición.
+   Los de baraja que tocan cartas ajenas (KILL, BOOST, PUSH) se usan como reacción en la ventana de ataque. */
 function datosHackeo(p, accId){
   return conFicha(p.ficha, () => {
     const M = modeloCombate();
@@ -9256,11 +9390,163 @@ function defensaHackeo(q){
     return {total:C.s.inteligencia + v + C.penal, desglose:"Inteligencia " + C.s.inteligencia + " + Tecnomancia " + v + (C.penal ? " " + sgn(C.penal) + " por heridas" : "")};
   });
 }
+/* ---------- BLACK.ICE en el combate ----------
+   Salta cuando alguien falla un hackeo contra su dueño o contra sus muros (con hunt, también cuando acierta), y cuando falla al desarmarlo.
+   Tirada enfrentada: Inteligencia + Tecnomancia + Carta del dueño contra la del atacante. Gane quien gane, salta una vez y se desarma
+   (vuelve la RAM reservada). Un BLACK.ICE bloqueado con BLOCK no salta mientras dure. */
+function iceDe(q){
+  if(!q || !q.ficha.combate || !Array.isArray(q.ficha.combate.ice)) return null;
+  const bloq = (q.ficha.combate.estados || []).some(e => e.ice);
+  const i = q.ficha.combate.ice.findIndex(x => x);
+  return i >= 0 && !bloq ? {i, x:q.ficha.combate.ice[i]} : null;
+}
+function iceSalta(q, fallo){ const ice = iceDe(q); return !!ice && (fallo || !!(ice.x.spec && ice.x.spec.hunt)); }
+const tiradaTecno = q => { const d = defensaHackeo(q); return {total:d.total, desglose:[d.desglose]}; };
+async function saltarIce(dueno, atk, forzar){
+  const ice = iceDe(dueno);
+  if(!ice || atk.fuera) return;
+  const x = ice.x, sp = normalizarSpec(x.spec || {verbo:"BLACK.ICE", obj:"destroy"}), H = {nombre:x.nombre};
+  const sube = sp.amp && !["destroy", "fry"].includes(sp.obj) ? 2 * sp.amp : 0;
+  const r = await tiradaEnfrentada("¡Salta el BLACK.ICE de " + dueno.nombre + "!", dueno, atk, x.nombre + " contraataca a " + atk.nombre + ": si gana, " + cargaIce(sp) + ".",
+    {tirada:q => { const t = tiradaTecno(q); return q === atk && sube ? {total:t.total - sube, desglose:t.desglose.concat(["−" + sube + " de amp"])} : t; }, comp:"Tecnomancia",
+     regla:"Inteligencia + Tecnomancia + Carta de cada uno. Gana el BLACK.ICE si iguala o supera al atacante. Salte como salte, se desarma."});
+  antes("BLACK.ICE de " + dueno.nombre);
+  conFicha(dueno.ficha, () => quitarIce(ice.i));
+  ANOTAR_OCULTO = !!sp.quiet;
+  try{
+    const quien = sp.quiet ? "Un BLACK.ICE" : "El BLACK.ICE " + x.nombre + " de " + dueno.nombre;
+    if(!r){ anotar(quien + " salta contra " + atk.nombre + " (sin tirada: lo resuelves tú) y se desarma.", "ataque"); guardarTracker(); pintar(); return; }
+    if(!r.gana){ anotar(quien + " salta contra " + atk.nombre + " y no le alcanza (" + r.txt + "). Se desarma.", "ataque"); guardarTracker(); pintar(); return; }
+    anotar(quien + " salta contra " + atk.nombre + " y le alcanza (" + r.txt + "): " + cargaIce(sp) + ".", "ataque");
+    if(sp.obj === "destroy"){
+      const E = conFicha(atk.ficha, () => dadosElectricos()), n = 2 + sp.amp + E.extra;
+      let d = tirarDados(n).split("").reduce((a, v) => a + num(v), 0);
+      const tir = d;
+      if(E.resiste === "inmune") d = 0; else if(E.resiste === "mitad") d = Math.floor(d / 2);
+      cambiarVidaP(atk, -d, x.nombre + ": " + n + "d6 eléctrico" + (E.extra ? " (con " + E.motivos.join(", ") + ")" : "") + " = " + tir + (E.resiste ? (E.resiste === "inmune" ? ", inmune" : ", resiste la mitad") : "") + " (ignora la CB)", {sinCB:true});
+    }
+    if(sp.obj === "burn") estadoA(atk, "Ardiendo", 3, null, x.nombre);
+    if(sp.obj === "block"){ const K = atk.ficha.combate = atk.ficha.combate || {cont:{}, estados:[]};
+      (K.estados = Array.isArray(K.estados) ? K.estados : []).push({n:"Bloqueado por un hackeo", rot:1, que:"sus hackeos (ciberterminal y chips)", terminal:true, deQuien:dueno.nombre});
+      anotar(atk.nombre + ": no puede hackear hasta que acabe su próximo turno.", "estado"); }
+    if(sp.obj === "fry"){ const n = 1 + sp.amp, d = tirarDados(n).split("").reduce((a, v) => a + num(v), 0);
+      conFicha(atk.ficha, () => { const K = datosCombate(); const antesR = num(K.ram === undefined || K.ram === "" ? calcular().ram : K.ram); K.ram = Math.max(0, antesR - d); anotar(atk.nombre + ": pierde " + d + " de RAM (" + n + "d6; " + antesR + " → " + K.ram + ").", "recurso"); }); }
+    guardarTracker(); pintar();
+    if(sp.obj === "read"){ anotar(dueno.nombre + " lee a " + atk.nombre + " con su BLACK.ICE.", "ataque"); await mostrarLectura(atk, H); }
+  } finally { ANOTAR_OCULTO = false; }
+  guardarTracker(); pintar();
+}
+/* Lo que BLOCK puede inutilizar de un combatiente: sus armas, sus piezas de ciberware y su ciberterminal */
+function opcionesBloqueo(q, p){
+  return conFicha(q.ficha, () => {
+    const out = [];
+    // un BLACK.ICE que ha detectado (con READ) se puede bloquear 1 turno sin desarmarlo
+    if(p) iceArmados().forEach((x, i) => { if((x.detectado || []).includes(p.id)) out.push({v:"ice:" + i, n:"BLACK.ICE: " + x.nombre}); });
+    datosArmamento().armas.forEach(w => { const va = vistaArma(w); out.push({v:"arma:" + w.id, n:"Arma: " + va.nombre}); });
+    piezasInstaladas().filter(x => !x.conflicto).forEach(x => out.push({v:"pieza:" + x.rec.id, n:"Ciberware: " + nombrePieza(x.p, x.rec) + (x.lugar ? " (" + String(x.lugar).toLowerCase() + ")" : "")}));
+    const t = TERMINAL_LISTO ? terminalActivo() : null;
+    if(t) out.push({v:"terminal", n:"Ciberterminal: " + t.n});
+    return out;
+  });
+}
+function bloquearA(q, v, hold, p, H){
+  const op = opcionesBloqueo(q, p).find(o => o.v === v);
+  if(!op) return;
+  const extra = {n:"Bloqueado por un hackeo", rot:1, que:op.n.replace(/^[^:]+: /, ""), deQuien:p.nombre};
+  if(v.startsWith("ice:")) extra.ice = true;
+  else if(v.startsWith("arma:")) extra.armas = [v.slice(5)];
+  else if(v.startsWith("pieza:")) extra.piezas = [v.slice(6)];
+  else extra.terminal = true;
+  if(hold) extra.hasta = p.id;
+  const K = q.ficha.combate = q.ficha.combate || {cont:{}, estados:[]};
+  (K.estados = Array.isArray(K.estados) ? K.estados : []).push(extra);
+  anotar(q.nombre + ": " + H.nombre + " le bloquea " + op.n.toLowerCase() + (hold ? " hasta el próximo turno de " + p.nombre : " hasta que acabe su próximo turno") + ".", "estado");
+}
+/* Lo que FORCE puede obligar a hacer: encender o apagar una pieza que dura, soltar un arma equipada, u otra cosa (la escribes) */
+function opcionesForce(q){
+  return conFicha(q.ficha, () => {
+    const M = modeloCombate(), out = [];
+    M.acciones.activables.filter(a => a.act && a.act.dur).forEach(a => out.push(a.encendida ? {v:"apagar:" + a.id, n:"Apagar " + a.nombre} : {v:"encender:" + a.id, n:"Encender " + a.nombre}));
+    datosArmamento().armas.filter(w => w.equipada).forEach(w => out.push({v:"soltar:" + w.id, n:"Soltar " + vistaArma(w).nombre}));
+    out.push({v:"otra", n:"Otra cosa (la escribes)"});
+    return out;
+  });
+}
+function forzarA(q, v, txt, H){
+  const op = opcionesForce(q).find(o => o.v === v) || {v:"otra", n:"otra cosa"};
+  if(v.startsWith("encender:") || v.startsWith("apagar:")){
+    const id = v.slice(v.indexOf(":") + 1);
+    conFicha(q.ficha, () => {
+      const a = modeloCombate().acciones.activables.find(x => x.id === id), K = datosCombate();
+      if(!a) return;
+      if(v.startsWith("apagar:")) K.estados = K.estados.filter(e => e.rec !== a.rec);
+      else ponerEstado(a.nombre, a.act.dur, {rec:a.rec, iniMas:a.act.iniMas || undefined, accionExtra:a.act.accionExtra || undefined, sobrecarga:a.act.sobrecarga || undefined, seguidos:a.act.sobrecarga ? 0 : undefined});
+    });
+    anotar(q.nombre + ": " + H.nombre + " le obliga a " + op.n.toLowerCase() + ".", "estado");
+  } else if(v.startsWith("soltar:")){
+    conFicha(q.ficha, () => armEquipar(v.slice(7), false));
+    anotar(q.nombre + ": " + H.nombre + " le obliga a " + op.n.toLowerCase() + " (cae a sus pies).", "estado");
+  } else anotar(q.nombre + ": " + H.nombre + " le obliga a " + (String(txt || "").trim() || "hacer lo contrario de lo que quería") + ".", "estado");
+}
+/* READ: lo que sabe el hackeador del objetivo */
+function lecturaDe(q){
+  return conFicha(q.ficha, () => {
+    const M = modeloCombate(), V = M.vida, K = datosCombate();
+    const r = razaActual() || {};
+    const rasgos = (r.rasgos || []).filter(x => /inmun|resistencia|daño adicional|vulnerab/i.test(x));
+    return {vida:V.actual + " / " + V.max, cb:M.cb.v, defensa:M.esquiva.tirada.total, resHack:(M.resist.find(x => x.id === "res-hack") || {tirada:{}}).tirada.total,
+      estados:K.estados.map(e => e.n), heridas:(q.heridas || []).map(h => h.n), armas:M.acciones.ataques.map(a => a.nombre + (a.textoDanyo || a.valor ? " (" + (a.textoDanyo || a.valor) + ")" : "")),
+      ciber:piezasInstaladas().filter(x => !x.conflicto).map(x => nombrePieza(x.p, x.rec)), rasgos, raza:val("f-raza"), muros:murosDe(q)};
+  });
+}
+function mostrarLectura(q, H, info){
+  info = info || {};
+  const L = lecturaDe(q);
+  const iceTxt = !info.ice ? "" : info.ice.length ? info.ice.map(x => x.carga || "Hay un BLACK.ICE armado (" + x.nombre + "); para ver su carga hay que superar por 5.").join(" · ") : "No detecta ninguno.";
+  return new Promise(res => {
+    const velo = document.createElement("div");
+    velo.className = "velo dialogo tk-atq";
+    const fila = (t, v) => v && (!Array.isArray(v) || v.length) ? `<div><dt>${t}</dt><dd>${esc(Array.isArray(v) ? v.join(", ") : String(v))}</dd></div>` : "";
+    velo.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><h3>${esc(H.nombre)} · lectura de ${esc(q.nombre)}</h3>
+      ${info.sondeo ? `<p class="atq-nota">Sondeo desde fuera de sus muros de H.I.E.L.O: solo ves los muros y su BLACK.ICE. El resto, cuando no le queden muros.</p>
+        <dl class="tk-lectura">${fila("Muros de H.I.E.L.O", L.muros.total ? (L.muros.total - L.muros.rotos) + " de " + L.muros.total + " en pie" : "")}${fila("BLACK.ICE", iceTxt)}</dl>` : `
+      <dl class="tk-lectura">${fila("BLACK.ICE", iceTxt)}${fila("Vida", L.vida)}${fila("CB", String(L.cb))}${fila("Defensa", L.defensa === null ? "—" : String(L.defensa))}${fila("Resistencia a hackeos", String(L.resHack))}
+        ${fila("Muros de H.I.E.L.O", L.muros.total ? (L.muros.total - L.muros.rotos) + " de " + L.muros.total + " en pie" : "")}${fila("Raza", L.raza)}${fila("Debilidades y resistencias", L.rasgos)}
+        ${fila("Estados", L.estados)}${fila("Heridas", L.heridas)}${fila("Ataques", L.armas)}${fila("Ciberware", L.ciber)}</dl>`}
+      <div class="tk-botones"><button type="button" class="btn principal" data-lec="ok">Cerrar</button></div></div>`;
+    document.body.appendChild(velo);
+    velo.addEventListener("click", ev => { if(ev.target === velo || ev.target.closest("[data-lec]")){ velo.remove(); res(); } });
+  });
+}
+/* OWN: el hackeador le hace hacer una acción ahora mismo (también contra sí mismo) */
+function accionForzada(p, q, H){
+  const atq = conFicha(q.ficha, () => modeloCombate().acciones.ataques.filter(a => !a.agotada));
+  return new Promise(res => {
+    const velo = document.createElement("div");
+    velo.className = "velo dialogo";
+    velo.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><h3>${esc(H.nombre)}: ${esc(p.nombre)} controla a ${esc(q.nombre)}</h3>
+      <p>Elige qué hace ahora mismo. No gasta su Acción y puede atacarse a sí mismo.</p>
+      <div class="atq-seg">${atq.map(a => `<button type="button" class="btn" data-own="${esc(a.id)}">Atacar con ${esc(a.nombre)}</button>`).join("")}
+        <button type="button" class="btn" data-own="otra">Otra acción (la narras)</button></div>
+      <div class="tk-botones"><button type="button" class="btn" data-own="">Nada</button></div></div>`;
+    document.body.appendChild(velo);
+    velo.addEventListener("click", ev => {
+      const b = ev.target.closest("[data-own]");
+      if(!b) return;
+      velo.remove();
+      const v = b.dataset.own;
+      if(!v){ res(); return; }
+      if(v === "otra"){ anotar(q.nombre + ": " + p.nombre + " le controla con " + H.nombre + " y le hace hacer una acción.", "ataque"); guardarTracker(); pintar(); res(); return; }
+      abrirAtaque(q.id, v, {forzado:p.nombre, alCerrar:res});
+    });
+  });
+}
 function resolverHackeo(S){
   const p = participante(S.atk), H = p && datosHackeo(p, S.acc);
   if(!H) return {error:"Ese hackeo ya no está disponible."};
   const R = {H, p, res:[], avisos:[]}, hk = H.hk, tA = turnoDe(p);
-  R.sinAccion = !H.gasta || (S.exdisk && H.exdisk && !tA.exdisk);
+  R.disparo = S.disparo !== undefined && S.disparo !== null;
+  R.sinAccion = R.disparo || !H.gasta || (S.exdisk && H.exdisk && !tA.exdisk);
   if(!R.sinAccion && accQueda(tA) < UNID) R.avisos.push("Ya ha usado la Acción este turno.");
   if(S.modo === "muro"){
     const q = participante(S.muroDe), W = q ? murosDe(q) : null;
@@ -9271,8 +9557,19 @@ function resolverHackeo(S){
     R.final = H.total + num(S.cartaA); R.rompe = R.final >= W.dif;
     return R;
   }
-  if(H.ram !== null && H.ram > H.ramActual) return Object.assign(R, {error:"No le llega la RAM: tiene " + H.ramActual + " y el hackeo cuesta " + H.ram + "."});
+  if(S.modo === "desarmar"){
+    const q = participante(S.iceDe), ice = q ? iceDe(q) : null;
+    if(!ice) return Object.assign(R, {error:"Ya no tiene un BLACK.ICE armado."});
+    if(H.total === null) return Object.assign(R, {error:"No tiene Tecnomancia: falla automáticamente."});
+    Object.assign(R, {q, ice:ice.x, dif:13 + num(ice.x.ram)});
+    if(S.cartaA === "") return Object.assign(R, {esperando:"Escribe la carta del atacante."});
+    R.final = H.total + num(S.cartaA); R.desarma = R.final >= R.dif;
+    return R;
+  }
+  if(!R.disparo && H.ram !== null && H.ram > H.ramActual) return Object.assign(R, {error:"No le llega la RAM: tiene " + H.ramActual + " y el hackeo cuesta " + H.ram + "."});
   if(!hk){ R.manual = true; return R; }                                      // escrito a mano sin la sintaxis: solo gasta y se apunta
+  // wait: ahora solo se arma (gasta RAM y Acción); se resuelve al dispararlo
+  if(hk.wait && !R.disparo){ R.armar = true; if(!String(S.cond || "").trim()) R.esperando = "Escribe cuándo salta."; return R; }
   if(grupoHk(hk) === "baraja" || hk.obj === "self"){ R.auto = true; return R; }
   if(H.total === null) return Object.assign(R, {error:"No tiene Tecnomancia: falla automáticamente."});
   const sube = hk.amp && hk.verbo !== "DESTROY" ? 2 * hk.amp : 0;
@@ -9287,11 +9584,13 @@ function resolverHackeo(S){
       const q = participante(id);
       if(!q) return;
       const W = murosDe(q);
-      if(W.total > W.rotos){ R.res.push({q, muros:W}); return; }
+      // READ puede sondear desde fuera de los muros: ve cuántos hay y si hay BLACK.ICE, pero no el resto
+      const sondeo = W.total > W.rotos && hk.verbo === "READ";
+      if(W.total > W.rotos && !sondeo){ R.res.push({q, muros:W}); return; }
       const Dd = defensaHackeo(q), c = S.cartasD[id];
       if(c === undefined || c === ""){ R.res.push({q, def:Dd, espera:true}); R.esperando = R.esperando || "Escribe la carta de cada objetivo."; return; }
       const dif = Dd.total + num(c) + sube;
-      R.res.push({q, def:Dd, dif, exito:R.final !== undefined && R.final >= dif, cadena:S.cadena === id});
+      R.res.push({q, def:Dd, dif, exito:R.final !== undefined && R.final >= dif, cadena:S.cadena === id, sondeo});
     });
   }
   const acierta = R.exito || R.res.some(x => x.exito && !x.cadena);
@@ -9299,46 +9598,103 @@ function resolverHackeo(S){
     R.nDados = 2 + hk.amp;
     const dd = leerDados(S.dados, R.nDados);
     if(!dd.ok) R.esperandoDanyo = "Escribe los " + R.nDados + " dados de daño o tíralos.";
-    else { R.dados = dd; R.danyo = dd.suma; }
+    else {
+      R.dados = dd; R.danyo = dd.suma;
+      // daño eléctrico: los dados extra del PEM de cada objetivo (vulnerable, 5 piezas, borgware) y su resistencia
+      R.res.filter(x => x.exito).forEach(x => {
+        const E = conFicha(x.q.ficha, () => dadosElectricos());
+        if(E.extra && !S.extraD[x.q.id]) S.extraD[x.q.id] = tirarDados(E.extra);
+        const ex = E.extra ? String(S.extraD[x.q.id]).split("").reduce((a, v) => a + num(v), 0) : 0;
+        let d = R.danyo + ex;
+        if(x.cadena) d = Math.floor(d / 2);
+        if(E.resiste === "inmune") d = 0; else if(E.resiste === "mitad") d = Math.floor(d / 2);
+        x.elec = {E, ex, d, dadosEx:E.extra ? S.extraD[x.q.id] : ""};
+      });
+    }
+  }
+  if(!R.esperando){
+    R.res.filter(x => x.exito).forEach(x => {
+      if(hk.verbo === "BLOCK"){ x.opciones = opcionesBloqueo(x.q, p); if(!S.bloqueo[x.q.id]) R.esperandoEleccion = "Elige qué le bloquea a " + x.q.nombre + "."; }
+      if(hk.verbo === "FORCE"){ x.opciones = opcionesForce(x.q); if(!S.force[x.q.id]) S.force[x.q.id] = "otra"; }
+    });
   }
   return R;
 }
 function aplicarHackeo(S, R){
   const {H, p} = R, hk = H.hk, tA = turnoDe(p);
-  if(R.sinAccion){ if(S.exdisk && H.exdisk && H.gasta) tA.exdisk = true; } else tA.usado = num(tA.usado) + UNID;
+  R.despues = [];
+  if(R.sinAccion){ if(!R.disparo && S.exdisk && H.exdisk && H.gasta) tA.exdisk = true; } else tA.usado = num(tA.usado) + UNID;
+  R.iceSaltos = [];
   if(S.modo === "muro"){
     anotar(p.nombre + " ataca un muro de H.I.E.L.O de " + R.q.nombre + ": " + H.total + " + carta " + S.cartaA + " = " + R.final + " contra " + R.dif + " → " + (R.rompe ? "lo rompe (" + (R.W.total - R.W.rotos - 1) + " en pie)." : "aguanta."), "ataque");
     if(R.rompe) R.q.murosRotos = num(R.q.murosRotos) + 1;
+    if(iceSalta(R.q, !R.rompe)) R.iceSaltos.push({dueno:R.q, atacante:p});
     return;
   }
-  if(H.ram) conFicha(p.ficha, () => { const K = datosCombate(); K.ram = Math.max(0, num(K.ram) - H.ram); });
-  const cab = p.nombre + " ejecuta " + H.nombre + (H.ram ? " (−" + H.ram + " RAM)" : "");
-  if(R.manual || R.auto){ anotar(cab + ". " + (hk ? efectoSpec(hk) : H.a.e || ""), "ataque"); return; }
-  if(R.objeto){ anotar(cab + ": " + R.final + " contra " + R.dif + " → " + (R.exito ? "funciona. " + efectoSpec(hk) : "falla."), "ataque"); return; }
-  const algun = R.res.some(x => x.exito && !x.cadena);
-  R.res.forEach(x => {
-    if(x.muros){ anotar(cab + " → " + x.q.nombre + ": tiene " + (x.muros.total - x.muros.rotos) + " muros de H.I.E.L.O en pie; no le llega.", "ataque"); return; }
-    if(x.cadena && !algun) return;
-    const txt = cab + " → " + x.q.nombre + (x.cadena ? " (cadena, mitad del efecto)" : "") + ": " + R.final + " contra " + x.dif + " (" + x.def.desglose + " + carta)";
-    if(!x.exito){ anotar(txt + " → resiste.", "ataque"); return; }
-    anotar(txt + " → le alcanza.", "ataque");
-    if(hk.verbo === "DESTROY" && R.danyo){ const d = x.cadena ? Math.floor(R.danyo / 2) : R.danyo; cambiarVidaP(x.q, -d, d + " de daño de " + H.nombre + " (ignora la CB)", {sinCB:true}); }
-    const V = HK_VERBOS[hk.verbo];
-    if(V.estado && !x.cadena){
-      const K = x.q.ficha.combate = x.q.ficha.combate || {cont:{}, estados:[]};
-      (K.estados = Array.isArray(K.estados) ? K.estados : []).push({n:V.estado, rot:1});
-      anotar(x.q.nombre + ": " + V.estado.toLowerCase() + " (" + (hk.hold ? "toda la rotación" : "1 turno") + ").", "ataque");
+  if(S.modo === "desarmar"){
+    ANOTAR_OCULTO = true;
+    try{ anotar(p.nombre + " intenta desarmar el BLACK.ICE de " + R.q.nombre + ": " + H.total + " + carta " + S.cartaA + " = " + R.final + " contra " + R.dif + " → " + (R.desarma ? "lo desarma sin que salte." : "falla."), "ataque"); }
+    finally { ANOTAR_OCULTO = false; }
+    if(R.desarma){ const i = iceDe(R.q).i; conFicha(R.q.ficha, () => quitarIce(i)); }
+    else R.iceSaltos.push({dueno:R.q, atacante:p, forzar:true});
+    return;
+  }
+  if(H.ram && !R.disparo) conFicha(p.ficha, () => { const K = datosCombate(); K.ram = Math.max(0, num(K.ram) - H.ram); });
+  ANOTAR_OCULTO = !!(hk && hk.quiet);
+  try{
+    const cab = p.nombre + (R.disparo ? " dispara " : " ejecuta ") + H.nombre + (H.ram && !R.disparo ? " (−" + H.ram + " RAM)" : "") + (hk && hk.quiet ? " [quiet: los jugadores no lo ven]" : "");
+    if(R.armar){
+      p.armados = (p.armados || []).concat([{acc:S.acc, nombre:H.nombre, cond:String(S.cond).trim(), linea:H.linea}]);
+      anotar(cab + ": lo deja armado. Salta cuando: " + String(S.cond).trim() + ".", "ataque");
+      return;
     }
-  });
+    if(R.disparo) p.armados = (p.armados || []).filter((a, i) => i !== S.disparo);
+    if(R.manual || R.auto){ anotar(cab + ". " + (hk ? efectoSpec(hk) : H.a.e || ""), "ataque"); return; }
+    const extraTxt = hk.verbo === "PATCH" && S.patchTxt.trim() ? " Cambia: " + S.patchTxt.trim() + "." : hk.verbo === "FORCE" && S.forceTxt.trim() ? " Le obliga a: " + S.forceTxt.trim() + "." : "";
+    if(R.objeto){ anotar(cab + ": " + R.final + " contra " + R.dif + " → " + (R.exito ? "funciona. " + efectoSpec(hk) + extraTxt : "falla."), "ataque"); return; }
+    const algun = R.res.some(x => x.exito && !x.cadena);
+    R.res.forEach(x => {
+      if(x.muros){ anotar(cab + " → " + x.q.nombre + ": tiene " + (x.muros.total - x.muros.rotos) + " muros de H.I.E.L.O en pie; no le llega.", "ataque"); return; }
+      if(x.cadena && !algun) return;
+      const txt = cab + " → " + x.q.nombre + (x.cadena ? " (cadena, mitad del efecto)" : "") + ": " + R.final + " contra " + x.dif + " (" + x.def.desglose + " + carta)";
+      if(iceSalta(x.q, !x.exito)) R.iceSaltos.push({dueno:x.q, atacante:p});
+      if(!x.exito){ anotar(txt + " → resiste.", "ataque"); return; }
+      anotar(txt + " → le alcanza." + (hk.verbo === "PATCH" ? extraTxt : ""), "ataque");
+      const v = hk.verbo;
+      if(v === "DESTROY" && x.elec){
+        const e = x.elec;
+        cambiarVidaP(x.q, -e.d, H.nombre + ": " + R.nDados + "d6 = " + R.danyo + (e.ex ? " + " + e.E.extra + "d6 (" + e.E.motivos.join(", ") + ") = " + e.ex : "") + " eléctrico" +
+          (x.cadena ? ", mitad por la cadena" : "") + (e.E.resiste === "inmune" ? ", inmune al daño eléctrico" : e.E.resiste === "mitad" ? ", resiste la mitad" : "") + " (ignora la CB)", {sinCB:true});
+      }
+      if(v === "BURN") estadoA(x.q, "Ardiendo", x.cadena ? 1 : 3, null, H.nombre);
+      if(v === "BLOCK") bloquearA(x.q, S.bloqueo[x.q.id], hk.hold, p, H);
+      if(v === "FORCE") forzarA(x.q, S.force[x.q.id] || "otra", S.forceTxt, H);
+      if(v === "PATCH" && S.patchEstado) estadoA(x.q, S.patchEstado, undefined, null, H.nombre);
+      if(v === "READ"){
+        // detecta su BLACK.ICE: si acierta, sabe que hay uno; superando por 5, ve su carga. Uno con quiet solo se ve superando por 5.
+        const margen = R.final - x.dif, vistos = [];
+        conFicha(x.q.ficha, () => iceArmados().forEach(ic => {
+          if(ic.spec && ic.spec.quiet && margen < 5) return;
+          ic.detectado = Array.from(new Set((ic.detectado || []).concat([p.id])));
+          if(margen >= 5) ic.revelado = Array.from(new Set((ic.revelado || []).concat([p.id])));
+          vistos.push({nombre:ic.nombre, carga:margen >= 5 ? lineaSpec(Object.assign({}, ic.spec, {nombre:ic.nombre})) : ""});
+        }));
+        R.despues.push({v, q:x.q, sondeo:x.sondeo, ice:vistos});
+      }
+      if(v === "OWN") R.despues.push({v, q:x.q});
+    });
+  } finally { ANOTAR_OCULTO = false; }
 }
-function abrirHackeo(atkId, accId){
+function abrirHackeo(atkId, accId, opc){
+  opc = opc || {};
   const c = T.combate, p = participante(atkId);
   if(!p) return;
   const H0 = datosHackeo(p, accId);
   if(!H0){ toast("Ese hackeo no está disponible"); return; }
   const hk = H0.hk;
   const otros = c.participantes.filter(x => x.id !== p.id && !x.fuera), enemigos = otros.filter(x => x.tipo !== p.tipo);
-  const S = {atk:p.id, acc:accId, modo:"hackeo", objetivos:[], cadena:null, cartaA:"", cartasD:{}, difManual:"", dados:"", exdisk:false, muroDe:null};
+  const S = {atk:p.id, acc:accId, modo:"hackeo", objetivos:[], cadena:null, cartaA:"", cartasD:{}, difManual:"", dados:"", exdisk:false, muroDe:null,
+    extraD:{}, bloqueo:{}, force:{}, forceTxt:"", patchTxt:"", patchEstado:"", cond:"", disparo:opc.disparo};
   if(hk && hk.obj === "target"){ const prev = otros.find(x => x.id === p.ultimoObjetivo) || enemigos[0] || otros[0]; if(prev) S.objetivos = [prev.id]; }
   if(hk && hk.obj === "all") S.objetivos = enemigos.map(x => x.id);
   const velo = document.createElement("div");
@@ -9350,18 +9706,31 @@ function abrirHackeo(atkId, accId){
   function tecla(ev){ if(ev.key === "Escape" && !document.querySelector(".velo.dialogo")){ ev.preventDefault(); ev.stopPropagation(); cerrar(); } }
   document.addEventListener("keydown", tecla, true);
   const seg = (k, v, txt, sel, dis) => `<button type="button" class="btn${sel ? " on" : ""}" data-hkt="${k}" data-v="${esc(v)}"${dis ? " disabled" : ""}>${txt}</button>`;
-  const conDefensa = hk && grupoHk(hk) === "realidad" && ["target", "zone", "all"].includes(hk.obj);
+  const disparo = S.disparo !== undefined && S.disparo !== null;
+  const armar = hk && hk.wait && !disparo;
+  const conDefensa = hk && !armar && grupoHk(hk) === "realidad" && ["target", "zone", "all"].includes(hk.obj);
   function pintarTodo(){
     // los PNJ tiran su carta solos (el tecnomante y los objetivos que se defienden)
-    if(p.tipo === "pnj" && S.cartaA === "") S.cartaA = String(tirarCarta().v);
+    if(p.tipo === "pnj" && S.cartaA === "" && !armar) S.cartaA = String(tirarCarta().v);
     S.objetivos.forEach(id => { const q = participante(id); if(q && q.tipo === "pnj" && (S.cartasD[id] === undefined || S.cartasD[id] === "")) S.cartasD[id] = String(tirarCarta().v); });
     const H = datosHackeo(p, accId), tA = turnoDe(p);
-    let h = `<h3 id="hkTit">${esc(p.nombre)} ejecuta ${esc(H.nombre)}</h3>
+    const arm = disparo ? (p.armados || [])[S.disparo] : null;
+    let h = `<h3 id="hkTit">${esc(p.nombre)} ${disparo ? "dispara" : armar ? "arma" : "ejecuta"} ${esc(H.nombre)}</h3>
       <p class="atq-sub"><code>${esc(H.linea)}</code></p>
       <p class="atq-sub">${esc(hk ? efectoSpec(hk) + " " + resolucionSpec(hk) : (H.a.e || "Escrito a mano: el tracker solo gasta la RAM y lo apunta. Créalo con el constructor de la ficha para resolverlo aquí."))}</p>
-      <p class="atq-acc${H.ram !== null && H.ram > H.ramActual ? " mal" : ""}">RAM: cuesta ${H.ram === null ? "?" : H.ram} · tiene ${H.ramActual} · ${H.gasta ? "gasta la Acción (" + esc(textoAcciones(tA).toLowerCase()) + ")" : "no gasta la Acción"}</p>`;
-    if(H.exdisk && H.gasta && !tA.exdisk) h += `<label class="atq-check"><input type="checkbox" data-hk-check="exdisk"${S.exdisk ? " checked" : ""}> Sin gastar la Acción (dos Ex-Disk: una vez por turno)</label>`;
-    if(S.modo === "muro"){
+      ${disparo ? `<p class="atq-acc">Armado antes: ya pagó la RAM y la Acción. Salta cuando: <b>${esc(arm ? arm.cond : "")}</b></p>`
+        : `<p class="atq-acc${H.ram !== null && H.ram > H.ramActual ? " mal" : ""}">RAM: cuesta ${H.ram === null ? "?" : H.ram} · tiene ${H.ramActual} · ${H.gasta ? "gasta la Acción (" + esc(textoAcciones(tA).toLowerCase()) + ")" : "no gasta la Acción"}</p>`}
+      ${hk && hk.quiet ? `<p class="atq-nota0">quiet: lo que pase no llega al registro de las fichas de los jugadores.</p>` : ""}`;
+    if(!disparo && H.exdisk && H.gasta && !tA.exdisk) h += `<label class="atq-check"><input type="checkbox" data-hk-check="exdisk"${S.exdisk ? " checked" : ""}> Sin gastar la Acción (dos Ex-Disk: una vez por turno)</label>`;
+    if(armar){
+      h += `<p class="atq-nota">wait: ahora solo se arma. Gasta la RAM y la Acción, y queda en ${esc(p.nombre)} con un botón «Disparar» para cuando se cumpla la condición.</p>
+        <div class="atq-campos"><label class="ancho">Salta cuando…<input id="hkCond" value="${esc(S.cond)}" placeholder="p. ej. alguien cruce la puerta"></label></div>`;
+    } else if(S.modo === "desarmar"){
+      const q = participante(S.iceDe), ice = iceDe(q);
+      h += `<p class="atq-nota">Desarmar el BLACK.ICE de <b>${esc(q.nombre)}</b>${ice && (ice.x.revelado || []).includes(p.id) ? " (" + esc(ice.x.nombre) + ")" : ""}: Acción de Tecnomancia, Inteligencia + Tecnomancia + Carta contra ${ice ? 13 + num(ice.x.ram) : "?"}. No gasta RAM. Si falla, salta contra ${esc(p.nombre)}.</p>
+        <div class="atq-campos"><label>Carta del atacante<input id="hkCartaA" inputmode="numeric" value="${esc(S.cartaA)}" placeholder="2–11"></label>
+        <button type="button" class="btn" data-hkt="volver">Volver al hackeo</button></div>`;
+    } else if(S.modo === "muro"){
       const q = participante(S.muroDe), W = murosDe(q);
       h += `<p class="atq-nota">Romper un muro de H.I.E.L.O de <b>${esc(q.nombre)}</b> (${W.total - W.rotos} de ${W.total} en pie): Acción de Tecnomancia, Inteligencia + Tecnomancia + Carta contra ${W.dif}. No gasta RAM.</p>
         <div class="atq-campos"><label>Carta del atacante<input id="hkCartaA" inputmode="numeric" value="${esc(S.cartaA)}" placeholder="2–11"></label>
@@ -9373,13 +9742,17 @@ function abrirHackeo(atkId, accId){
       const sel = S.objetivos.map(participante).filter(Boolean);
       h += `<div class="atq-campos"><label>Carta del atacante<input id="hkCartaA" inputmode="numeric" value="${esc(S.cartaA)}" placeholder="2–11"></label>
         ${sel.map(q => { const W = murosDe(q);
-          return W.total > W.rotos ? `<span class="hk-muro">${esc(q.nombre)}: ${W.total - W.rotos} muro${W.total - W.rotos > 1 ? "s" : ""} de H.I.E.L.O en pie <button type="button" class="btn fina" data-hkt="muro" data-v="${esc(q.id)}">Romper un muro</button></span>`
-            : `<label>Carta de ${esc(q.nombre)}<input data-hk-carta="${esc(q.id)}" inputmode="numeric" value="${esc(S.cartasD[q.id] || "")}" placeholder="2–11"></label>`; }).join("")}</div>`;
+          const ice = iceDe(q), iceB = ice && (ice.x.detectado || []).includes(p.id) ? `<span class="hk-ice">${esc(q.nombre)}: BLACK.ICE detectado <button type="button" class="btn fina" data-hkt="desarmar" data-v="${esc(q.id)}">Desarmar (contra ${13 + num(ice.x.ram)})</button></span>` : "";
+          return (W.total > W.rotos && hk.verbo !== "READ" ? `<span class="hk-muro">${esc(q.nombre)}: ${W.total - W.rotos} muro${W.total - W.rotos > 1 ? "s" : ""} de H.I.E.L.O en pie <button type="button" class="btn fina" data-hkt="muro" data-v="${esc(q.id)}">Romper un muro</button></span>`
+            : `<label>Carta de ${esc(q.nombre)}${W.total > W.rotos ? " (sondeo: sus muros siguen en pie)" : ""}<input data-hk-carta="${esc(q.id)}" inputmode="numeric" value="${esc(S.cartasD[q.id] || "")}" placeholder="2–11"></label>`) + iceB; }).join("")}</div>`;
     } else if(hk && hk.obj === "obj" && grupoHk(hk) === "realidad"){
       h += `<div class="atq-campos"><label>Carta del atacante<input id="hkCartaA" inputmode="numeric" value="${esc(S.cartaA)}" placeholder="2–11"></label>
         <label>Otra dificultad<input id="hkDif" inputmode="numeric" value="${esc(S.difManual)}" placeholder="${13 + (hk.amp && hk.verbo !== "DESTROY" ? 2 * hk.amp : 0)}"></label></div>`;
     }
-    h += `<div id="hkRes"></div><div class="tk-botones"><button type="button" class="btn" data-hkt="cancelar">Cancelar</button><button type="button" class="btn principal" data-hkt="aplicar" id="hkAplicar">Aplicar</button></div>`;
+    if(hk && !armar && S.modo !== "muro" && hk.verbo === "PATCH") h += `<div class="atq-campos"><label class="ancho">Qué cambias<input id="hkPatchTxt" value="${esc(S.patchTxt)}" placeholder="p. ej. el suelo se vuelve hielo"></label>
+      ${hk.obj === "obj" ? "" : `<label>Estado para quien alcance<select id="hkPatchEst"><option value="">Ninguno</option>${ESTADOS_LISTA.filter(n => n !== "PEM").map(n => `<option${S.patchEstado === n ? " selected" : ""}>${n}</option>`).join("")}</select></label>`}</div>`;
+    if(hk && !armar && S.modo !== "muro" && hk.verbo === "FORCE") h += `<div class="atq-campos"><label class="ancho">${hk.obj === "obj" ? "Qué le obligas a hacer" : "Si eliges «otra cosa»: qué le obligas a hacer"}<input id="hkForceTxt" value="${esc(S.forceTxt)}" placeholder="p. ej. la puerta se abre"></label></div>`;
+    h += `<div id="hkRes"></div><div class="tk-botones"><button type="button" class="btn" data-hkt="cancelar">Cancelar</button><button type="button" class="btn principal" data-hkt="aplicar" id="hkAplicar">${armar ? "Armar" : "Aplicar"}</button></div>`;
     caja.innerHTML = h;
     pintarRes();
   }
@@ -9387,6 +9760,11 @@ function abrirHackeo(atkId, accId){
     const R = resolverHackeo(S), res = caja.querySelector("#hkRes"), btn = caja.querySelector("#hkAplicar");
     let h = "", listo = false;
     if(R.error) h = `<p class="aviso-conf">${esc(R.error)}</p>`;
+    else if(R.armar){ if(R.esperando) h = `<p class="atq-espera">${esc(R.esperando)}</p>`; else { h = `<p class="atq-res impacta">Queda armado: se dispara a mano cuando se cumpla.</p>`; listo = true; } }
+    else if(S.modo === "desarmar"){
+      if(R.esperando) h = `<p class="atq-espera">${esc(R.esperando)}</p>`;
+      else { h = `<p class="atq-res ${R.desarma ? "impacta" : "falla"}">${R.desarma ? "LO DESARMA SIN QUE SALTE" : "FALLA: EL BLACK.ICE SALTA"}: ${R.final} contra ${R.dif}</p>`; listo = true; }
+    }
     else if(S.modo === "muro"){
       if(R.esperando) h = `<p class="atq-espera">${esc(R.esperando)}</p>`;
       else { h = `<p class="atq-res ${R.rompe ? "impacta" : "falla"}">${R.rompe ? "ROMPE EL MURO" : "EL MURO AGUANTA"}: ${R.final} contra ${R.dif}</p>`; listo = true; }
@@ -9397,16 +9775,22 @@ function abrirHackeo(atkId, accId){
       R.res.forEach(x => {
         if(x.muros) h += `<p class="aviso">${esc(x.q.nombre)}: primero hay que romper sus muros de H.I.E.L.O.</p>`;
         else if(!x.espera && x.dif !== undefined && R.final !== undefined) h += `<p class="atq-res ${x.exito ? "impacta" : "falla"}">${esc(x.q.nombre)}${x.cadena ? " (cadena)" : ""}: ${x.exito ? "LE ALCANZA" : "RESISTE"} · ${R.final} contra ${x.dif} (${esc(x.def.desglose)} + carta${hk.amp && hk.verbo !== "DESTROY" ? " + " + 2 * hk.amp + " de amp" : ""})</p>`;
+        if(x.exito && x.opciones && hk.verbo === "BLOCK") h += `<div class="atq-campos"><label class="ancho">Qué le bloquea a ${esc(x.q.nombre)}<select data-hk-bloq="${esc(x.q.id)}"><option value="">Elige…</option>${x.opciones.map(o => `<option value="${esc(o.v)}"${S.bloqueo[x.q.id] === o.v ? " selected" : ""}>${esc(o.n)}</option>`).join("")}</select></label></div>`;
+        if(x.exito && x.opciones && hk.verbo === "FORCE") h += `<div class="atq-campos"><label class="ancho">Qué le obliga a hacer a ${esc(x.q.nombre)}<select data-hk-force="${esc(x.q.id)}">${x.opciones.map(o => `<option value="${esc(o.v)}"${S.force[x.q.id] === o.v ? " selected" : ""}>${esc(o.n)}</option>`).join("")}</select></label></div>`;
+        if(x.elec) h += `<p class="atq-res impacta">${esc(x.q.nombre)}: ${x.elec.d} de daño eléctrico (${R.danyo}${x.elec.ex ? " + " + x.elec.E.extra + "d6 [" + esc(x.elec.dadosEx) + "] por " + esc(x.elec.E.motivos.join(", ")) : ""}${x.cadena ? ", mitad por la cadena" : ""}${x.elec.E.resiste === "inmune" ? ", inmune" : x.elec.E.resiste === "mitad" ? ", resiste la mitad" : ""}). Ignora la CB, que no baja.</p>`;
       });
       if(R.esperando) h += `<p class="atq-espera">${esc(R.esperando)}</p>`;
       if(R.nDados){
         h += `<div class="atq-campos"><label>Dados de daño (${R.nDados}d6)<input id="hkDados" inputmode="numeric" value="${esc(S.dados)}"></label><button type="button" class="btn" data-hkt="tirar">Tirar ${R.nDados}d6</button></div>`;
-        if(R.dados) h += `<div class="atq-dados">${R.dados.d.map(v => `<i>${v}</i>`).join("")}</div><p class="atq-res impacta">${R.danyo} de daño que ignora la CB (la CB no baja)${hk.chain && S.cadena ? "; la cadena hace " + Math.floor(R.danyo / 2) : ""}.</p>`;
+        if(R.dados) h += `<div class="atq-dados">${R.dados.d.map(v => `<i>${v}</i>`).join("")}</div>`;
         else h += `<p class="atq-espera">${esc(R.esperandoDanyo)}</p>`;
       }
-      const V = hk && HK_VERBOS[hk.verbo];
-      if(V && V.estado && R.res.some(x => x.exito && !x.cadena)) h += `<p class="atq-nota0">Queda ${esc(V.estado.toLowerCase())} durante ${hk.hold ? "toda la rotación" : "1 turno"}.</p>`;
-      listo = !R.esperando && !R.esperandoDanyo;
+      if(R.esperandoEleccion) h += `<p class="atq-espera">${esc(R.esperandoEleccion)}</p>`;
+      const alcanza = R.res.some(x => x.exito && !x.cadena) || R.exito;
+      if(alcanza && hk.verbo === "BURN") h += `<p class="atq-nota0">Queda Ardiendo 3 turnos${hk.chain && S.cadena ? " (la cadena, 1)" : ""}.</p>`;
+      if(alcanza && hk.verbo === "OWN" && !R.objeto) h += `<p class="atq-nota0">Al aplicar eliges qué le haces hacer ahora mismo (puede atacarse a sí mismo).</p>`;
+      if(alcanza && hk.verbo === "READ" && !R.objeto) h += `<p class="atq-nota0">Al aplicar se abre lo que lee de su objetivo.</p>`;
+      listo = !R.esperando && !R.esperandoDanyo && !R.esperandoEleccion;
     }
     R.avisos.forEach(a => { h += `<p class="aviso">${esc(a)}</p>`; });
     res.innerHTML = h;
@@ -9425,14 +9809,25 @@ function abrirHackeo(atkId, accId){
       return pintarTodo(); }
     if(k === "cadena"){ if(S.cadena) S.objetivos = S.objetivos.filter(x => x !== S.cadena); S.cadena = b.dataset.v || null; if(S.cadena) S.objetivos.push(S.cadena); return pintarTodo(); }
     if(k === "muro"){ S.modo = "muro"; S.muroDe = b.dataset.v; S.cartaA = ""; return pintarTodo(); }
+    if(k === "desarmar"){ S.modo = "desarmar"; S.iceDe = b.dataset.v; S.cartaA = ""; return pintarTodo(); }
     if(k === "volver"){ S.modo = "hackeo"; S.cartaA = ""; return pintarTodo(); }
     if(k === "tirar"){ const R = resolverHackeo(S); S.dados = tirarDados(R.nDados || 0); return pintarTodo(); }
     if(k === "aplicar" && S._R){
-      antes((S.modo === "muro" ? "romper muro · " : "hackeo de ") + p.nombre);
-      aplicarHackeo(S, S._R);
+      const R = S._R;
+      antes((S.modo === "muro" ? "romper muro · " : S.modo === "desarmar" ? "desarmar BLACK.ICE · " : "hackeo de ") + p.nombre);
+      aplicarHackeo(S, R);
       if(S.objetivos[0]) p.ultimoObjetivo = S.objetivos[0];
       cerrar(); guardarTracker(); pintar();
-      toast(S.modo === "muro" ? (S._R.rompe ? "Muro roto" : "El muro aguanta") : H0.nombre + " ejecutado");
+      toast(S.modo === "muro" ? (R.rompe ? "Muro roto" : "El muro aguanta") : S.modo === "desarmar" ? (R.desarma ? "BLACK.ICE desarmado" : "¡El BLACK.ICE salta!") : R.armar ? H0.nombre + " armado" : H0.nombre + " ejecutado");
+      // READ enseña lo que lee; OWN deja elegir la acción forzada (uno detrás de otro)
+      (async () => {
+        for(const d of R.despues || []){
+          if(d.v === "READ"){ anotar(p.nombre + " lee a " + d.q.nombre + " con " + H0.nombre + (d.sondeo ? " (sondeo desde fuera de sus muros)" : "") + ".", "ataque"); await mostrarLectura(d.q, H0, d); }
+          else await accionForzada(p, d.q, H0);
+        }
+        for(const z of R.iceSaltos || []) await saltarIce(z.dueno, z.atacante, z.forzar);
+        guardarTracker(); pintar();
+      })();
     }
   });
   velo.addEventListener("input", ev => {
@@ -9440,15 +9835,75 @@ function abrirHackeo(atkId, accId){
     if(t.id === "hkCartaA") S.cartaA = t.value;
     else if(t.id === "hkDif") S.difManual = t.value;
     else if(t.id === "hkDados") S.dados = t.value;
+    else if(t.id === "hkCond") S.cond = t.value;
+    else if(t.id === "hkPatchTxt") S.patchTxt = t.value;
+    else if(t.id === "hkForceTxt") S.forceTxt = t.value;
     else if(t.dataset.hkCarta) S.cartasD[t.dataset.hkCarta] = t.value;
     else return;
     pintarRes();
     if(foco){ const el = caja.querySelector("#" + foco); if(el && el !== document.activeElement){ el.focus(); try{ el.setSelectionRange(pos, pos); }catch(e){} } }
   });
-  velo.addEventListener("change", ev => { if(ev.target.dataset.hkCheck === "exdisk"){ S.exdisk = ev.target.checked; pintarRes(); } });
+  velo.addEventListener("change", ev => {
+    const t = ev.target;
+    if(t.dataset.hkCheck === "exdisk") S.exdisk = t.checked;
+    else if(t.dataset.hkBloq) S.bloqueo[t.dataset.hkBloq] = t.value;
+    else if(t.dataset.hkForce) S.force[t.dataset.hkForce] = t.value;
+    else if(t.id === "hkPatchEst") S.patchEstado = t.value;
+    else return;
+    pintarRes();
+  });
   pintarTodo();
 }
-
+/* ---------- Hackeos de baraja como reacción en la ventana de ataque ----------
+   KILL: la carta se descarta y su dueño juega otra (un PNJ la tira sola). BOOST=n: +n a la carta. PUSH: pones una carta tuya en su lugar.
+   Gastan la RAM de quien lo usa (es una reacción: no gasta su Acción). Se puede usar sobre la carta del atacante o la del defensor. */
+function reaccionesDisponibles(){
+  const out = [];
+  T.combate.participantes.filter(x => !x.fuera && (x.ficha.hackeos || []).some(r => /::\s*(KILL|BOOST|PUSH)\b/i.test(String(r && r.nombre || "")) || (r && r.hk && ["KILL", "BOOST", "PUSH"].includes(r.hk.verbo)))).forEach(h => {
+    conFicha(h.ficha, () => {
+      const M = modeloCombate();
+      M.acciones.tecno.filter(a => a.hk && ["KILL", "BOOST", "PUSH"].includes(a.hk.verbo) && a.hk.obj === "target" && (a.ram === null || a.ram <= M.ram.actual))
+        .forEach(a => out.push({h, a, verbo:a.hk.verbo, n:a.hk.n, nombre:String(a.nombre || "").split(" ::")[0], ram:a.ram}));
+    });
+  });
+  return out;
+}
+function htmlReaccionesBaraja(S, p, q, hayD){
+  const L = reaccionesDisponibles();
+  if(!L.length) return "";
+  const cartas = [["cartaA", p]].concat(hayD && q ? [["cartaD", q]] : []);
+  return `<details class="atq-baraja"><summary>Hackeos de baraja (reacción) · ${L.length}</summary>
+    ${L.map(x => `<div class="atq-baraja-f"><b>${esc(x.h.nombre)}</b> · ${esc(x.nombre)} (${x.verbo}${x.verbo === "BOOST" ? "=" + x.n : ""}, ${x.ram === null ? "?" : x.ram} RAM)
+      ${x.verbo === "PUSH" ? `<input data-push="${esc(x.h.id + "|" + x.a.id)}" inputmode="numeric" placeholder="carta" style="width:64px">` : ""}
+      ${cartas.map(([campo, dueno]) => `<button type="button" class="btn fina" data-atq="baraja" data-quien="${esc(x.h.id)}" data-hacc="${esc(x.a.id)}" data-campo="${campo}"${S[campo] === "" && x.verbo !== "PUSH" ? " disabled" : ""}>sobre la carta de ${esc(dueno.nombre)}${S[campo] !== "" ? " (" + esc(S[campo]) + ")" : ""}</button>`).join("")}</div>`).join("")}
+    <p class="cm-vacio">KILL: la carta se descarta y su dueño juega otra (un PNJ la tira sola). BOOST: suma a la carta. PUSH: pones una carta tuya en su lugar. Gasta la RAM al momento, aunque luego canceles el ataque.</p></details>`;
+}
+function reaccionBaraja(S, b, p, q, autoCarta, caja){
+  const h = participante(b.dataset.quien), x = reaccionesDisponibles().find(r => r.h.id === b.dataset.quien && r.a.id === b.dataset.hacc);
+  if(!h || !x) return;
+  const campo = b.dataset.campo, dueno = campo === "cartaA" ? p : q;
+  if(!dueno) return;
+  let nueva;
+  if(x.verbo === "PUSH"){ const inp = caja.querySelector('[data-push="' + x.h.id + "|" + x.a.id + '"]'); nueva = inp ? String(inp.value).replace(/[^\d]/g, "") : ""; if(!nueva){ toast("Escribe la carta que pones"); return; } }
+  const antesV = S[campo];
+  if(x.ram) conFicha(h.ficha, () => { const K = datosCombate(); K.ram = Math.max(0, num(K.ram) - x.ram); });
+  ANOTAR_OCULTO = !!x.a.hk.quiet;
+  try{
+    if(x.verbo === "KILL"){
+      if(dueno.tipo === "pnj"){ autoCarta(campo, dueno.nombre); anotar(h.nombre + ": " + x.nombre + " (KILL, −" + x.ram + " RAM) anula la carta de " + dueno.nombre + " (" + antesV + "): juega otra, " + S[campo] + ".", "ataque"); }
+      else { S[campo] = ""; delete S.auto[campo]; anotar(h.nombre + ": " + x.nombre + " (KILL, −" + x.ram + " RAM) anula la carta de " + dueno.nombre + " (" + antesV + "): tiene que jugar otra.", "ataque"); }
+    } else if(x.verbo === "BOOST"){ S[campo] = String(num(antesV) + num(x.n)); anotar(h.nombre + ": " + x.nombre + " (BOOST=" + x.n + ", −" + x.ram + " RAM) sube la carta de " + dueno.nombre + " de " + antesV + " a " + S[campo] + ".", "ataque"); }
+    else { S[campo] = nueva; delete S.auto[campo]; anotar(h.nombre + ": " + x.nombre + " (PUSH, −" + x.ram + " RAM) pone un " + nueva + " en lugar de la carta de " + dueno.nombre + (antesV !== "" ? " (" + antesV + ")" : "") + ".", "ataque"); }
+  } finally { ANOTAR_OCULTO = false; }
+  guardarTracker();
+}
+/* Hackeos armados con wait: se disparan a mano cuando se cumple la condición */
+function htmlArmados(p){
+  const L = p.armados || [];
+  if(!L.length) return "";
+  return `<section class="tk-grupo tk-armados"><h3>Hackeos armados</h3>${L.map((a, i) => `<div class="tk-armado"><div><b>${esc(a.nombre)}</b><small>Salta cuando: ${esc(a.cond)}</small></div>
+    <button type="button" class="btn atq" data-t="hk-disparar" data-i="${i}">Disparar</button><button type="button" class="btn fina" data-t="hk-desarmar" data-i="${i}">Quitar</button></div>`).join("")}</section>`;
+}
 
 /* ================= ESTADOS CON EFECTO, PIEZAS QUE SE ACTIVAN Y ACCIONES DEL TURNO =================
    Las reglas de cada estado están en estados.js (ESTADOS_DEF). Aquí se aplican en el combate:
@@ -9576,9 +10031,11 @@ function tiradaLucha(p){
 /* Lucha contra Lucha: cada uno suma su carta (los PNJ la tiran solos). Gana quien hace la acción si iguala o supera al otro.
    Sin Lucha (nivel 0) se falla automáticamente: si es quien la hace, no lo consigue; si es el otro, no se resiste.
    Devuelve {gana, txt} o null si se cancela. */
-function tiradaEnfrentada(titulo, a, b, texto){
+function tiradaEnfrentada(titulo, a, b, texto, opc){
+  opc = Object.assign({tirada:tiradaLucha, comp:"Lucha", regla:"Cuerpo + Lucha + Carta de cada uno. Gana quien hace la acción si iguala o supera al otro."}, opc || {});
+  const tiradaLuchaLocal = opc.tirada;
   return new Promise(res => {
-    const lado = (p, rol) => ({p, rol, t:tiradaLucha(p), carta:"", auto:""});
+    const lado = (p, rol) => ({p, rol, t:tiradaLuchaLocal(p), carta:"", auto:""});
     const L = [lado(a, "hace la acción"), lado(b, "se resiste")];
     const tirar = x => { const c = tirarCarta(); x.carta = String(c.v); x.auto = c.txt; };
     L.forEach(x => { if(x.p.tipo === "pnj" && x.t.total !== null) tirar(x); });
@@ -9586,18 +10043,18 @@ function tiradaEnfrentada(titulo, a, b, texto){
     velo.className = "velo dialogo tk-atq";
     const res0 = () => {
       const [A, B] = L;
-      if(A.t.total === null) return {listo:true, gana:false, txt:A.p.nombre + " no tiene Lucha: falla automáticamente"};
-      if(B.t.total === null){ if(A.carta === "") return {listo:false}; return {listo:true, gana:true, txt:B.p.nombre + " no tiene Lucha: no se resiste"}; }
+      if(A.t.total === null) return {listo:true, gana:false, txt:A.p.nombre + " no tiene " + opc.comp + ": falla automáticamente"};
+      if(B.t.total === null){ if(A.carta === "") return {listo:false}; return {listo:true, gana:true, txt:B.p.nombre + " no tiene " + opc.comp + ": no se resiste"}; }
       if(A.carta === "" || B.carta === "") return {listo:false};
       const ta = A.t.total + num(A.carta), tb = B.t.total + num(B.carta);
-      return {listo:true, gana:ta >= tb, txt:"Lucha " + A.t.total + " + carta " + A.carta + " = " + ta + " contra " + B.t.total + " + carta " + B.carta + " = " + tb};
+      return {listo:true, gana:ta >= tb, txt:opc.comp + " " + A.t.total + " + carta " + A.carta + " = " + ta + " contra " + B.t.total + " + carta " + B.carta + " = " + tb};
     };
     const pintarE = () => {
       const r = res0();
       velo.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><h3>${esc(titulo)}</h3>${texto ? `<p>${esc(texto)}</p>` : ""}
-        <p class="cm-vacio">Cuerpo + Lucha + Carta de cada uno. Gana quien hace la acción si iguala o supera al otro.</p>
+        <p class="cm-vacio">${esc(opc.regla)}</p>
         <div class="tk-enf">${L.map((x, i) => `<div class="tk-enf-l"><b>${esc(x.p.nombre)}</b> <small>${esc(x.rol)}</small>
-          <span title="${esc((x.t.desglose || []).join("\n"))}">${x.t.total === null ? "sin Lucha: falla" : "Lucha " + x.t.total}</span>
+          <span title="${esc((x.t.desglose || []).join("\n"))}">${x.t.total === null ? "sin " + esc(opc.comp) + ": falla" : esc(opc.comp) + " " + x.t.total}</span>
           ${x.t.total === null ? "" : `<label>Carta <input data-enf="${i}" inputmode="numeric" value="${esc(x.carta)}" placeholder="?" style="width:58px"></label>
           ${x.auto ? `<small>${esc(x.auto)}</small>` : ""}${x.p.tipo === "pnj" ? `<button type="button" class="btn fina" data-enf-tirar="${i}">Otra</button>` : ""}`}</div>`).join("")}</div>
         <p class="tk-enf-r ${r.listo ? (r.gana ? "bien" : "mal") : ""}">${r.listo ? esc((r.gana ? "Lo consigue. " : "No lo consigue. ") + r.txt) : "Falta la carta."}</p>
@@ -9688,11 +10145,11 @@ function fotoCombate(){
     const R = resumenFicha(p.ficha), K = p.ficha.combate || {};
     pjs[id] = {nombre:p.nombre, vida:p.ficha["f-vidaActual"] === undefined ? "" : String(p.ficha["f-vidaActual"]), vidaN:R.vida, vidaMax:R.vidaMax,
       estados:(K.estados || []).map(s => Object.assign({}, s)), heridas:(p.heridas || []).map(h => Object.assign({}, h)), cbMenos:num(K.cbMenos),
-      ram:K.ram === undefined ? "" : K.ram, muerte:num(K.muerte), cont:K.cont || {}, estabilizado:!!p.ficha.estabilizado, fuera:!!p.fuera, carta:p.carta, turno:K.turno || null};
+      ram:K.ram === undefined ? "" : K.ram, ice:(K.ice || []).map(x => Object.assign({}, x)), muerte:num(K.muerte), cont:K.cont || {}, estabilizado:!!p.ficha.estabilizado, fuera:!!p.fuera, carta:p.carta, turno:K.turno || null};
   });
   const tP = participante(c.turno);
   return {activo:true, rot:c.rot, turno:tP ? tP.nombre : "", orden:c.participantes.filter(p => !p.fuera).map(p => ({n:p.nombre, pj:p.tipo === "pj", ini:totalIni(p)})),
-    registro:c.registro.slice(-80), pjs};
+    registro:c.registro.filter(r => !r.o).slice(-80), pjs};
 }
 function nubeCombateCambio(){
   if(!nubeLista() || !T.nube || !T.nube.codigo) return;
