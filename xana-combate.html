@@ -7106,6 +7106,12 @@ function modeloCombate(){
   // ---- Tecnomancia: hackeos cargados en las ranuras del ciberterminal en uso y chips de hackeo rápido (terminal.js)
   const TA = terminalActivo();
   const tTec = tirada("inteligencia", "Tecnomancia");
+  // Acciones de Tecnomancia por turno, aparte de la Acción normal (que también puede usarse para un hackeo):
+  // Neuropuerto 1; dos Ex-Disk o más, 1 más (con Neuropuerto, 2; sin él, un hackeo por turno sin gastar la Acción)
+  const exDisk = an.piezas.filter(({rec, p}) => !rec.secundario && !conflicto[rec.id] && p.n === "Ex-Disk").length;
+  M.tecnoPorTurno = (neuropuerto ? 1 : 0) + (exDisk >= 2 ? 1 : 0);
+  const textoCosteHack = M.tecnoPorTurno ? (M.tecnoPorTurno === 1 ? "Acción de Tecnomancia (1 por turno" : "Acción de Tecnomancia (" + M.tecnoPorTurno + " por turno") +
+    (neuropuerto ? ", Neuropuerto" : "") + (exDisk >= 2 ? ", dos Ex-Disk" : "") + ") o tu Acción" : "Acción";
   (D.hackeos || []).forEach((h, i) => {
     if(!String(h.nombre || "").trim()) return;
     const donde = h.donde || "ranura";
@@ -7114,7 +7120,7 @@ function modeloCombate(){
     const notas = [ce.txt ? "Coste " + ce.txt + "." : "", donde === "ranura" && TA && TA.cuenta("antena") ? "far=1 gratis (Antena de largo alcance)." : ""].filter(Boolean).join(" ");
     const hk = specDeFila(h);
     const acc = {id:"hack" + i, clase:"hackeo", nombre:h.nombre, origen:donde === "chip" ? "Hackeo rápido (chip)" : TA ? TA.n : "Ciberterminal", e:hk ? efectoSpec(hk) : h.efecto || "", tirada:tTec, ram:coste, notas, hk,
-      coste:neuropuerto ? "Acción de Tecnomancia (con el Neuropuerto, aparte de tu Acción)" : "Acción (Tecnomancia)",
+      coste:textoCosteHack,
       resolucion:hk ? resolucionSpec(hk) : "Contra VD13 si es un objeto, o contra Inteligencia + Tecnomancia + Carta del objetivo."};
     const motivo = terminalHk ? "Tus hackeos están bloqueados por un hackeo."
       : donde === "chip" ? tTec.falta || ""
@@ -8018,7 +8024,7 @@ function inicioTurno(p){
     const fin = K.estados.filter(s => s.hasta === p.id);
     if(fin.length){ K.estados = K.estados.filter(s => s.hasta !== p.id); anotar(q.nombre + ": se le pasa " + fin.map(s => s.n).join(", ") + ".", "estado"); } });
   p.ficha.combate = p.ficha.combate || {cont:{}, estados:[]};
-  p.ficha.combate.turno = {usado:0, extra:0, mov:false};       // turno nuevo: Movimiento y Acción enteros
+  p.ficha.combate.turno = {usado:0, extra:0, mov:false, tecno:0};       // turno nuevo: Movimiento, Acción y Acciones de Tecnomancia enteros
   efectosInicioTurno(p, msg);
   conFicha(p.ficha, () => {
     const C = calcular(), K = datosCombate();
@@ -8681,7 +8687,8 @@ function tarjetaAtaque(a, M, p){
 }
 /* Habilidad que se usa: qué hace, qué cuesta (Acción, RAM, usos) y si está gastada */
 function tarjetaHabilidad(a, M, tipo, p){
-  const quedaA = p ? accQueda(turnoDe(p)) : UNID, gasta = gastaAccion(a.coste), sinAcc = gasta && quedaA < UNID;
+  const quedaA = p ? accQueda(turnoDe(p)) : UNID, gasta = gastaAccion(a.coste);
+  const sinAcc = tipo === "tecno" && p ? !gastoTecno(p, M.tecnoPorTurno || 0) : gasta && quedaA < UNID;
   const q = a.cont ? a.cont.total - a.cont.usados : null;
   const chips = [];
   chips.push(`<span class="tk-tag ${tipo === "tecno" ? "tec" : tipo === "def" ? "def" : "act"}">${tipo === "tecno" ? "Tecnomancia" : tipo === "def" ? "Defensa" : "Activa"}</span>`);
@@ -8695,8 +8702,8 @@ function tarjetaHabilidad(a, M, tipo, p){
     <button type="button" class="btn" data-cm="gastar" data-k="${esc(a.cont.clave)}" data-nom="${esc(a.nombre || a.origen)}"${gasta ? ' data-accion="1"' : ""} ${q > 0 && !sinAcc ? "" : "disabled"}${sinAcc ? ' title="Gasta la Acción y ya la ha usado"' : ""}>Usar</button>
     <button type="button" class="btn fina" data-cm="reponer" data-k="${esc(a.cont.clave)}" data-nom="${esc(a.nombre || a.origen)}" ${a.cont.usados ? "" : "disabled"}>Reponer</button>`;
   if(tipo === "tecno" && a.ice) mandos += a.armado !== null ? `<span class="tk-tag ice-on">Armado · reserva ${a.ram} RAM</span><button type="button" class="btn fina" data-t="ice-desarmar" data-i="${a.armado}">Desarmar</button>`
-    : `<button type="button" class="btn atq" data-t="ice-armar" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Armarlo en combate gasta la Acción"' : ""}>Armar · Acción</button>`;
-  else if(tipo === "tecno") mandos += `<button type="button" class="btn atq" data-t="hackear" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Ya ha usado su Acción este turno"' : ""}>Ejecutar</button>`;
+    : `<button type="button" class="btn atq" data-t="ice-armar" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Armarlo en combate gasta la Acción"' : ""}>Armar</button>`;
+  else if(tipo === "tecno") mandos += `<button type="button" class="btn atq" data-t="hackear" data-acc="${esc(a.id)}" ${(a.ram && a.ram > M.ram.actual) || sinAcc ? "disabled" : ""}${sinAcc ? ' title="Ya ha usado su Acción y sus Acciones de Tecnomancia este turno"' : ""}>Ejecutar</button>`;
   if(a.act && a.rec){
     // pieza de ciberware que se activa: el botón gasta lo que diga, un uso, y la deja encendida su duración
     mandos = a.cont ? `<span class="tk-usos${q <= 0 ? " vacio" : ""}"><b>${q}</b>/${a.cont.total} ${esc(a.cont.etiqueta)} · por ${esc(a.cont.por)}</span>` : "";
@@ -8776,8 +8783,9 @@ function htmlDetalle(p){
         <button type="button" class="tk-acc-mov${tP.mov ? " usado" : ""}" data-t="mov" aria-pressed="${!!tP.mov}"><small>Movimiento</small><b>${tP.mov ? "Usado" : "Disponible"}</b><span>${M.mov.v} casillas</span></button>
         <div class="tk-acc-acc${quedaU <= 0 ? " usada" : quedaU < accTotal(tP) ? " parcial" : ""}"><small>Acción${num(tP.extra) ? "es (" + (1 + num(tP.extra)) + ")" : ""}</small><b>${esc(textoAcciones(tP))}</b><span class="tk-acc-barra">${barra}</span>
           ${cad.length ? `<span>Aún puede: ${esc([...new Set(cad.map(x => x.n + " (" + Math.floor(quedaU / x.c) + ")"))].join(", "))}</span>` : ""}</div>
+        ${M.tecnoPorTurno ? `<div class="tk-acc-acc${num(tP.tecno) >= M.tecnoPorTurno ? " usada" : num(tP.tecno) ? " parcial" : ""}"><small>Tecnomancia</small><b>${Math.max(0, M.tecnoPorTurno - num(tP.tecno))} de ${M.tecnoPorTurno}</b><span>Acciones de Tecnomancia aparte de la Acción</span></div>` : ""}
         <span class="tk-acc-b"><button type="button" class="btn fina" data-t="accion-extra" title="Para efectos que dan una Acción adicional este turno (p. ej. Sandevistan mkII)">+1 Acción extra</button>
-          <button type="button" class="btn fina" data-t="accion-reiniciar" ${num(tP.usado) || tP.mov || num(tP.extra) ? "" : "disabled"}>Reiniciar turno</button></span>
+          <button type="button" class="btn fina" data-t="accion-reiniciar" ${num(tP.usado) || tP.mov || num(tP.extra) || num(tP.tecno) ? "" : "disabled"}>Reiniciar turno</button></span>
       </section>
       <div class="tk-salud">
         <section class="tk-vida est-${V.nivel}" aria-label="Vida">
@@ -9055,7 +9063,7 @@ async function accion(b){
   if(b.dataset.t === "deshacer"){ deshacer(); return; }
   if(b.dataset.t === "mov" && sel){ antes("movimiento · " + sel.nombre); const t = turnoDe(sel); t.mov = !t.mov; anotar(sel.nombre + (t.mov ? ": usa su Movimiento." : ": recupera el Movimiento."), "turno"); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "accion-extra" && sel){ antes("acción extra · " + sel.nombre); const t = turnoDe(sel); t.extra = num(t.extra) + 1; anotar(sel.nombre + ": +1 Acción este turno.", "turno"); guardarTracker(); pintar(); return; }
-  if(b.dataset.t === "accion-reiniciar" && sel){ antes("reiniciar turno · " + sel.nombre); sel.ficha.combate.turno = {usado:0, extra:0, mov:false}; anotar(sel.nombre + ": se reinician su Movimiento y su Acción.", "turno"); guardarTracker(); pintar(); return; }
+  if(b.dataset.t === "accion-reiniciar" && sel){ antes("reiniciar turno · " + sel.nombre); sel.ficha.combate.turno = {usado:0, extra:0, mov:false, tecno:0}; anotar(sel.nombre + ": se reinician su Movimiento, su Acción y sus Acciones de Tecnomancia.", "turno"); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "ver-turno" && c && c.turno){ c.sel = c.turno; pintar(); return; }
   if(b.dataset.mover && sel){ const i = c.participantes.indexOf(sel), j = i + num(b.dataset.mover);
     if(j >= 0 && j < c.participantes.length){ antes("mover en el orden · " + sel.nombre); c.participantes.splice(i, 1); c.participantes.splice(j, 0, sel); anotar(sel.nombre + " cambia de posición en el orden (" + (j + 1) + "º).", "turno"); guardarTracker(); pintar(); } return; }
@@ -9067,10 +9075,10 @@ async function accion(b){
   if(b.dataset.t === "cartas-pnj" && c){ antes("cartas de los PNJ"); c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).forEach(x => cartaPnj(x)); ordenar();
     anotar("Cartas de iniciativa de los PNJ: " + c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).map(x => x.nombre + " " + x.carta).join(", ") + ".", "turno"); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "hackear" && sel){ abrirHackeo(sel.id, b.dataset.acc); return; }
-  if(b.dataset.t === "ice-armar" && sel){ const tP = turnoDe(sel); if(accQueda(tP) < UNID){ toast(sel.nombre + " ya ha usado su Acción"); return; }
+  if(b.dataset.t === "ice-armar" && sel){ const usa = gastoTecno(sel); if(!usa){ toast(sel.nombre + " ya ha usado su Acción y sus Acciones de Tecnomancia"); return; }
     antes("armar BLACK.ICE · " + sel.nombre); const r = conFicha(sel.ficha, () => armarIce(b.dataset.acc));
     if(!r.ok){ HIST.pop(); toast(r.motivo); return; }
-    tP.usado = num(tP.usado) + UNID; anotarIceArmado(sel, [r.a]); guardarTracker(); pintar(); return; }
+    gastarTecno(sel, usa); anotarIceArmado(sel, [r.a]); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "ice-desarmar" && sel){ antes("desarmar BLACK.ICE · " + sel.nombre); const x = conFicha(sel.ficha, () => quitarIce(num(b.dataset.i)));
     if(x){ ANOTAR_OCULTO = true; try{ anotar(sel.nombre + " desarma su " + x.nombre + " (vuelven " + x.ram + " RAM).", "recurso"); } finally { ANOTAR_OCULTO = false; } } guardarTracker(); pintar(); return; }
   if(b.dataset.t === "hk-disparar" && sel){ const a = (sel.armados || [])[num(b.dataset.i)]; if(!a) return;
@@ -9373,9 +9381,23 @@ function datosHackeo(p, accId){
     if(!a) return null;
     const exd = piezasInstaladas().filter(x => !x.conflicto && x.p.n === "Ex-Disk").length;
     return {a, hk:a.hk || null, nombre:String(a.nombre || "").split(" ::")[0], linea:a.nombre, total:a.tirada && a.tirada.total !== null ? a.tirada.total : null,
-      desglose:a.tirada ? a.tirada.desglose : [], ram:a.ram, ramActual:M.ram.actual, gasta:gastaAccion(a.coste), exdisk:exd >= 2};
+      desglose:a.tirada ? a.tirada.desglose : [], ram:a.ram, ramActual:M.ram.actual, tecnoTotal:M.tecnoPorTurno || 0, exdisk:exd >= 2};
   });
 }
+/* Qué gasta una acción de Tecnomancia (hackeo, romper un muro, desarmar o armar un BLACK.ICE): primero una Acción de Tecnomancia
+   si le quedan (Neuropuerto, dos Ex-Disk), si no la Acción normal. preferirAccion: usar la Acción normal aunque queden de Tecnomancia. */
+function tecnoTurno(p, total){
+  const tA = turnoDe(p);
+  if(total === undefined) total = conFicha(p.ficha, () => modeloCombate().tecnoPorTurno || 0);
+  return {total, usadas:num(tA.tecno), quedan:Math.max(0, total - num(tA.tecno)), accion:accQueda(tA) >= UNID};
+}
+function gastoTecno(p, total, preferirAccion){
+  const t = tecnoTurno(p, total);
+  if(t.quedan > 0 && !(preferirAccion && t.accion)) return "tecno";
+  return t.accion ? "accion" : null;
+}
+function gastarTecno(p, usa){ const tA = turnoDe(p); if(usa === "tecno") tA.tecno = num(tA.tecno) + 1; else if(usa === "accion") tA.usado = num(tA.usado) + UNID; }
+const textoGastoTecno = (usa, t) => usa === "tecno" ? "gasta una Acción de Tecnomancia (le quedan " + (t.quedan - 1) + " de " + t.total + ")" : usa === "accion" ? "gasta la Acción" : "no le queda Acción ni Acción de Tecnomancia";
 function murosDe(q){
   return conFicha(q.ficha, () => {
     const pers = Math.min(3, piezasInstaladas().filter(x => !x.conflicto && x.p.n === "H.I.E.L.O personal").length);
@@ -9546,8 +9568,9 @@ function resolverHackeo(S){
   if(!H) return {error:"Ese hackeo ya no está disponible."};
   const R = {H, p, res:[], avisos:[]}, hk = H.hk, tA = turnoDe(p);
   R.disparo = S.disparo !== undefined && S.disparo !== null;
-  R.sinAccion = R.disparo || !H.gasta || (S.exdisk && H.exdisk && !tA.exdisk);
-  if(!R.sinAccion && accQueda(tA) < UNID) R.avisos.push("Ya ha usado la Acción este turno.");
+  R.tecno = tecnoTurno(p, H.tecnoTotal);
+  R.usa = R.disparo ? "" : gastoTecno(p, H.tecnoTotal, S.usarAccion);
+  if(!R.disparo && !R.usa) R.avisos.push("Ya ha usado su Acción y sus Acciones de Tecnomancia este turno.");
   if(S.modo === "muro"){
     const q = participante(S.muroDe), W = q ? murosDe(q) : null;
     if(!W || W.total <= W.rotos) return Object.assign(R, {error:"No le quedan muros en pie."});
@@ -9623,7 +9646,7 @@ function resolverHackeo(S){
 function aplicarHackeo(S, R){
   const {H, p} = R, hk = H.hk, tA = turnoDe(p);
   R.despues = [];
-  if(R.sinAccion){ if(!R.disparo && S.exdisk && H.exdisk && H.gasta) tA.exdisk = true; } else tA.usado = num(tA.usado) + UNID;
+  if(!R.disparo) gastarTecno(p, R.usa);
   R.iceSaltos = [];
   if(S.modo === "muro"){
     anotar(p.nombre + " ataca un muro de H.I.E.L.O de " + R.q.nombre + ": " + H.total + " + carta " + S.cartaA + " = " + R.final + " contra " + R.dif + " → " + (R.rompe ? "lo rompe (" + (R.W.total - R.W.rotos - 1) + " en pie)." : "aguanta."), "ataque");
@@ -9694,7 +9717,7 @@ function abrirHackeo(atkId, accId, opc){
   const hk = H0.hk;
   const otros = c.participantes.filter(x => x.id !== p.id && !x.fuera), enemigos = otros.filter(x => x.tipo !== p.tipo);
   const S = {atk:p.id, acc:accId, modo:"hackeo", objetivos:[], cadena:null, cartaA:"", cartasD:{}, difManual:"", dados:"", exdisk:false, muroDe:null,
-    extraD:{}, bloqueo:{}, force:{}, forceTxt:"", patchTxt:"", patchEstado:"", cond:"", disparo:opc.disparo};
+    extraD:{}, bloqueo:{}, force:{}, forceTxt:"", patchTxt:"", patchEstado:"", cond:"", disparo:opc.disparo, usarAccion:false};
   if(hk && hk.obj === "target"){ const prev = otros.find(x => x.id === p.ultimoObjetivo) || enemigos[0] || otros[0]; if(prev) S.objetivos = [prev.id]; }
   if(hk && hk.obj === "all") S.objetivos = enemigos.map(x => x.id);
   const velo = document.createElement("div");
@@ -9719,9 +9742,10 @@ function abrirHackeo(atkId, accId, opc){
       <p class="atq-sub"><code>${esc(H.linea)}</code></p>
       <p class="atq-sub">${esc(hk ? efectoSpec(hk) + " " + resolucionSpec(hk) : (H.a.e || "Escrito a mano: el tracker solo gasta la RAM y lo apunta. Créalo con el constructor de la ficha para resolverlo aquí."))}</p>
       ${disparo ? `<p class="atq-acc">Armado antes: ya pagó la RAM y la Acción. Salta cuando: <b>${esc(arm ? arm.cond : "")}</b></p>`
-        : `<p class="atq-acc${H.ram !== null && H.ram > H.ramActual ? " mal" : ""}">RAM: cuesta ${H.ram === null ? "?" : H.ram} · tiene ${H.ramActual} · ${H.gasta ? "gasta la Acción (" + esc(textoAcciones(tA).toLowerCase()) + ")" : "no gasta la Acción"}</p>`}
+        : `<p class="atq-acc${(H.ram !== null && H.ram > H.ramActual) || !gastoTecno(p, H.tecnoTotal, S.usarAccion) ? " mal" : ""}">RAM: cuesta ${H.ram === null ? "?" : H.ram} · tiene ${H.ramActual} · ${esc(textoGastoTecno(gastoTecno(p, H.tecnoTotal, S.usarAccion), tecnoTurno(p, H.tecnoTotal)))}</p>`}
       ${hk && hk.quiet ? `<p class="atq-nota0">quiet: lo que pase no llega al registro de las fichas de los jugadores.</p>` : ""}`;
-    if(!disparo && H.exdisk && H.gasta && !tA.exdisk) h += `<label class="atq-check"><input type="checkbox" data-hk-check="exdisk"${S.exdisk ? " checked" : ""}> Sin gastar la Acción (dos Ex-Disk: una vez por turno)</label>`;
+    { const tt = tecnoTurno(p, H.tecnoTotal);
+      if(!disparo && tt.quedan > 0 && tt.accion) h += `<label class="atq-check"><input type="checkbox" data-hk-check="accion"${S.usarAccion ? " checked" : ""}> Usar su Acción normal en vez de una Acción de Tecnomancia</label>`; }
     if(armar){
       h += `<p class="atq-nota">wait: ahora solo se arma. Gasta la RAM y la Acción, y queda en ${esc(p.nombre)} con un botón «Disparar» para cuando se cumpla la condición.</p>
         <div class="atq-campos"><label class="ancho">Salta cuando…<input id="hkCond" value="${esc(S.cond)}" placeholder="p. ej. alguien cruce la puerta"></label></div>`;
@@ -9793,6 +9817,7 @@ function abrirHackeo(atkId, accId, opc){
       listo = !R.esperando && !R.esperandoDanyo && !R.esperandoEleccion;
     }
     R.avisos.forEach(a => { h += `<p class="aviso">${esc(a)}</p>`; });
+    if(!R.error && !R.disparo && !R.usa) listo = false;
     res.innerHTML = h;
     btn.disabled = !listo;
     S._R = listo ? R : null;
@@ -9845,7 +9870,7 @@ function abrirHackeo(atkId, accId, opc){
   });
   velo.addEventListener("change", ev => {
     const t = ev.target;
-    if(t.dataset.hkCheck === "exdisk") S.exdisk = t.checked;
+    if(t.dataset.hkCheck === "accion"){ S.usarAccion = t.checked; pintarTodo(); return; }
     else if(t.dataset.hkBloq) S.bloqueo[t.dataset.hkBloq] = t.value;
     else if(t.dataset.hkForce) S.force[t.dataset.hkForce] = t.value;
     else if(t.id === "hkPatchEst") S.patchEstado = t.value;

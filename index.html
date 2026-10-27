@@ -7521,6 +7521,12 @@ function modeloCombate(){
   // ---- Tecnomancia: hackeos cargados en las ranuras del ciberterminal en uso y chips de hackeo rápido (terminal.js)
   const TA = terminalActivo();
   const tTec = tirada("inteligencia", "Tecnomancia");
+  // Acciones de Tecnomancia por turno, aparte de la Acción normal (que también puede usarse para un hackeo):
+  // Neuropuerto 1; dos Ex-Disk o más, 1 más (con Neuropuerto, 2; sin él, un hackeo por turno sin gastar la Acción)
+  const exDisk = an.piezas.filter(({rec, p}) => !rec.secundario && !conflicto[rec.id] && p.n === "Ex-Disk").length;
+  M.tecnoPorTurno = (neuropuerto ? 1 : 0) + (exDisk >= 2 ? 1 : 0);
+  const textoCosteHack = M.tecnoPorTurno ? (M.tecnoPorTurno === 1 ? "Acción de Tecnomancia (1 por turno" : "Acción de Tecnomancia (" + M.tecnoPorTurno + " por turno") +
+    (neuropuerto ? ", Neuropuerto" : "") + (exDisk >= 2 ? ", dos Ex-Disk" : "") + ") o tu Acción" : "Acción";
   (D.hackeos || []).forEach((h, i) => {
     if(!String(h.nombre || "").trim()) return;
     const donde = h.donde || "ranura";
@@ -7529,7 +7535,7 @@ function modeloCombate(){
     const notas = [ce.txt ? "Coste " + ce.txt + "." : "", donde === "ranura" && TA && TA.cuenta("antena") ? "far=1 gratis (Antena de largo alcance)." : ""].filter(Boolean).join(" ");
     const hk = specDeFila(h);
     const acc = {id:"hack" + i, clase:"hackeo", nombre:h.nombre, origen:donde === "chip" ? "Hackeo rápido (chip)" : TA ? TA.n : "Ciberterminal", e:hk ? efectoSpec(hk) : h.efecto || "", tirada:tTec, ram:coste, notas, hk,
-      coste:neuropuerto ? "Acción de Tecnomancia (con el Neuropuerto, aparte de tu Acción)" : "Acción (Tecnomancia)",
+      coste:textoCosteHack,
       resolucion:hk ? resolucionSpec(hk) : "Contra VD13 si es un objeto, o contra Inteligencia + Tecnomancia + Carta del objetivo."};
     const motivo = terminalHk ? "Tus hackeos están bloqueados por un hackeo."
       : donde === "chip" ? tTec.falta || ""
