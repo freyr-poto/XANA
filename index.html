@@ -486,7 +486,7 @@
   .cw-pick,.cw-fijo,.cw-paso{grid-area:c;min-width:0}
   .cw-pick{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:40px;text-align:left;padding:7px 12px;
     border:1px solid var(--hair);border-radius:7px;background:var(--fondo);color:var(--hueso)}
-  .cw-pick .nom{font-size:14.5px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+  .cw-pick .nom{font-size:14.5px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;flex:1 1 auto;min-width:9ch}
   .cw-pick .sub{font-size:12.5px;color:var(--sec);white-space:nowrap}
   .cw-pick .sub::after{content:" ▾"}
   .st-libre .cw-pick .nom{font-weight:500;color:var(--sec)}
@@ -773,6 +773,8 @@
   .cw-fbc{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 4px;width:100%}
   .cw-escena.enfocada .cw-fbc{display:none}
   .cw-mej-btn{margin-top:8px}
+  .cw-amp-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+  .cw-amp-btns .cw-pick{width:auto}
   .mej-linea{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 0}
   .tag.mejora{background:rgba(232,190,53,.14);border:1px solid rgba(232,190,53,.55);color:#F2D27A}
   .mej-modal{max-width:620px}
@@ -3394,8 +3396,11 @@ function etiquetas(p, rec){
     }else escalaConfig(p).forEach(x => t.push(`<span class="tag ${x.cls}" title="${x.cls === "hum" ? "Coste de humanidad" : "Precio"}">${esc(x.t)}</span>`));
     return `<span class="tags">${t.join("")}</span>`;
   }
+  // instalada: lo que cuesta de verdad (de serie del androide, mejora de técnico de humanidad…)
+  if(rec && rec.androide){ t.push(`<span class="tag precio" title="De serie por ser androide">de serie</span>`); t.push(tagHum(0)); return `<span class="tags">${t.join("")}</span>`; }
+  const hum = rec ? costeRec(rec).hum : num(p.h);
   t.push(p.c ? `<span class="tag precio" title="Precio">${fmtC(precioDe(p))}</span>` : `<span class="tag precio vacio" title="Precio">sin precio</span>`);
-  t.push(tagHum(num(p.h)));
+  t.push(tagHum(hum));
   return `<span class="tags">${t.join("")}</span>`;
 }
 /* Cómo escala el coste de una pieza configurable, tal como lo da el catálogo */
@@ -3759,7 +3764,7 @@ function ranura(E, c, lugar, rec, opc){
     control = `<div class="cw-fijo"><span class="nom">${esc(p.n)}</span><span class="sub">de serie: todo el mundo lo lleva</span></div>`;
   }else if(rec && rec.androide && esAndroide()){
     control = `<button type="button" class="cw-pick" aria-haspopup="dialog" aria-expanded="false" ${attrs({cont:c.id, rec:rec.id})}>
-      <span class="nom">${esc(nombreInstalado(p, rec))}</span><span class="sub">de serie (androide): sin humanidad ni créditos · Sustituir</span></button>`;
+      <span class="nom">${esc(nombreInstalado(p, rec))}</span><span class="sub" title="De serie por ser androide: sin humanidad ni créditos. Se puede sustituir por otro (que se paga), pero no retirar.">De serie · Sustituir</span></button>`;
   }else if(integrado){
     control = `<div class="cw-fijo"><span class="nom">${esc(p.n)}</span><span class="sub">${rec.fbc === "cuerpo" ? "irreversible" : "parte del cuerpo"}</span></div>`;
   }else{
@@ -3863,13 +3868,33 @@ function bloqueDedos(E, c, lado){
     <div class="cw-dedos-cuerpo"><figure>${manoSVG(c, E, lado)}<figcaption>${esc(c.mano)}${c.ctx.includes("brazo1") ? "" : "<br>Sin ciberbrazo: solo dedos que no lo necesiten"}</figcaption></figure>
     <div class="cw-dedos-filas">${filas.join("")}</div></div></section>`;
 }
+/* Borgware que amplía una región: plazas de ojos, brazos o piernas (capacidad) o ranuras extra de ciberaudio o neurales
+   (ranurasExtra: Panel de sensores, Córtex Frontal Sintético). «Ampliar con borgware» lo instala sin ir a Borgware,
+   y cada pieza puesta tiene su «Retirar» al lado. */
+const ampliaPieza = (p, que) => !!p && ((p.capacidad && p.capacidad[que]) || (p.ranurasExtra && p.ranurasExtra[que]));
+function botonesAmpliar(E, que, mas){
+  const puestas = E.lista.filter(r => !r.secundario && ampliaPieza(defDe(r), que));
+  const hay = LISTA_PIEZAS.some(p => ampliaPieza(p, que) && !puestas.some(r => r.k === p.k && !p.repetible));
+  return `<div class="cw-amp-btns">${puestas.map(r => esIntegradoFBC(r) ? "" :
+      `<button type="button" class="cw-quitar" data-quitar="${esc(r.id)}" title="Retirar ${esc(defDe(r).n)} (borgware)">Retirar ${esc(defDe(r).n)}</button>`).join("")}${
+    hay ? `<button type="button" class="cw-pick cw-pick-sec" data-amplia="${que}"><span class="nom">Ampliar con borgware</span><span class="sub">${esc(mas)}</span></button>` : ""}</div>`;
+}
 function lineaCapacidad(E, org){
   const cap = E.cap[org];
   const nombre = {ojo:"ojos", brazo:"brazos", pierna:"piernas"}[org];
   const fuentes = cap.fuentes.map(f => "+" + f.v + " " + f.n).join(", ");
-  const hay = LISTA_PIEZAS.some(p => p.capacidad && p.capacidad[org]);
   return `<div class="cw-capacidad"><div><b>${plural(cap.total, "plaza de " + nombre.replace(/s$/, ""), "plazas de " + nombre)}</b><span>${cap.base} de serie${fuentes ? " · " + esc(fuentes) : ""}</span></div>${
-    hay ? `<button type="button" class="cw-pick cw-pick-sec" data-amplia="${org}"><span class="nom">Ampliar con borgware</span><span class="sub">más ${nombre}</span></button>` : ""}</div>`;
+    botonesAmpliar(E, org, "más " + nombre)}</div>`;
+}
+/* Ranuras extra de equipo neuronal o de ciberaudio que da el borgware */
+function lineaRanurasExtra(E, cat){
+  const c = E.cont["op:" + cat];
+  if(!c) return "";
+  const fuentes = E.lista.filter(r => !r.secundario && defDe(r) && defDe(r).ranurasExtra && defDe(r).ranurasExtra[cat]).map(r => "+" + defDe(r).ranurasExtra[cat] + " " + defDe(r).n);
+  if(!fuentes.length && !LISTA_PIEZAS.some(p => ampliaPieza(p, cat))) return "";
+  const nombre = cat === "neural" ? "equipo neuronal" : "ciberaudio";
+  return `<div class="cw-capacidad"><div><b>${plural(c.cap, "ranura de " + nombre, "ranuras de " + nombre)}</b><span>${c.cap - (c.extra || 0)} de serie${fuentes.length ? " · " + esc(fuentes.join(", ")) : ""}</span></div>${
+    botonesAmpliar(E, cat, "más ranuras")}</div>`;
 }
 /* Recubrimiento del implante: uno por implante, independiente en cada miembro, sin ranura.
    Solo aparece si el catálogo tiene recubrimientos para ese tipo de implante. */
@@ -3928,14 +3953,14 @@ function panelRegion(id, E){
           <b>${z.recs.length}</b><button type="button" class="pm" data-zocalos="1" ${z.recs.length < z.tope ? "" : "disabled"} aria-label="Añadir un zócalo">+</button>
           <span class="sub">de ${z.tope} posibles${z.incluidos ? ", más " + z.incluidos + " del IETS" : ""}</span></div>
         <div class="cw-det">${etiquetas(PIEZAS["base|Zócalo para chips"])}<p class="mec">${esc(PIEZAS["base|Zócalo para chips"].m)}</p></div></div>`;
-      return rejilla([
+      return lineaRanurasExtra(E, "neural") + rejilla([
         tarjeta("Sistema neuronal", "", bloqueUnico(E, C["sistema:neural"], "Implante", "IETS", "De serie") +
           incluidosHTML(E, "cabeza") + (C["op:neural"] ? bloqueOpciones(E, C["op:neural"]) : `<p class="cw-nota-bloque">Sin IETS no hay ranuras de equipo neuronal.</p>`)),
         tarjeta("Zócalos y chipware", "", zoc + (C["op:chips"] ? bloqueOpciones(E, C["op:chips"]) : `<p class="cw-nota-bloque">Sin zócalos no hay ranuras de chip.</p>`))
       ]);
     }
     case "auditivo":
-      return rejilla([
+      return lineaRanurasExtra(E, "audio") + rejilla([
         tarjeta("Ciberaudio", "", bloqueUnico(E, C["sistema:audio"], "Equipo", "Sin equipo de ciberaudio", "Instalar equipo") +
           (C["op:audio"] ? bloqueOpciones(E, C["op:audio"], "Opciones de ciberaudio" + (C["op:audio"].extra ? " (+" + C["op:audio"].extra + " del panel de sensores)" : "")) : `<p class="cw-nota-bloque">Sin equipo de ciberaudio no hay ranuras de opciones.</p>`))
       ]);
@@ -4094,8 +4119,8 @@ function abrirSelector(b){
     const org = b.dataset.amplia;
     const items = ["libre:borg"].flatMap(cid => {
       const op = opcionesPara(cid);
-      return op.validas.filter(v => v.p.capacidad && v.p.capacidad[org]).map(v => ({k:v.p.k, n:v.p.n, p:v.p, desc:v.p.m, cont:cid}))
-        .concat(op.no.filter(x => x.p.capacidad && x.p.capacidad[org]).map(x => ({k:x.p.k, n:x.p.n, p:x.p, desc:x.p.m, motivo:x.motivo})));
+      return op.validas.filter(v => ampliaPieza(v.p, org)).map(v => ({k:v.p.k, n:v.p.n, p:v.p, desc:v.p.m, cont:cid}))
+        .concat(op.no.filter(x => ampliaPieza(x.p, org)).map(x => ({k:x.p.k, n:x.p.n, p:x.p, desc:x.p.m, motivo:x.motivo})));
     });
     return abrirPicker(b, {titulo:"Ampliar capacidad", items, onPick:x => ejecutar(() => instalar(x.k, x.cont))});
   }
