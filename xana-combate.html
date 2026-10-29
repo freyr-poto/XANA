@@ -103,6 +103,7 @@
   .td-buscar{flex:1;min-width:180px}
   .td-gratis{font-size:13px;color:var(--apagado);display:flex;gap:6px;align-items:center;white-space:nowrap}
   .td-gratis input{width:16px;height:16px}
+  .td-gratis[hidden]{display:none}
   .td-lista{overflow:auto;flex:1;padding-right:4px}
   .td-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:6px;align-items:start}
   .td-grupo h4{grid-column:1/-1;margin:14px 0 0;font-size:13px;color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
@@ -121,6 +122,8 @@
   .td-compra input[data-td-precio]{width:80px}
   .td-precio{font-weight:600;color:var(--ambar)}
   .td-falta{color:var(--rojo);font-size:12px}
+  .td-deshacer{margin-top:6px;font-size:12px;color:var(--apagado);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .td-venta .td-falta{color:var(--apagado)}
 
   .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
   .stat{background:var(--panel-alto);border:1px solid var(--linea);border-radius:9px;padding:9px 7px;text-align:center}
@@ -6648,7 +6651,7 @@ function pintarMenuMejoras(){
    Lo que ya estaba instalado o puesto antes de la tienda cuenta como pagado.
    En el modo creación se elige libremente, como siempre (sin comprar ni apuntar posesiones).
    D["f-dinero"]: un número (créditos). */
-const CATS_TIENDA = [["ciber", "Ciberware"], ["armas", "Armas"], ["municion", "Munición"], ["consumibles", "Consumibles"], ["ropa", "Ropa y equipo"], ["terminales", "Terminales"], ["hardware", "Hardware"]];
+const CATS_TIENDA = [["ciber", "Ciberware"], ["armas", "Armas"], ["municion", "Munición"], ["consumibles", "Consumibles"], ["ropa", "Ropa y equipo"], ["terminales", "Terminales"], ["hardware", "Hardware"], ["vender", "Vender"]];
 const ZONAS_TIENDA = {neural:"Sistema neuronal", chips:"Chips", optica:"Ciberópticas", audio:"Ciberaudio", brazo:"Brazos y manos", pierna:"Piernas",
   interno:"Interno", externo:"Externo", moda:"Moda", borg:"Borgware", fbc:"Cuerpos completos"};
 
@@ -6778,7 +6781,83 @@ function comprar(cat, id, o){
   else if(cat === "terminales") P.terminales.push(id);
   else if(cat === "hardware") P.hardware.push(id);
   if(total > 0) ponerDinero(leerDinero() - total);
+  anotarCompra(cat, id, art.cfg ? Number(o.valor) : undefined, n, total);
   return {ok:true, total, n, art};
+}
+
+/* ---------- Vender (deshacer una compra): se devuelve lo que se pagó ----------
+   D.compras: [{cat, id, v (versión del ciberware), n (unidades o cajas), pagado}] — lo comprado en la tienda.
+   Al vender se devuelve lo pagado por esas unidades (las últimas compradas primero); lo que no consta (de antes de la
+   tienda, botín) devuelve 0. Solo se vende lo que no está en uso. */
+function datosCompras(d){
+  d = d || D;
+  if(!Array.isArray(d.compras)) d.compras = [];
+  d.compras = d.compras.filter(c => c && typeof c.cat === "string" && typeof c.id === "string" && num(c.n) > 0);
+  return d.compras;
+}
+function anotarCompra(cat, id, v, n, pagado){
+  const L = datosCompras();
+  L.push(Object.assign({cat, id, n, pagado}, v !== undefined ? {v} : {}));
+  if(L.length > 300) L.splice(0, L.length - 300);
+}
+const mismaCompra = (c, cat, id, v) => c.cat === cat && c.id === id && (cat !== "ciber" || (c.v === undefined ? undefined : Number(c.v)) === (v === undefined ? undefined : Number(v)));
+/* Lo que se devolvería por «cantidad» unidades (y, con gastar, se apunta como devuelto) */
+function reembolso(cat, id, v, cantidad, gastar){
+  const L = datosCompras();
+  let queda = cantidad, total = 0;
+  for(let i = L.length - 1; i >= 0 && queda > 0; i--){
+    const c = L[i];
+    if(!mismaCompra(c, cat, id, v)) continue;
+    const coge = Math.min(queda, num(c.n)), unidad = num(c.pagado) / num(c.n);
+    total += unidad * coge; queda -= coge;
+    if(gastar){ c.pagado = num(c.pagado) - unidad * coge; c.n = num(c.n) - coge; }
+  }
+  if(gastar) datosCompras();
+  return Math.round(total);
+}
+/* Lo que se puede vender: lo que tienes y no estás usando */
+function vendibles(){
+  const P = datosPosee(), out = [];
+  const contar = (l, clave) => { const c = new Map(); l.forEach(x => { const k = clave(x); c.set(k, (c.get(k) || 0) + 1); }); return c; };
+  contar(P.ciber, x => x.k + "#" + (x.cfg ? x.cfg.valor : "")).forEach((n, k) => {
+    const [id, v] = k.split("#"), p = PIEZAS[id]; if(!p) return;
+    out.push({cat:"ciber", id, v:v === "" ? undefined : Number(v), n, nombre:p.n + (v !== "" && esConfigurable(p) ? " (" + etiquetaValor(p, Number(v)) + ")" : ""), grupo:"Ciberware por instalar"}); });
+  [["ropa", "Ropa y accesorios guardados", id => EQUIPO_DEF[id] && EQUIPO_DEF[id].n], ["terminales", "Terminales sin usar", id => (TERMINALES_EXT.find(t => t.id === id) || {}).n],
+   ["hardware", "Hardware sin usar", id => HW_DEF[id] && HW_DEF[id].n]].forEach(([cat, grupo, nom]) =>
+    contar(P[cat], x => x).forEach((n, id) => { if(nom(id)) out.push({cat, id, n, nombre:nom(id), grupo}); }));
+  // armas del catálogo que no llevas equipadas ni en la mano (las de un solo uso, por cantidad)
+  datosArmamento().armas.forEach(a => {
+    if(!a.def || !ARMAS_DEF[a.def] || a.equipada || a.enMano) return;
+    out.push({cat:"armas", id:a.def, inst:a.id, n:esUnUso(ARMAS_DEF[a.def]) ? (num(a.cantidad) || 1) : 1, nombre:ARMAS_DEF[a.def].n + (a.cargada && a.cargada.n ? " (sus balas cargadas vuelven al inventario)" : ""), grupo:"Armas sin equipar"});
+  });
+  // munición del inventario (por cajas, como se compra) y consumibles
+  datosArmamento().municion.forEach(m => {
+    if(!m.def || !MUN_DEF[m.def]) return;
+    const art = articulosTienda("municion").find(a => a.id === m.def), lote = art ? art.lote || 1 : 1, n = Math.floor(num(m.n) / lote);
+    if(n > 0) out.push({cat:"municion", id:m.def, inst:m.id, n, lote, nombre:MUN_DEF[m.def].n + (lote > 1 ? " (cajas de " + lote + ")" : ""), grupo:"Munición"});
+  });
+  datosConsumibles().forEach(c => { if(CONSUMIBLE_DEF[c.def] && num(c.n) > 0) out.push({cat:"consumibles", id:c.def, inst:c.id, n:num(c.n), nombre:CONSUMIBLE_DEF[c.def].n, grupo:"Consumibles"}); });
+  return out;
+}
+const claveVendible = x => x.cat + "|" + x.id + "|" + (x.v === undefined ? "" : x.v) + "|" + (x.inst || "");
+/* Vende «cantidad» de un vendible (por su clave). {ok, motivo, total} */
+function vender(clave, cantidad){
+  const x = vendibles().find(y => claveVendible(y) === clave);
+  if(!x) return {ok:false, motivo:"Eso ya no lo tienes (o lo estás usando)."};
+  const n = Math.max(1, Math.min(x.n, Math.floor(num(cantidad) || 1)));
+  const total = reembolso(x.cat, x.id, x.v, n, false);
+  if(total > 0 && leerDinero() === null) return {ok:false, motivo:"Tu dinero no está escrito como un número: corrígelo para poder vender."};
+  const P = datosPosee();
+  if(x.cat === "ciber"){ for(let i = 0; i < n; i++){ const j = P.ciber.findIndex(c => c.k === x.id && (c.cfg ? c.cfg.valor : undefined) === x.v); if(j >= 0) P.ciber.splice(j, 1); } }
+  else if(["ropa", "terminales", "hardware"].includes(x.cat)){ for(let i = 0; i < n; i++) sacarPosesion(x.cat, x.id); }
+  else if(x.cat === "armas"){ const A = datosArmamento(), a = A.armas.find(w => w.id === x.inst);
+    if(a && esUnUso(ARMAS_DEF[a.def]) && (num(a.cantidad) || 1) > n) a.cantidad = (num(a.cantidad) || 1) - n; else armQuitar(x.inst); }
+  else if(x.cat === "municion"){ const A = datosArmamento(), m = A.municion.find(y => y.id === x.inst);
+    if(m){ m.n = num(m.n) - n * x.lote; if(m.n <= 0) A.municion = A.municion.filter(y => y !== m); } }
+  else if(x.cat === "consumibles"){ const c = datosConsumibles().find(y => y.id === x.inst); if(c){ c.n = num(c.n) - n; datosConsumibles(); } }
+  reembolso(x.cat, x.id, x.v, n, true);
+  if(total > 0) ponerDinero(leerDinero() + total);
+  return {ok:true, total, n, x};
 }
 
 /* Inventario · Objetos: lo que tienes sin usar (1 espacio cada cosa) */
@@ -7310,6 +7389,9 @@ const filaDeSpec = (s, antes) => Object.assign({}, antes || {}, {nombre:lineaSpe
        partidas/<código>/indice/<id>  = {nombre, t}          (lo que mira el tracker para saber qué ha cambiado)
      El retrato se sube en pequeño (el tracker solo usa una miniatura).
    · El tracker mira el índice y baja solo las fichas que han cambiado.
+   · La misma ficha en varios dispositivos: cada uno recuerda con qué versión de la nube está al día (xana-nube-sync) y si
+     tiene cambios sin subir. Al abrirla, al volver a la pestaña, cada 20 s y antes de subir, mira el índice: si otro
+     dispositivo ha subido algo, lo baja. Si los dos tenían cambios, gana el último cambio (índice: e = hora del último cambio).
    Sin NUBE_URL no aparece nada de esto y todo sigue funcionando con .json. */
 const NUBE_URL = "https://xana-rol-default-rtdb.europe-west1.firebasedatabase.app".replace(/\/+$/, "");
 const nubeLista = () => /^https:\/\//.test(NUBE_URL);
@@ -7336,11 +7418,12 @@ async function nubePedir(ruta, opc){
   return r.json();
 }
 const nubeEscribir = (codigo, cambios) => nubePedir("partidas/" + codigo, {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(cambios)});
-async function nubeSubir(codigo, id, nombre, texto){
-  const t = Date.now();
-  await nubeEscribir(codigo, {["fichas/" + id]:{nombre, t, datos:texto}, ["indice/" + id]:{nombre, t}});
+async function nubeSubir(codigo, id, nombre, texto, t, e){
+  t = t || Date.now();
+  await nubeEscribir(codigo, {["fichas/" + id]:{nombre, t, e:e || t, datos:texto}, ["indice/" + id]:{nombre, t, e:e || t}});
   return t;
 }
+const nubeEntrada = (codigo, id) => nubePedir("partidas/" + codigo + "/indice/" + id);
 const nubeIndice = codigo => nubePedir("partidas/" + codigo + "/indice").then(x => x && typeof x === "object" ? x : {});
 const nubeFicha = (codigo, id) => nubePedir("partidas/" + codigo + "/fichas/" + id);
 const nubeBorrar = (codigo, id) => nubeEscribir(codigo, {["fichas/" + id]:null, ["indice/" + id]:null});

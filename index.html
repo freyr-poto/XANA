@@ -103,6 +103,7 @@
   .td-buscar{flex:1;min-width:180px}
   .td-gratis{font-size:13px;color:var(--apagado);display:flex;gap:6px;align-items:center;white-space:nowrap}
   .td-gratis input{width:16px;height:16px}
+  .td-gratis[hidden]{display:none}
   .td-lista{overflow:auto;flex:1;padding-right:4px}
   .td-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:6px;align-items:start}
   .td-grupo h4{grid-column:1/-1;margin:14px 0 0;font-size:13px;color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
@@ -121,6 +122,8 @@
   .td-compra input[data-td-precio]{width:80px}
   .td-precio{font-weight:600;color:var(--ambar)}
   .td-falta{color:var(--rojo);font-size:12px}
+  .td-deshacer{margin-top:6px;font-size:12px;color:var(--apagado);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .td-venta .td-falta{color:var(--apagado)}
 
   .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
   .stat{background:var(--panel-alto);border:1px solid var(--linea);border-radius:9px;padding:9px 7px;text-align:center}
@@ -6680,7 +6683,7 @@ function pintarMenuMejoras(){
    Lo que ya estaba instalado o puesto antes de la tienda cuenta como pagado.
    En el modo creación se elige libremente, como siempre (sin comprar ni apuntar posesiones).
    D["f-dinero"]: un número (créditos). */
-const CATS_TIENDA = [["ciber", "Ciberware"], ["armas", "Armas"], ["municion", "Munición"], ["consumibles", "Consumibles"], ["ropa", "Ropa y equipo"], ["terminales", "Terminales"], ["hardware", "Hardware"]];
+const CATS_TIENDA = [["ciber", "Ciberware"], ["armas", "Armas"], ["municion", "Munición"], ["consumibles", "Consumibles"], ["ropa", "Ropa y equipo"], ["terminales", "Terminales"], ["hardware", "Hardware"], ["vender", "Vender"]];
 const ZONAS_TIENDA = {neural:"Sistema neuronal", chips:"Chips", optica:"Ciberópticas", audio:"Ciberaudio", brazo:"Brazos y manos", pierna:"Piernas",
   interno:"Interno", externo:"Externo", moda:"Moda", borg:"Borgware", fbc:"Cuerpos completos"};
 
@@ -6810,7 +6813,83 @@ function comprar(cat, id, o){
   else if(cat === "terminales") P.terminales.push(id);
   else if(cat === "hardware") P.hardware.push(id);
   if(total > 0) ponerDinero(leerDinero() - total);
+  anotarCompra(cat, id, art.cfg ? Number(o.valor) : undefined, n, total);
   return {ok:true, total, n, art};
+}
+
+/* ---------- Vender (deshacer una compra): se devuelve lo que se pagó ----------
+   D.compras: [{cat, id, v (versión del ciberware), n (unidades o cajas), pagado}] — lo comprado en la tienda.
+   Al vender se devuelve lo pagado por esas unidades (las últimas compradas primero); lo que no consta (de antes de la
+   tienda, botín) devuelve 0. Solo se vende lo que no está en uso. */
+function datosCompras(d){
+  d = d || D;
+  if(!Array.isArray(d.compras)) d.compras = [];
+  d.compras = d.compras.filter(c => c && typeof c.cat === "string" && typeof c.id === "string" && num(c.n) > 0);
+  return d.compras;
+}
+function anotarCompra(cat, id, v, n, pagado){
+  const L = datosCompras();
+  L.push(Object.assign({cat, id, n, pagado}, v !== undefined ? {v} : {}));
+  if(L.length > 300) L.splice(0, L.length - 300);
+}
+const mismaCompra = (c, cat, id, v) => c.cat === cat && c.id === id && (cat !== "ciber" || (c.v === undefined ? undefined : Number(c.v)) === (v === undefined ? undefined : Number(v)));
+/* Lo que se devolvería por «cantidad» unidades (y, con gastar, se apunta como devuelto) */
+function reembolso(cat, id, v, cantidad, gastar){
+  const L = datosCompras();
+  let queda = cantidad, total = 0;
+  for(let i = L.length - 1; i >= 0 && queda > 0; i--){
+    const c = L[i];
+    if(!mismaCompra(c, cat, id, v)) continue;
+    const coge = Math.min(queda, num(c.n)), unidad = num(c.pagado) / num(c.n);
+    total += unidad * coge; queda -= coge;
+    if(gastar){ c.pagado = num(c.pagado) - unidad * coge; c.n = num(c.n) - coge; }
+  }
+  if(gastar) datosCompras();
+  return Math.round(total);
+}
+/* Lo que se puede vender: lo que tienes y no estás usando */
+function vendibles(){
+  const P = datosPosee(), out = [];
+  const contar = (l, clave) => { const c = new Map(); l.forEach(x => { const k = clave(x); c.set(k, (c.get(k) || 0) + 1); }); return c; };
+  contar(P.ciber, x => x.k + "#" + (x.cfg ? x.cfg.valor : "")).forEach((n, k) => {
+    const [id, v] = k.split("#"), p = PIEZAS[id]; if(!p) return;
+    out.push({cat:"ciber", id, v:v === "" ? undefined : Number(v), n, nombre:p.n + (v !== "" && esConfigurable(p) ? " (" + etiquetaValor(p, Number(v)) + ")" : ""), grupo:"Ciberware por instalar"}); });
+  [["ropa", "Ropa y accesorios guardados", id => EQUIPO_DEF[id] && EQUIPO_DEF[id].n], ["terminales", "Terminales sin usar", id => (TERMINALES_EXT.find(t => t.id === id) || {}).n],
+   ["hardware", "Hardware sin usar", id => HW_DEF[id] && HW_DEF[id].n]].forEach(([cat, grupo, nom]) =>
+    contar(P[cat], x => x).forEach((n, id) => { if(nom(id)) out.push({cat, id, n, nombre:nom(id), grupo}); }));
+  // armas del catálogo que no llevas equipadas ni en la mano (las de un solo uso, por cantidad)
+  datosArmamento().armas.forEach(a => {
+    if(!a.def || !ARMAS_DEF[a.def] || a.equipada || a.enMano) return;
+    out.push({cat:"armas", id:a.def, inst:a.id, n:esUnUso(ARMAS_DEF[a.def]) ? (num(a.cantidad) || 1) : 1, nombre:ARMAS_DEF[a.def].n + (a.cargada && a.cargada.n ? " (sus balas cargadas vuelven al inventario)" : ""), grupo:"Armas sin equipar"});
+  });
+  // munición del inventario (por cajas, como se compra) y consumibles
+  datosArmamento().municion.forEach(m => {
+    if(!m.def || !MUN_DEF[m.def]) return;
+    const art = articulosTienda("municion").find(a => a.id === m.def), lote = art ? art.lote || 1 : 1, n = Math.floor(num(m.n) / lote);
+    if(n > 0) out.push({cat:"municion", id:m.def, inst:m.id, n, lote, nombre:MUN_DEF[m.def].n + (lote > 1 ? " (cajas de " + lote + ")" : ""), grupo:"Munición"});
+  });
+  datosConsumibles().forEach(c => { if(CONSUMIBLE_DEF[c.def] && num(c.n) > 0) out.push({cat:"consumibles", id:c.def, inst:c.id, n:num(c.n), nombre:CONSUMIBLE_DEF[c.def].n, grupo:"Consumibles"}); });
+  return out;
+}
+const claveVendible = x => x.cat + "|" + x.id + "|" + (x.v === undefined ? "" : x.v) + "|" + (x.inst || "");
+/* Vende «cantidad» de un vendible (por su clave). {ok, motivo, total} */
+function vender(clave, cantidad){
+  const x = vendibles().find(y => claveVendible(y) === clave);
+  if(!x) return {ok:false, motivo:"Eso ya no lo tienes (o lo estás usando)."};
+  const n = Math.max(1, Math.min(x.n, Math.floor(num(cantidad) || 1)));
+  const total = reembolso(x.cat, x.id, x.v, n, false);
+  if(total > 0 && leerDinero() === null) return {ok:false, motivo:"Tu dinero no está escrito como un número: corrígelo para poder vender."};
+  const P = datosPosee();
+  if(x.cat === "ciber"){ for(let i = 0; i < n; i++){ const j = P.ciber.findIndex(c => c.k === x.id && (c.cfg ? c.cfg.valor : undefined) === x.v); if(j >= 0) P.ciber.splice(j, 1); } }
+  else if(["ropa", "terminales", "hardware"].includes(x.cat)){ for(let i = 0; i < n; i++) sacarPosesion(x.cat, x.id); }
+  else if(x.cat === "armas"){ const A = datosArmamento(), a = A.armas.find(w => w.id === x.inst);
+    if(a && esUnUso(ARMAS_DEF[a.def]) && (num(a.cantidad) || 1) > n) a.cantidad = (num(a.cantidad) || 1) - n; else armQuitar(x.inst); }
+  else if(x.cat === "municion"){ const A = datosArmamento(), m = A.municion.find(y => y.id === x.inst);
+    if(m){ m.n = num(m.n) - n * x.lote; if(m.n <= 0) A.municion = A.municion.filter(y => y !== m); } }
+  else if(x.cat === "consumibles"){ const c = datosConsumibles().find(y => y.id === x.inst); if(c){ c.n = num(c.n) - n; datosConsumibles(); } }
+  reembolso(x.cat, x.id, x.v, n, true);
+  if(total > 0) ponerDinero(leerDinero() + total);
+  return {ok:true, total, n, x};
 }
 
 /* Inventario · Objetos: lo que tienes sin usar (1 espacio cada cosa) */
@@ -6857,11 +6936,45 @@ function abrirTienda(o){
         ${a.cantidad ? `<label>${a.lote > 1 ? "Cajas de " + a.lote : "Cantidad"} <input data-td-n inputmode="numeric" value="1" size="3"></label>` : ""}
         ${pr === null ? `<label class="td-sinprecio">Sin precio en el catálogo <input data-td-precio inputmode="numeric" placeholder="precio" size="6"></label>` : `<span class="td-precio" data-td-pr>${esc(textoCreditos(pr))}${a.lote > 1 ? " la caja" : a.cantidad ? " cada una" : ""}</span>`}
         <button type="button" class="btn fina principal" data-td="comprar">Comprar</button>
-        <span class="td-falta" aria-live="polite"></span></div></article>`;
+        <span class="td-falta" aria-live="polite"></span></div>${botonVenderUno(a)}</article>`;
+  }
+  /* En la tarjeta de compra: deshacer (vender una) si tienes alguna sin usar */
+  function botonVenderUno(a){
+    const x = vendibles().find(y => y.cat === a.cat && y.id === a.id);
+    if(!x) return "";
+    const dev = reembolso(x.cat, x.id, x.v, 1, false);
+    return `<div class="td-deshacer"><button type="button" class="btn fina" data-td="vender-uno" data-clave="${esc(claveVendible(x))}">Vender ${x.lote > 1 ? "una caja" : "una"}</button> <small>devuelve ${esc(textoCreditos(dev))}${dev ? "" : " (no consta que la pagaras)"}</small></div>`;
+  }
+  function tarjetaVenta(x){
+    return `<article class="td-art td-venta" data-venta="${esc(claveVendible(x))}">
+      <div class="td-art-cab"><b>${esc(x.nombre)}</b><span class="td-tengo">tienes ${x.n}${x.lote > 1 ? (x.n === 1 ? " caja" : " cajas") : ""}</span></div>
+      <div class="td-compra">${x.n > 1 ? `<label>${x.lote > 1 ? "Cajas" : "Cantidad"} <input data-td-vn inputmode="numeric" value="1" size="3"></label>` : ""}
+        <span class="td-precio">Devuelve <b data-td-dev></b></span>
+        <button type="button" class="btn fina principal" data-td="vender">Vender</button>
+        <small class="td-falta" data-td-nota></small></div></article>`;
+  }
+  function revisarVenta(el){
+    const x = vendibles().find(y => claveVendible(y) === el.dataset.venta);
+    if(!x) return;
+    const inp = el.querySelector("[data-td-vn]"), n = inp ? Math.max(1, Math.min(x.n, Math.floor(num(inp.value) || 1))) : 1;
+    const dev = reembolso(x.cat, x.id, x.v, n, false);
+    el.querySelector("[data-td-dev]").textContent = textoCreditos(dev);
+    el.querySelector("[data-td-nota]").textContent = dev ? "" : "No consta lo que pagaste (de antes de la tienda o sin pagar).";
   }
   function pintar(){
     velo.querySelectorAll("[data-td-cat]").forEach(b => { b.setAttribute("aria-selected", b.dataset.tdCat === S.cat ? "true" : "false"); b.classList.toggle("activa", b.dataset.tdCat === S.cat); });
     const q = normalizar(S.q.trim());
+    velo.querySelector(".td-gratis").hidden = S.cat === "vender";
+    if(S.cat === "vender"){
+      const vs = vendibles().filter(x => !q || normalizar(x.nombre).includes(q)), gv = [];
+      vs.forEach(x => { let g = gv.find(y => y[0] === x.grupo); if(!g) gv.push(g = [x.grupo, []]); g[1].push(x); });
+      lista.innerHTML = `<p class="aviso" style="margin:0 0 6px">Para deshacer una compra: se devuelve lo que pagaste. Solo se vende lo que no estás usando (quítatelo o desinstálalo antes).</p>` +
+        (gv.length ? gv.map(([g, l]) => `<section class="td-grupo"><h4>${esc(g)} <span>${l.length}</span></h4>${l.map(tarjetaVenta).join("")}</section>`).join("")
+          : `<p class="vacio-hab">${q ? "Nada coincide con la búsqueda." : "No tienes nada sin usar que vender."}</p>`);
+      lista.querySelectorAll(".td-venta").forEach(revisarVenta);
+      pintarDinero();
+      return;
+    }
     const arts = articulosTienda(S.cat).filter(a => !q || normalizar(a.n + " " + a.desc).includes(q));
     const grupos = [];
     arts.forEach(a => { let g = grupos.find(x => x[0] === a.grupo); if(!g) grupos.push(g = [a.grupo, []]); g[1].push(a); });
@@ -6916,13 +7029,25 @@ function abrirTienda(o){
       despuesDeComprar();
       pintar();
     }
+    if(b.dataset.td === "vender" || b.dataset.td === "vender-uno"){
+      const el = b.closest(".td-art"), clave = b.dataset.td === "vender" ? el.dataset.venta : b.dataset.clave;
+      const inp = b.dataset.td === "vender" ? el.querySelector("[data-td-vn]") : null;
+      const r = vender(clave, inp ? inp.value : 1);
+      if(!r.ok){ toast(r.motivo, 4000); return; }
+      toast("Vendido: " + r.x.nombre.replace(/ \(.*\)$/, "") + (r.n > 1 ? " ×" + r.n : "") + " · +" + textoCreditos(r.total), 3500);
+      if(b.dataset.td === "vender-uno") S.foco = r.x.id;
+      despuesDeComprar();
+      pintar();
+    }
   });
   velo.addEventListener("change", ev => {
     if(ev.target.dataset.td === "gratis"){ S.gratis = ev.target.checked; lista.querySelectorAll(".td-art").forEach(revisar); return; }
+    const v = ev.target.closest(".td-venta"); if(v) return revisarVenta(v);
     const el = ev.target.closest(".td-art"); if(el) revisar(el);
   });
   velo.addEventListener("input", ev => {
     if(ev.target === buscar){ S.q = buscar.value; S.foco = ""; pintar(); return; }
+    const v = ev.target.closest(".td-venta"); if(v) return revisarVenta(v);
     const el = ev.target.closest(".td-art"); if(el) revisar(el);
   });
   pintar();
@@ -7593,6 +7718,9 @@ document.addEventListener("click", ev => {
        partidas/<código>/indice/<id>  = {nombre, t}          (lo que mira el tracker para saber qué ha cambiado)
      El retrato se sube en pequeño (el tracker solo usa una miniatura).
    · El tracker mira el índice y baja solo las fichas que han cambiado.
+   · La misma ficha en varios dispositivos: cada uno recuerda con qué versión de la nube está al día (xana-nube-sync) y si
+     tiene cambios sin subir. Al abrirla, al volver a la pestaña, cada 20 s y antes de subir, mira el índice: si otro
+     dispositivo ha subido algo, lo baja. Si los dos tenían cambios, gana el último cambio (índice: e = hora del último cambio).
    Sin NUBE_URL no aparece nada de esto y todo sigue funcionando con .json. */
 const NUBE_URL = "https://xana-rol-default-rtdb.europe-west1.firebasedatabase.app".replace(/\/+$/, "");
 const nubeLista = () => /^https:\/\//.test(NUBE_URL);
@@ -7619,11 +7747,12 @@ async function nubePedir(ruta, opc){
   return r.json();
 }
 const nubeEscribir = (codigo, cambios) => nubePedir("partidas/" + codigo, {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(cambios)});
-async function nubeSubir(codigo, id, nombre, texto){
-  const t = Date.now();
-  await nubeEscribir(codigo, {["fichas/" + id]:{nombre, t, datos:texto}, ["indice/" + id]:{nombre, t}});
+async function nubeSubir(codigo, id, nombre, texto, t, e){
+  t = t || Date.now();
+  await nubeEscribir(codigo, {["fichas/" + id]:{nombre, t, e:e || t, datos:texto}, ["indice/" + id]:{nombre, t, e:e || t}});
   return t;
 }
+const nubeEntrada = (codigo, id) => nubePedir("partidas/" + codigo + "/indice/" + id);
 const nubeIndice = codigo => nubePedir("partidas/" + codigo + "/indice").then(x => x && typeof x === "object" ? x : {});
 const nubeFicha = (codigo, id) => nubePedir("partidas/" + codigo + "/fichas/" + id);
 const nubeBorrar = (codigo, id) => nubeEscribir(codigo, {["fichas/" + id]:null, ["indice/" + id]:null});
@@ -7640,12 +7769,39 @@ var NUBE = null;
 var CLAVE_NUBE = "xana-nube";
 var NUBE_APLICANDO = false;          // lo que llega del combate no se vuelve a subir
 var NUBE_VIVO = {fuente:null, sondeo:null, datos:null, hora:0, error:""};
+/* Sincronización de esta ficha con la nube en este dispositivo: {id, t (versión de la nube con la que está al día),
+   sucio (cambios sin subir), e (hora del último cambio hecho aquí)} */
+var CLAVE_SYNC = "xana-nube-sync";
+function nubeSync(){
+  let S = null;
+  try{ S = JSON.parse(localStorage.getItem(CLAVE_SYNC) || "null"); }catch(e){ S = null; }
+  const id = D && D.nube ? D.nube.id : "";
+  if(!S || typeof S !== "object" || S.id !== id) S = {id, t:null, sucio:false, e:0};
+  return S;
+}
+function nubeSyncGuardar(S){ try{ localStorage.setItem(CLAVE_SYNC, JSON.stringify(S)); }catch(e){} }
 /* ¿Esta ficha está unida a la partida? Solo entonces se sube sola. Al conectar no se sube nada hasta que el jugador elige
    «Subir esta ficha» o carga una de la partida: así no salen fichas repetidas (una ficha en blanco, una copia vieja…). */
 function nubeVinculada(){ return !!(NUBE && NUBE.codigo && D && D.nube && typeof D.nube === "object" && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && D.nube.partida === NUBE.codigo); }
+/* Huella del contenido (el retrato, por su firma; sin los datos de la nube): para saber si de verdad ha cambiado algo */
+function nubeHuella(d){
+  const t = JSON.stringify(Object.assign({}, d, {retrato:undefined, retratoFirma:undefined, nube:undefined})) + "|" + nubeFirma(d.retrato || "");
+  let h = 5381; for(let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+  return t.length + ":" + (h >>> 0).toString(36);
+}
 function nubeCambio(){
-  if(!NUBE || !NUBE.codigo || !nubeLista() || NUBE_APLICANDO) return;
+  if(!NUBE || !NUBE.codigo || !nubeLista()) return;
+  if(NUBE_APLICANDO){
+    // lo que llega de la nube (combate, reloj) pasa a ser la versión de base si aquí no había cambios propios
+    if(nubeVinculada()){ const S = nubeSync(); if(!S.sucio){ S.h = nubeHuella(D); nubeSyncGuardar(S); } }
+    return;
+  }
   if(!nubeVinculada()){ nubePintar(); return; }       // otra ficha (vaciada, importada…): no se sube hasta elegir
+  // al abrir la ficha se guarda sola (migraciones, raza…): eso no es un cambio del jugador hasta haber mirado la nube
+  if(!NUBE.listo) return;
+  const S = nubeSync();
+  if(S.h && nubeHuella(D) === S.h && !S.sucio) return;        // se ha guardado igual que estaba: nada que subir
+  S.sucio = true; S.e = Date.now(); nubeSyncGuardar(S);
   clearTimeout(NUBE.temporizador);
   NUBE.temporizador = setTimeout(nubeEnviar, 3000);
 }
@@ -7673,23 +7829,111 @@ async function nubeEnviar(forzar){
   if(!nubeVinculada()){ nubePintar(); return false; }
   if(NUBE.enviando){ NUBE.pendiente = true; return false; }
   if(nubeFichaVacia()){ nubePintar(); return false; }       // una ficha en blanco no se sube (dispositivo nuevo, «Vaciar»)
-  const copia = Object.assign({}, D);
-  const mini = await nubeMini(D.retrato);
-  if(mini) copia.retrato = mini; else delete copia.retrato;
-  const texto = JSON.stringify(copia);
-  if(!forzar && texto === NUBE.ultimo){ nubePintar(); return true; }
   NUBE.enviando = true; nubePintar();
   let ok = false;
   try{
-    await nubeSubir(NUBE.codigo, D.nube.id, String(D["f-nombre"] || "").trim() || "Sin nombre", texto);
-    NUBE.ultimo = texto; NUBE.hora = Date.now(); NUBE.error = ""; ok = true;
+    // antes de subir: si otro dispositivo ha subido algo más nuevo, se baja eso en vez de pisarlo («Subir ahora» sube sin mirar)
+    const r = forzar ? "subir" : await nubeComprobarDentro();
+    if(r === "bajada" || r === "igual"){ ok = true; NUBE.error = ""; }
+    else{
+      const copia = Object.assign({}, D);
+      const mini = await nubeMini(D.retrato);
+      if(mini){ copia.retrato = mini; copia.retratoFirma = nubeFirma(D.retrato); } else { delete copia.retrato; delete copia.retratoFirma; }
+      const texto = JSON.stringify(copia), S = nubeSync();
+      if(!forzar && texto === NUBE.ultimo && !S.sucio){ ok = true; }
+      else{
+        const t = Date.now(), e = S.e || t;
+        NUBE.esperaT = t;
+        await nubeSubir(NUBE.codigo, D.nube.id, String(D["f-nombre"] || "").trim() || "Sin nombre", texto, t, e);
+        // si mientras subía se ha cambiado algo, sigue sucia (se volverá a subir)
+        const S2 = nubeSync(); S2.t = t; if(S2.e === S.e){ S2.sucio = false; S2.h = nubeHuella(D); } nubeSyncGuardar(S2);
+        NUBE.ultimo = texto; NUBE.hora = Date.now(); NUBE.error = ""; ok = true;
+      }
+    }
   }catch(e){
     NUBE.error = e.message || String(e);
     NUBE.reintento = setTimeout(nubeEnviar, 30000);
   }
   NUBE.enviando = false; nubePintar();
-  if(NUBE.pendiente){ NUBE.pendiente = false; nubeCambio(); }
+  if(NUBE.pendiente || nubeSync().sucio && ok && !NUBE.temporizador){ NUBE.pendiente = false; if(nubeSync().sucio) nubeCambioSinMarcar(); }
   return ok;
+}
+function nubeCambioSinMarcar(){ clearTimeout(NUBE.temporizador); NUBE.temporizador = setTimeout(nubeEnviar, 3000); }
+/* Firma corta del retrato completo: si la nube trae la miniatura del mismo retrato, aquí se conserva el grande */
+function nubeFirma(src){
+  if(!src) return "";
+  if(NUBE.firmaDe === src) return NUBE.firma;
+  let h = 5381; for(let i = 0; i < src.length; i += Math.max(1, Math.floor(src.length / 4000))) h = ((h << 5) + h + src.charCodeAt(i)) | 0;
+  NUBE.firmaDe = src; NUBE.firma = src.length + ":" + (h >>> 0).toString(36);
+  return NUBE.firma;
+}
+/* ¿Ha subido otro dispositivo una versión de esta ficha? Devuelve "igual" (al día), "subir" (aquí hay lo último), "bajada" (se ha
+   traído la de la nube) o "nada" (no está en la nube). Gana el último cambio: si los dos tienen cambios, el más reciente. */
+async function nubeComprobarDentro(){
+  const S = nubeSync(), id = D.nube.id;
+  const ent = await nubeEntrada(NUBE.codigo, id);
+  if(!ent || !ent.t) return S.sucio ? "subir" : "nada";
+  if(ent.t === S.t || ent.t === NUBE.esperaT){ if(S.t !== ent.t){ S.t = ent.t; nubeSyncGuardar(S); } return S.sucio ? "subir" : "igual"; }
+  // la nube tiene otra versión (de otro dispositivo)
+  if(S.sucio && S.t !== null && num(S.e) > num(ent.e || ent.t)) return "subir";      // lo de aquí es más nuevo
+  const f = await nubeFicha(NUBE.codigo, id);
+  if(!f || typeof f.datos !== "string") return S.sucio ? "subir" : "nada";
+  let obj;
+  try{ obj = JSON.parse(f.datos); }catch(e){ return "subir"; }
+  if(!obj || typeof obj !== "object") return "subir";
+  const perdidos = S.sucio;
+  // primera vez en este dispositivo (sin versión apuntada) y ya era igual: solo se apunta
+  const sinFoto = o => JSON.stringify(Object.assign({}, o, {retrato:undefined, retratoFirma:undefined, nube:undefined}));
+  if(!S.sucio && sinFoto(obj) === sinFoto(D)){ S.t = f.t || ent.t; S.h = nubeHuella(D); nubeSyncGuardar(S); return "igual"; }
+  nubeAplicarFicha(obj, f.t || ent.t);
+  toast(perdidos ? "Había cambios más nuevos de esta ficha en otro dispositivo: se han cargado aquí." : "Ficha actualizada con los cambios hechos en otro dispositivo.", 5000);
+  return "bajada";
+}
+/* Pone aquí la versión de la nube (sin volver a subirla); conserva el retrato grande si es el mismo */
+function nubeAplicarFicha(obj, t){
+  const id = D.nube.id, partida = NUBE.codigo;
+  if(obj.retratoFirma && D.retrato && nubeFirma(D.retrato) === obj.retratoFirma) obj.retrato = D.retrato;
+  delete obj.retratoFirma;
+  obj.nube = {id, partida};
+  NUBE_APLICANDO = true;
+  try{
+    D = sanear(obj);
+    D.modoCreacion = false;
+    Guardado.escribir(D);
+    if(typeof repintarTodo === "function") repintarTodo();
+  }finally{ NUBE_APLICANDO = false; }
+  nubeSyncGuardar({id, t, sucio:false, e:0, h:nubeHuella(D)});
+  NUBE.ultimo = ""; NUBE.error = "";
+}
+/* Mirar la nube por fuera de una subida (al abrir, al volver a la pestaña, cada 20 s o cuando la nube avisa) */
+async function nubeComprobar(){
+  if(!NUBE || !NUBE.codigo || !nubeLista() || !nubeVinculada() || NUBE.enviando || NUBE.comprobando) return;
+  NUBE.comprobando = true;
+  try{
+    const r = await nubeComprobarDentro();
+    if(r === "subir") nubeCambioSinMarcar();
+    NUBE.error = ""; nubePintar();
+  }catch(e){ /* sin conexión: ya se mirará */ }
+  finally{ NUBE.comprobando = false; }
+}
+/* La nube avisa (EventSource) cuando cambia la entrada de esta ficha en el índice; si no se puede, se mira cada 20 s */
+function nubeEscucharFicha(){
+  nubeDejarFicha();
+  if(!NUBE.codigo || !nubeLista() || !D.nube || !D.nube.id) return;
+  const aviso = () => { clearTimeout(NUBE.avisoT); NUBE.avisoT = setTimeout(nubeComprobar, 600); };
+  if(typeof EventSource === "function"){
+    try{
+      const es = new EventSource(NUBE_URL + "/partidas/" + NUBE.codigo + "/indice/" + D.nube.id + ".json");
+      es.addEventListener("put", aviso); es.addEventListener("patch", aviso);
+      es.onerror = () => { if(es.readyState === 2) NUBE.fuenteFicha = null; };
+      NUBE.fuenteFicha = es;
+    }catch(e){}
+  }
+  NUBE.sondeoFicha = setInterval(() => { if(document.visibilityState === "visible") nubeComprobar(); }, 20000);
+}
+function nubeDejarFicha(){
+  if(NUBE.fuenteFicha){ try{ NUBE.fuenteFicha.close(); }catch(e){} NUBE.fuenteFicha = null; }
+  clearInterval(NUBE.sondeoFicha); NUBE.sondeoFicha = null;
 }
 /* Ficha sin nombre ni estadísticas: no tiene nada que subir */
 const nubeFichaVacia = () => !String(D["f-nombre"] || "").trim() && !Object.keys(D).some(k => /^stat_/.test(k) && num(D[k]) > 0);
@@ -7740,7 +7984,7 @@ function nubeAbrir(){
       velo.innerHTML = `<div class="modal">
         <h3>Fichas de la partida</h3>
         <p><b>Cargar aquí</b> pone esa ficha en este dispositivo y sigue sincronizándose con la misma ficha de la nube: así puedes pasar tu personaje del ordenador al móvil, o al revés. <b>.json</b> la descarga como copia de seguridad.</p>
-        <p class="nube-nota">Usa la ficha en un solo dispositivo a la vez: si la cambias en dos sitios, se queda lo último que se haya subido. El retrato viene en pequeño.</p>
+        <p class="nube-nota">La misma ficha se mantiene al día en todos los dispositivos donde la cargues. Si la cambias en dos a la vez, se queda el último cambio. El retrato viene en pequeño.</p>
         ${filas}
         <div class="nube-botones"><button class="btn" data-n="volver">Volver</button></div></div>`;
       return;
@@ -7782,7 +8026,7 @@ function nubeAbrir(){
     const obj = JSON.parse(f.datos);
     if(!obj || typeof obj !== "object") throw new Error("la ficha de la nube está dañada");
     obj.nube = {id, partida:NUBE.codigo};
-    return {obj, nombre:String(f.nombre || "ficha")};
+    return {obj, nombre:String(f.nombre || "ficha"), t:f.t || null};
   };
   pintarModal();
   document.body.appendChild(velo);
@@ -7799,11 +8043,11 @@ function nubeAbrir(){
       const aviso = velo.querySelector("#nubeAviso");
       if(!nubeCodigoValido(c)){ aviso.textContent = "Ese código no tiene la forma XANA-XXXX-XXXX-XXXX. Cópialo tal cual te lo ha pasado el máster."; return; }
       b.disabled = true; aviso.textContent = "Conectando…";
-      NUBE.codigo = c; NUBE.ultimo = ""; NUBE.error = ""; nubeEscucharCombate();
+      NUBE.codigo = c; NUBE.ultimo = ""; NUBE.error = ""; NUBE.listo = true; nubeEscucharCombate();
       try{ localStorage.setItem(CLAVE_NUBE, c); }catch(e){}
       nubePintar();
       // no se sube nada todavía: si ya era la ficha de esta partida, sigue; si no, el jugador elige subirla o cargar una
-      if(nubeVinculada()){ vista = "conectada"; pintarModal(); nubeEnviar(); return; }
+      if(nubeVinculada()){ vista = "conectada"; pintarModal(); nubeEscucharFicha(); nubeComprobar(); return; }
       if(nubeFichaVacia()){ cargarLista(); return; }     // dispositivo nuevo: lo normal es traer la ficha
       vista = "conectada"; pintarModal();
       return;
@@ -7814,7 +8058,9 @@ function nubeAbrir(){
       const id = D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") ? D.nube.id : "f" + nubeAzar(10);
       D.nube = {id, partida:NUBE.codigo};
       Guardado.escribir(D);
+      nubeSyncGuardar({id, t:null, sucio:true, e:Date.now()});
       const ok = await nubeEnviar(true);
+      nubeEscucharFicha();
       vista = "conectada"; pintarModal();
       toast(ok ? "Ficha subida a la partida" : "La ficha se subirá en cuanto haya conexión.", 4000);
       return;
@@ -7826,15 +8072,21 @@ function nubeAbrir(){
          !await confirmar("Se sustituye la ficha de este dispositivo («" + (String(D["f-nombre"] || "").trim() || "sin nombre") + "») por «" + fila.nombre + "» de la nube. Si la de ahora no está subida ni guardada en un .json, se pierde.", "Cargar aquí")) return;
       b.disabled = true;
       try{
-        const {obj, nombre} = await bajar(fila.id);
+        const {obj, nombre, t} = await bajar(fila.id);
         if(n === "json"){
           await descargar(JSON.stringify(obj, null, 2), "application/json", "xana-" + (nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ficha") + ".json");
           b.disabled = false; return;
         }
-        D = sanear(obj);
-        D.modoCreacion = false;
+        if(obj.retratoFirma) delete obj.retratoFirma;
+        NUBE_APLICANDO = true;
+        try{ D = sanear(obj); D.modoCreacion = false; }finally{ NUBE_APLICANDO = false; }
         NUBE.ultimo = ""; NUBE.error = "";
-        if(!guardar()) avisar("La ficha se ha cargado, pero este navegador no deja guardarla: si cierras la página se perderá.");
+        nubeSyncGuardar({id:fila.id, t, sucio:false, e:0, h:nubeHuella(D)});
+        nubeEscucharFicha();
+        NUBE_APLICANDO = true;
+        let guardada = false;
+        try{ guardada = Guardado.escribir(D); }finally{ NUBE_APLICANDO = false; }
+        if(!guardada) avisar("La ficha se ha cargado, pero este navegador no deja guardarla: si cierras la página se perderá.");
         repintarTodo(); pestanya("ficha"); nubePintar();
         velo.remove();
         toast("«" + nombre + "» cargada desde la nube. Sigue sincronizada.", 4000);
@@ -7852,7 +8104,7 @@ function nubeAbrir(){
       try{
         await nubeBorrar(NUBE.codigo, fila.id);
         if(propia){
-          NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = ""; nubeDejarCombate();
+          NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = ""; nubeDejarCombate(); nubeDejarFicha();
           clearTimeout(NUBE.temporizador); clearTimeout(NUBE.reintento);
           try{ localStorage.removeItem(CLAVE_NUBE); }catch(e){}
           nubePintar();      // D.nube.id se conserva: si vuelve a conectarse, el tracker la reconoce como la misma
@@ -7865,7 +8117,7 @@ function nubeAbrir(){
     if(n === "subir"){ b.disabled = true; await nubeEnviar(true); b.disabled = false; return; }
     if(n === "desconectar"){
       if(!await confirmar("La ficha deja de subirse a la partida. Lo que ya está subido se queda donde está.", "Desconectar")) return;
-      NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = ""; nubeDejarCombate();
+      NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = ""; nubeDejarCombate(); nubeDejarFicha();
       clearTimeout(NUBE.temporizador); clearTimeout(NUBE.reintento);
       try{ localStorage.removeItem(CLAVE_NUBE); }catch(e){}
       nubePintar(); vista = "inicio"; pintarModal();
@@ -7974,7 +8226,7 @@ function htmlCombateVivo(){
     <details class="cm-vivo-reg" open><summary>Registro <span>${(d.registro || []).length}</span></summary><ol>${reg || `<li class="cm-vacio">Nada todavía.</li>`}</ol></details>
   </section>`;
 }
-NUBE = {codigo:"", hora:0, error:"", temporizador:null, reintento:null, ultimo:"", miniDe:"", mini:"", enviando:false, pendiente:false};
+NUBE = {codigo:"", hora:0, error:"", temporizador:null, reintento:null, ultimo:"", miniDe:"", mini:"", enviando:false, pendiente:false, listo:false, esperaT:0, comprobando:false, fuenteFicha:null, sondeoFicha:null};
 if(nubeLista()){
   try{ const c = nubeNormalizar(localStorage.getItem(CLAVE_NUBE) || ""); if(nubeCodigoValido(c)) NUBE.codigo = c; }catch(e){}
   const boton = document.getElementById("btnNube");
@@ -7982,8 +8234,13 @@ if(nubeLista()){
   nubePintar();
   // fichas que ya se subían antes de que hubiera que elegir: este dispositivo estaba conectado, así que siguen unidas a la partida
   if(NUBE.codigo && D && D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && !D.nube.partida){ D.nube.partida = NUBE.codigo; Guardado.escribir(D); }
-  if(NUBE.codigo){ setTimeout(nubeEnviar, 2000); setTimeout(nubeEscucharCombate, 800); }       // por si hubo cambios sin conexión
-  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden" && NUBE.temporizador) nubeEnviar(); });
+  // al abrir: primero se mira si otro dispositivo ha subido algo (y se baja); si aquí hay cambios sin subir, se suben
+  if(NUBE.codigo){ setTimeout(() => nubeComprobar().then(() => { NUBE.listo = true; }, () => { NUBE.listo = true; }), 1200); setTimeout(nubeEscucharCombate, 800); setTimeout(nubeEscucharFicha, 1000); }
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "hidden" && NUBE.temporizador) nubeEnviar();
+    if(document.visibilityState === "visible") nubeComprobar();
+  });
+  window.addEventListener("focus", () => nubeComprobar());
   window.addEventListener("online", () => { if(NUBE.codigo && NUBE.error) nubeEnviar(); });
 }
 /*</UI>*/
