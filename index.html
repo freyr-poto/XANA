@@ -1785,7 +1785,7 @@ function sanear(d){
   if(d.usosSemana !== undefined && !obj(d.usosSemana)) delete d.usosSemana;
   // hasta dónde ha aplicado esta ficha el reloj de la partida
   if(d.tiempo !== undefined){
-    if(obj(d.tiempo) && typeof d.tiempo.seg === "number" && isFinite(d.tiempo.seg)) d.tiempo = {seg:d.tiempo.seg, partida:num(d.tiempo.partida), codigo:String(d.tiempo.codigo || "")};
+    if(obj(d.tiempo) && typeof d.tiempo.seg === "number" && isFinite(d.tiempo.seg)) d.tiempo = {seg:d.tiempo.seg, partida:parseInt(d.tiempo.partida, 10) || 0, codigo:String(d.tiempo.codigo || "")};      // sin num(): sanear corre antes de que exista
     else delete d.tiempo;
   }
   // mejoras de Papilón: solo nombres conocidos, sin repetir
