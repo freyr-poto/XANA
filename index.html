@@ -7544,7 +7544,7 @@ function resumen(){
       .concat(instaladas.filter(x => x.region === g.id && !esBase(x) && !x.rec.secundario).map(x => {
         const pareja = x.rec.par ? E.lista.find(o => o.par === x.rec.par && o.id !== x.rec.id) : null;
         const origen = x.rec.fbc === "cuerpo" ? " (conversión de cuerpo completo)" : x.rec.fbc === "incluido" ? " (integrado en el FBC)" : x.rec.fbc ? " (sin humanidad por el FBC)" : "";
-        return { n:nombrePieza(x.p, x.rec) + origen, lugar:x.lugar + (pareja ? " y " + lugarDeRec(pareja, E) : ""),
+        return { n:nombrePieza(x.p, x.rec) + origen, a:x.p.a || "", lugar:x.lugar + (pareja ? " y " + lugarDeRec(pareja, E) : ""),
           e:[x.lugar + (pareja ? " y " + lugarDeRec(pareja, E) : "") + ".", textoPieza(x.p, x.rec), x.rec.nota ? "(" + x.rec.nota + ")" : "", x.conflicto ? "⚠ " + x.conflicto.join(" ") : ""].filter(Boolean).join(" ") };
       }))
   })).concat([{ zona:"Sin colocar", id:"pendiente", piezas: instaladas.filter(x => !x.region).map(x => ({n:nombrePieza(x.p, x.rec), e:textoPieza(x.p, x.rec) + (x.conflicto ? " ⚠ " + x.conflicto.join(" ") : "")})) }])
@@ -7876,172 +7876,175 @@ const textoPdf = t => String(t == null ? "" : t)
 
 const imagenPdfValida = src => typeof src === "string" && /^data:image\/(jpeg|jpg|png);base64,/i.test(src);
 
+/* ---------- PDF de la ficha: para que alguien de fuera de la partida entienda el personaje ----------
+   Estilo oscuro (neón rojo sobre negro), narrativo y en dos páginas: 1) quién es (cabecera con resumen del perfil, historia,
+   raza y rol, atributos y competencias en barras, sin números); 2) cómo pelea, qué lleva y su ciberware con su aspecto. */
+const PDF_C = { fondo:"#0b0d12", panel:"#141821", panel2:"#1a1f2a", borde:"#2a3140", texto:"#e7e9ef", suave:"#9aa3b4", tenue:"#5f6878", rojo:"#ff2d3d", cian:"#36e0e6" };
+/* Una regla reducida a su efecto: frases mecánicas, como mucho dos y unos 230 caracteres (cortando por frase) */
+function reglaCorta(txt, max){
+  max = max || 230;
+  const r = resumenMecanico(txt);
+  const frases = r.replace(/([.;])\s+/g, "$1\u0001").split("\u0001").filter(Boolean);
+  let out = "";
+  for(const f of frases){ if(out && (out + " " + f).length > max) break; out = out ? out + " " + f : f; if(out.length >= max * 0.6) break; }
+  return out.length > max + 80 ? out.slice(0, max).replace(/\s+\S*$/, "") + "…" : out;
+}
+/* Resumen del perfil en una línea: raza, rol y nivel, lo que mejor se le da y cuánto ciberware lleva */
+function resumenPerfil(R){
+  const top = [].concat(...R.comps.map(g => g.lista.filter(x => x.total !== null && x.nivel > 0))).sort((a, b) => b.total - a.total || b.nivel - a.nivel).slice(0, 3).map(x => x.n);
+  const lista = l => l.length > 1 ? l.slice(0, -1).join(", ") + " y " + l[l.length - 1] : l[0] || "";
+  const piezas = [].concat(...R.ciber.map(z => z.piezas)).filter(pz => !/\(incluido en /.test(pz.n)).length + R.basesPuestas.filter(b => !/Tecno-Psíquico|IETS|Zócalos/.test(b)).length;
+  return [[val("f-raza"), val("f-trabajo") ? val("f-trabajo") + " de nivel " + R.nivelT : ""].filter(Boolean).join(" · "),
+    top.length ? "Destaca en " + lista(top) : "", piezas ? piezas + (piezas === 1 ? " pieza de ciberware" : " piezas de ciberware") : "Sin ciberware"].filter(Boolean).join("  ·  ");
+}
+/* Lo que sabe hacer el rol, por nombre: los bloques de puntos («Reacción de iniciativa ●●») o las entradas abiertas */
+function habilidadesRol(R){
+  const out = [];
+  R.bloquesRol.forEach(b => {
+    const porPuntos = b.entradas.every(e => /^(Cada|\d)/.test(e.t || ""));
+    if(porPuntos && b.titulo) out.push({n:b.titulo, puntos:b.puntos});
+    else b.entradas.forEach(e => { if(e.t && !/^(Cada|\d|Cómo se)/.test(e.t)) out.push({n:e.t, grupo:b.titulo || ""}); });
+  });
+  return out;
+}
 function definicionPDF(){
-  const R = resumen();
-  const T = textoPdf;
-  const ROJO = "#A51111", GRIS = "#5c5c5c", LINEA = "#bdbdbd", ANCHO = 523;
+  const R = resumen(), T = textoPdf, K = PDF_C, ANCHO = 523;
   const nombre = val("f-nombre") || "Personaje sin nombre";
+  let M = null;
+  try{ M = modeloCombate(); }catch(e){ M = null; }
   const c = [];
 
-  const cajas = () => ({ hLineWidth:()=>0.8, vLineWidth:()=>0.8, hLineColor:()=>LINEA, vLineColor:()=>LINEA,
-    paddingLeft:()=>4, paddingRight:()=>4, paddingTop:()=>2, paddingBottom:()=>2 });
-  const rayada = () => ({ hLineWidth:()=>0.6, vLineWidth:()=>0.6, hLineColor:()=>LINEA, vLineColor:()=>LINEA,
-    fillColor:i => i === 0 ? "#ececec" : (i % 2 === 0 ? "#f7f7f7" : null),
-    paddingLeft:()=>4, paddingRight:()=>4, paddingTop:()=>2.5, paddingBottom:()=>2.5 });
-  const punteada = () => ({ hLineWidth:(i,n) => (i === 0 || i === n.table.body.length) ? 0 : 0.5, vLineWidth:()=>0,
-    hLineColor:()=>"#d0d0d0", hLineStyle:()=>({dash:{length:1.5, space:1.5}}),
-    paddingLeft:()=>0, paddingRight:()=>2, paddingTop:()=>1.3, paddingBottom:()=>1.3 });
+  // ---- piezas de maquetación
+  const lay = (fondo, borde) => ({ hLineWidth:() => 0.6, vLineWidth:() => 0.6, hLineColor:() => borde || K.borde, vLineColor:() => borde || K.borde,
+    fillColor:() => fondo || K.panel, paddingLeft:() => 9, paddingRight:() => 9, paddingTop:() => 7, paddingBottom:() => 7 });
+  const panel = (stack, extra) => Object.assign({ table:{ widths:["*"], body:[[{ stack }]] }, layout:lay() }, extra || {});
+  const seccion = (txt, extra, ancho) => Object.assign({ margin:[0, 12, 0, 6], stack:[
+    { text:T(txt).toUpperCase(), color:K.texto, bold:true, fontSize:10, characterSpacing:2.2 },
+    { canvas:[{ type:"line", x1:0, y1:3, x2:ancho || ANCHO, y2:3, lineWidth:0.7, lineColor:K.borde }, { type:"rect", x:0, y:1.6, w:34, h:2.8, color:K.rojo }] }
+  ] }, extra || {});
+  // puntos de una habilidad de rol: circulitos (sin cifras)
+  const puntos = n => ({ width:8 * Math.min(10, n) + 4, canvas:Array.from({ length:Math.min(10, n) }, (_, i) => ({ type:"ellipse", x:i * 8 + 4, y:5.4, r1:2.4, r2:2.4, color:K.cian })) });
+  const sub = (txt, extra) => Object.assign({ text:T(txt).toUpperCase(), color:K.rojo, bold:true, fontSize:7.4, characterSpacing:1.3, margin:[0, 0, 0, 4] }, extra || {});
+  // barra de 10 tramos (atributos y competencias): sin números, se ve de un vistazo
+  const barra = (v, color, ancho) => {
+    const n = 10, g = 1.6, w = ((ancho || 70) - g * (n - 1)) / n, lleno = Math.max(0, Math.min(n, Math.round(num(v))));
+    return { canvas:Array.from({ length:n }, (_, i) => ({ type:"rect", x:i * (w + g), y:0, w, h:4.6, r:0.6, color:i < lleno ? (color || K.rojo) : K.panel2 })) };
+  };
+  const vineta = (txt, extra, color, dots) => ({ margin:[0, 0, 0, 3.2], columns:[{ width:9, text:"›", color:color || K.rojo, bold:true }, { width:dots ? "auto" : "*", text:[{ text:T(txt), color:K.texto }].concat(extra ? [{ text:"  " + T(extra), color:K.suave, fontSize:7.6 }] : []) }]
+    .concat(dots ? [Object.assign(puntos(dots), { margin:[4, 0, 0, 0] }), { width:"*", text:"" }] : []) });
+  const chips = (l, color) => ({ text:[].concat(...l.map((x, i) => [{ text:T(x), color:color || K.texto }, i < l.length - 1 ? { text:"   ·   ", color:K.tenue } : ""])), lineHeight:1.45 });
+  const vacio = txt => ({ text:T(txt), color:K.tenue, italics:true });
+  // un título y su contenido no se separan entre páginas (si no cabe, pasa entero a la siguiente)
+  const bloque = (titulo, nodo, extra) => Object.assign({ unbreakable:true, stack:[titulo, nodo] }, extra || {});
 
-  const titulo = (txt, extra) => Object.assign({ stack:[
-    { text:T(txt).toUpperCase(), style:"h2" },
-    { canvas:[{ type:"line", x1:0, y1:1.5, x2:ANCHO, y2:1.5, lineWidth:1.4, lineColor:ROJO }] }
-  ], margin:[0, 12, 0, 6] }, extra || {});
-  const recuadro = txt => ({ table:{ widths:["*"], body:[[{ text:T(txt), margin:[2,2,2,2] }]] }, layout:cajas() });
-
-  // ---- cabecera
-  const cabTexto = { stack:[
-    { text:T(nombre), style:"h1" },
-    { text:T(metaPersonaje(R).map(x => x[0] + ": " + x[1]).join("    ·    ")), style:"meta", margin:[0,4,0,0] }
-  ]};
+  // ================= PÁGINA 1 · QUIÉN ES =================
+  const linea1 = [val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : "", val("f-edad") ? val("f-edad") + " años" : ""].filter(Boolean).join("   ·   ");
+  const estado = [R.vida < R.vidaMax ? R.estado.replace(/:.*$/, "") : "", textoHeridasFicha() ? textoHeridasFicha() : ""].filter(Boolean).join("  ·  ");
+  const cab = { stack:[
+    { text:"XANA  //  FICHA DE PERSONAJE", fontSize:6.8, color:K.tenue, characterSpacing:2.4 },
+    { text:T(nombre), fontSize:30, bold:true, color:K.texto, margin:[0, 3, 0, 3] },
+    linea1 ? { text:T(linea1).toUpperCase(), fontSize:8.6, bold:true, color:K.rojo, characterSpacing:1.3 } : "",
+    { text:T(resumenPerfil(R)), fontSize:9, color:K.cian, margin:[0, 7, 0, 0], lineHeight:1.3 },
+    estado ? { text:T("Ahora: " + estado), fontSize:7.6, color:K.suave, margin:[0, 4, 0, 0] } : ""
+  ].filter(Boolean) };
   c.push(imagenPdfValida(D.retrato)
-    ? { columns:[ { image:D.retrato, fit:[76,76], width:76 }, Object.assign({ width:"*", margin:[12,6,0,0] }, cabTexto) ] }
-    : cabTexto);
-  c.push({ canvas:[{ type:"line", x1:0, y1:7, x2:ANCHO, y2:7, lineWidth:2.2, lineColor:"#111" }], margin:[0,0,0,2] });
+    ? { columns:[ { width:118, table:{ widths:[110], body:[[{ image:D.retrato, fit:[110, 110], alignment:"center" }]] }, layout:lay(K.panel, K.rojo) }, Object.assign({ width:"*", margin:[14, 10, 0, 0] }, cab) ] }
+    : cab);
 
-  // ---- estadísticas y derivados
-  c.push(titulo("Estadísticas"));
-  c.push({ table:{ widths:ESTADISTICAS.map(() => "*"), body:[ESTADISTICAS.map(e => ({ stack:[
-      { text:String(R.s[e.c]), style:"statNum" },
-      { text:e.n.toUpperCase(), style:"statNom" }
-    ].concat(R.s[e.c] !== R.base[e.c] ? [{ text:"base " + R.base[e.c], style:"diminuto" }] : []),
-    alignment:"center", margin:[0,3,0,3] }))] }, layout:cajas() });
+  // historia (el texto del jugador, entero)
+  c.push(seccion("Historia"));
+  c.push(val("f-notas") ? panel([{ text:T(val("f-notas")), color:K.texto, lineHeight:1.35 }]) : vacio("Sin historia escrita."));
 
-  const der = [["Vida", R.vida + " / " + R.vidaMax], ["Movimiento", R.mov + "  (corre " + R.mov*2 + ")"],
-    ["Iniciativa", R.ini + " + carta"], ["Humanidad", R.hum + " / " + R.humMax], ["RAM", String(R.ram)]];
-  if(val("f-cb-cabeza")) der.push(["CB cabeza", val("f-cb-cabeza")]);
-  if(val("f-cb-cuerpo")) der.push(["CB cuerpo", val("f-cb-cuerpo")]);
-  { const pl = typeof cbPlacas === "function" ? cbPlacas() : null; if(pl) der.push(["CB placas", String(pl.v)]); }
-  if(R.r.cb) der.push(["CB natural", String(R.r.cb)]);
-  c.push({ table:{ widths:der.map(() => "*"), body:[der.map(d => ({ stack:[
-      { text:d[0].toUpperCase(), style:"statNom" }, { text:T(d[1]), style:"derNum" }
-    ], alignment:"center", margin:[0,2,0,2] }))] }, layout:cajas(), margin:[0,6,0,0] });
-  c.push({ text:T(R.estado), style:"nota", margin:[0,5,0,0] });
-  if(R.mods.length) c.push({ text:[{ text:"Modificadores: ", bold:true }, T(R.mods.join(" · "))], style:"nota", margin:[0,2,0,0] });
+  // raza y rol, uno al lado del otro
+  const rasgos = R.rasgosRaza.filter(x => !/^Competencias iniciales/i.test(x) && !/^Optimización de Papilón: eliges/i.test(x)).map(x => {
+    const m = String(x).match(/^([^:]{3,48}):\s*(.+)$/);
+    return m && !/\d/.test(m[1]) ? vineta(m[1].replace(/^Papilón · /, "Papilón: "), reglaCorta(m[2], 110)) : vineta(reglaCorta(x, 130));
+  });
+  const colRaza = val("f-raza") ? { stack:[sub("Raza · " + val("f-raza") + (R.r.t ? " — " + R.r.t : ""))].concat(rasgos.length ? rasgos : [vacio("Sin rasgos.")]) } : { stack:[sub("Raza"), vacio("Sin elegir.")] };
+  const habR = val("f-trabajo") ? habilidadesRol(R) : [];
+  const introRol = val("f-trabajo") && R.t.intro && R.t.intro[0] ? (String(R.t.intro[0]).match(/^[^.]*\./) || [String(R.t.intro[0])])[0] : "";
+  const colRol = val("f-trabajo") ? { stack:[sub("Rol · " + val("f-trabajo") + (R.t.t ? " — " + R.t.t : "") + " · nivel " + R.nivelT)]
+      .concat(introRol ? [{ text:T(introRol), color:K.suave, italics:true, fontSize:8, margin:[0, 0, 0, 5] }] : [])
+      .concat(habR.length ? habR.map(h => vineta(h.n, !h.puntos && h.grupo && h.grupo !== h.n ? h.grupo : "", K.cian, h.puntos || 0)) : [vacio("Todavía sin habilidades de rol.")]) }
+    : { stack:[sub("Rol"), vacio("Sin elegir.")] };
+  c.push(bloque(seccion("Raza y rol"), { table:{ widths:["*", "*"], body:[[colRaza, colRol]] }, layout:lay() }));
 
-  // ---- habilidades de raza y de rol
-  if(val("f-raza")){
-    c.push(titulo("Habilidad racial · " + R.r.t));
-    if(R.rasgosRaza.length) c.push({ ul:R.rasgosRaza.map(T), style:"lista" });
-  }
-  if(val("f-trabajo")){
-    c.push(titulo("Habilidad de rol · " + R.t.t + " (nivel " + R.nivelT + ")"));
-    if((R.t.intro||[]).length) c.push({ ul:R.t.intro.map(T), style:"lista" });
-    R.bloquesRol.forEach(b => {
-      if(b.titulo) c.push({ text:T(b.titulo + (b.puntos !== null ? "  (" + b.puntos + (b.puntos === 1 ? " punto)" : " puntos)") : "")), style:"h3" });
-      c.push({ ul:b.entradas.map(e => ({ text:[{ text:T(e.t), bold:true }, e.d ? " — " + T(e.d) : ""] })), style:"lista" });
-    });
-  }
+  // atributos: barras
+  c.push(bloque(seccion("Atributos"), { table:{ widths:ESTADISTICAS.map(() => "*"), body:[ESTADISTICAS.map(e => ({ stack:[
+      { text:T(e.n).toUpperCase(), fontSize:6.6, color:K.suave, characterSpacing:1, margin:[0, 0, 0, 4] }, barra(R.s[e.c], K.rojo, 62)] }))] }, layout:lay() }));
 
-  // ---- competencias en tres columnas equilibradas
-  c.push(titulo("Competencias"));
-  const cols = [[],[],[]], alto = [0,0,0];
-  R.comps.forEach(g => { const i = alto.indexOf(Math.min.apply(null, alto)); cols[i].push(g); alto[i] += g.lista.length + 2; });
-  const apagado = "#a0a0a0";
-  c.push({ columns:cols.map(gs => ({ width:"*", stack:gs.map(g => ({ unbreakable:true, margin:[0,0,0,8], stack:[
-      { columns:[ { text:g.nombre.toUpperCase(), style:"h3", margin:[0,0,0,1] },
-                  { text:"NV · TOTAL", style:"diminuto", alignment:"right", width:46, margin:[0,2,0,0] } ] },
-      { table:{ widths:["*", 14, 20], body:g.lista.map(x => {
-          const no = x.total === null;
-          return [
-            { text:T(x.n) + (x.x2 ? " ×2" : ""), color:no ? apagado : "#111" },
-            { text:String(x.nivel), alignment:"center", color:no ? apagado : "#111" },
-            { text:no ? "—" : String(x.total), alignment:"right", bold:!no, color:no ? apagado : ROJO }
-          ];
-        }) }, layout:punteada() }
-    ] })) })), columnGap:16, fontSize:8.4 });
-  c.push({ text:"El total es lo que sumas a la carta. «—» = no aprendida: se falla automáticamente.", style:"diminuto" });
+  // en qué destaca: competencias aprendidas, de más a menos
+  const comps = [].concat(...R.comps.map(g => g.lista.filter(x => x.total !== null && x.nivel > 0).map(x => Object.assign({ est:g.nombre }, x)))).sort((a, b) => b.nivel - a.nivel || b.total - a.total);
+  if(comps.length){
+    const fila = x => ({ columns:[{ width:"*", text:[{ text:T(x.n), color:K.texto }, { text:"  " + T(x.est), color:K.tenue, fontSize:6.6 }] }, { width:62, stack:[barra(x.nivel, K.cian, 62)], margin:[0, 3, 0, 0] }], margin:[0, 0, 0, 4.5] });
+    const lista = comps.slice(0, 18), mitad = Math.ceil(lista.length / 2);
+    c.push(bloque(seccion("En qué destaca"), { stack:[panel([{ columns:[{ width:"*", stack:lista.slice(0, mitad).map(fila) }, { width:"*", stack:lista.slice(mitad).map(fila) }], columnGap:22 }])]
+      .concat(comps.length > 18 ? [{ text:T("Y también: " + comps.slice(18).map(x => x.n).join(", ") + "."), color:K.suave, fontSize:7.4, margin:[0, 4, 0, 0] }] : []) }));
+  }else c.push(bloque(seccion("En qué destaca"), vacio("No tiene ninguna competencia aprendida.")));
 
-  // ---- tablas
-  const anchos = { armas:["*", 70, 42, 40, 60, "*"], municion:["*", 32, "*"], inventario:["*", 32, 32, "*"], hackeos:[150, "*"] };
-  const tabla = (tit, clave) => {
-    if(!R[clave].length) return;
-    c.push(titulo(tit));
-    c.push({ table:{ headerRows:1, dontBreakRows:true, widths:anchos[clave],
-      body:[CABECERAS[clave].map(h => ({ text:h.toUpperCase(), style:"th" }))]
-        .concat(R[clave].map(f => COLUMNAS[clave].map(col => ({ text:T(f[col.k] || "") })))) },
-      layout:rayada(), fontSize:8.6 });
-  };
-  tabla("Armas", "armas");
-  tabla("Munición", "municion");
-  const ropa = ropaYBlindaje();
-  if(ropa.length){
-    c.push(titulo("Ropa y blindaje"));
-    c.push({ table:{ widths:[110, "*"], body:ropa.map(x => [{ text:x[0], bold:true }, T(x[1])]) }, layout:cajas(), fontSize:8.6 });
-  }
-  tabla("Hackeos rápidos", "hackeos");
-  tabla("Inventario", "inventario");
-  if(textoHeridasFicha()){ c.push(titulo("Heridas críticas")); c.push(recuadro(textoHeridasFicha())); }
-  if(val("f-notas")){ c.push(titulo("Contactos y notas")); c.push(recuadro(val("f-notas"))); }
+  // ================= PÁGINA 2 · CÓMO PELEA Y QUÉ LLEVA =================
+  const armas = typeof armasDelPersonaje === "function" ? armasDelPersonaje() : [];
+  const tipoArma = va => va.escudo ? "escudo" : va.unUso ? "granada" : va.tipo && TIPOS_ARMA[va.tipo] ? TIPOS_ARMA[va.tipo].n.toLowerCase() : "";
+  const enMano = armas.filter(va => va.equipada).map(va => va.nombre + (tipoArma(va) && tipoArma(va) !== String(va.nombre).toLowerCase() ? " (" + tipoArma(va) + ")" : ""));
+  const integradas = M ? M.acciones.ataques.concat(M.no.filter(a => a.clase === "arma")).filter(a => a.rec).map(a => a.nombre) : [];
+  const naturales = M ? M.acciones.ataques.filter(a => /^nat-/.test(a.id)).map(a => a.nombre) : [];
+  const hackeos = (D.hackeos || []).filter(h => String(h.nombre || "").trim() && (h.donde || "ranura") !== "guardado").map(h => String(h.nombre).split(" ::")[0]);
+  const TA = typeof terminalActivo === "function" && typeof TERMINAL_LISTO !== "undefined" && TERMINAL_LISTO ? terminalActivo() : null;
+  const especiales = M ? M.acciones.activables.map(a => a.nombre).filter(Boolean) : [];
+  const pelea = [];
+  if(enMano.length) pelea.push(vineta("En las manos", enMano.join(", ")));
+  if(integradas.length) pelea.push(vineta("Armas implantadas", integradas.filter((x, i, a) => a.indexOf(x) === i).join(", ")));
+  if(naturales.length) pelea.push(vineta("Armas naturales", naturales.join(", ")));
+  if(hackeos.length) pelea.push(vineta("Hackeos", hackeos.join(", ") + (TA ? " (con " + TA.n + ")" : "")));
+  if(especiales.length) pelea.push(vineta("Capacidades especiales", especiales.filter((x, i, a) => a.indexOf(x) === i).join(", ")));
+  c.push(bloque(seccion("Cómo pelea"), pelea.length ? panel(pelea) : vacio("No lleva armas ni capacidades de combate.")));
 
-  // ---- ciberware (página nueva)
-  c.push(titulo("Ciberware", { pageBreak:"before", margin:[0,0,0,6] }));
-  const resumenCiber = [
-    { text:[{ text:"Humanidad ", bold:true }, R.hum + " / " + R.humMax, { text:"     RAM ", bold:true }, String(R.ram)], margin:[0,0,0,6] },
-    R.basesPuestas.length
-      ? { text:[{ text:"Bases instaladas: ", bold:true }, T(R.basesPuestas.join(" · "))], margin:[0,0,0,6] }
-      : { text:"Sin bases instaladas.", color:GRIS, italics:true, margin:[0,0,0,6] }
-  ];
-  const svg = figuraSVG("");
-  c.push({ columns:[ svg ? { svg, width:92 } : { text:"", width:92 }, { width:"*", stack:resumenCiber, margin:[14,0,0,0] } ], margin:[0,0,0,8] });
+  // ropa y equipo puesto
+  const puesto = typeof equipoDe === "function" ? equipoDe() : [];
+  const ropa = puesto.map(v => vineta(NOMBRE_HUECO[v.hueco] || "Equipo", v.nombre + (v.tipo === "casco" && v.roto ? " (roto)" : "") + (v.nota && v.e.def !== "eq:otra" ? " · " + v.nota : "")));
+  // lo que lleva encima (sin lo que tiene en las manos)
+  const E = typeof espacioInventario === "function" ? espacioInventario() : null;
+  const lleva = E ? E.items.filter(x => x.nombre && !/en las manos/.test(x.donde || "")).map(x => x.nombre) : [];
+  if(val("f-dinero")) lleva.push("Dinero: " + val("f-dinero"));
+  c.push({ unbreakable:true, columns:[
+    { width:"*", stack:[seccion("Ropa y equipo", null, (ANCHO - 16) / 2), ropa.length ? panel(ropa) : vacio("Nada puesto.")] },
+    { width:"*", stack:[seccion("Lo que lleva encima", null, (ANCHO - 16) / 2), lleva.length ? panel(lleva.map(x => vineta(x))) : vacio("No lleva nada encima.")] }
+  ], columnGap:16 });
 
-  if(R.ciber.length){
-    const zc = [[],[]], za = [0,0];
-    R.ciber.forEach(z => {
-      const i = za[0] <= za[1] ? 0 : 1;
-      zc[i].push(z);
-      za[i] += 2 + z.piezas.reduce((s,p) => s + 1 + Math.ceil((p.e||"").length / 70), 0);
-    });
-    c.push({ columns:zc.map(lista => ({ width:"*", stack:lista.map(z => ({ margin:[0,0,0,8], stack:[
-        { text:T(z.zona).toUpperCase(), style:"h3" }
-      ].concat(z.piezas.map(p => ({ margin:[0,0,0,3], stack:[
-        { text:[{ text:T(p.n), bold:true }, p.ips ? { text:"  (IPS)", color:GRIS } : ""] },
-        p.e ? { text:T(p.e), fontSize:7.8, color:"#333" } : ""
-      ].filter(Boolean) }))) })) })), columnGap:18 });
-  }else c.push({ text:"Sin ciberware instalado.", italics:true, color:GRIS });
-
-  const listaHab = (tit, arr) => {
-    if(!arr.length) return;
-    c.push({ text:tit.toUpperCase() + " (" + arr.length + ")", style:"h3" });
-    c.push({ ul:ordenarHab(arr).map(x => ({ text:[{ text:T(x.n), bold:true }, " — " + T(x.e)] })), style:"lista", fontSize:8.4 });
-  };
-  if(R.an.activas.length || R.an.pasivas.length){
-    c.push(titulo("Habilidades del ciberware"));
-    listaHab("Activas", R.an.activas);
-    listaHab("Pasivas", R.an.pasivas);
+  // ciberware: dónde va cada pieza y cómo se ve
+  const zonas = R.ciber.map(z => ({ zona:z.zona, piezas:z.piezas.filter(pz => !/\(incluido en /.test(pz.n)) })).filter(z => z.piezas.length);
+  const bases = R.basesPuestas.filter(b => !/Tecno-Psíquico|IETS|Zócalos/.test(b));
+  const svg = (figuraSVG("") || "").replace(/fill="#eeeeee"/g, 'fill="' + K.panel + '"').replace(/stroke="#444444"/g, 'stroke="' + K.rojo + '"');
+  const tituloCiber = seccion("Ciberware");
+  if(!zonas.length && !bases.length) c.push(bloque(tituloCiber, vacio("Sin ciberware a la vista (todo el mundo lleva el IETS de serie).")));
+  else{
+    const piezaN = pz => ({ margin:[0, 0, 0, 5], stack:[{ text:T(pz.n.replace(/\s*\((sin humanidad|integrado) [^)]*\)\s*$/, "")), bold:true, color:K.texto }].concat(pz.a ? [{ text:T(pz.a), color:K.suave, italics:true, fontSize:7.4, lineHeight:1.25 }] : []) });
+    const zc = [[], []], za = [0, 0];
+    zonas.forEach(z => { const i = za[0] <= za[1] ? 0 : 1; zc[i].push(z); za[i] += 1.5 + z.piezas.reduce((x, pz) => x + 1 + (pz.a ? Math.ceil(pz.a.length / 70) : 0), 0); });
+    c.push(tituloCiber);
+    c.push({ columns:[
+      svg ? { width:40, svg, margin:[0, 2, 0, 0] } : { width:40, text:"" },
+      { width:"*", margin:[12, 0, 0, 0], stack:(bases.length ? [{ text:[{ text:"MIEMBROS Y SISTEMAS  ", color:K.rojo, bold:true, fontSize:7.2, characterSpacing:1.2 }, { text:T(bases.join("  ·  ")), color:K.texto }], margin:[0, 0, 0, 8] }] : [])
+        .concat([{ columns:zc.map(l => ({ width:"*", stack:l.map(z => ({ unbreakable:true, margin:[0, 0, 0, 5], stack:[sub(z.zona)].concat(z.piezas.map(piezaN)) })) })), columnGap:16 }]) }
+    ] });
   }
 
   return {
-    pageSize:"A4", pageOrientation:"portrait", pageMargins:[36, 36, 36, 42],
+    pageSize:"A4", pageOrientation:"portrait", pageMargins:[36, 40, 36, 44],
     info:{ title:"XANA · " + nombre, author:"XANA", subject:"Ficha de personaje" },
+    background:(pag, tam) => ({ canvas:[
+      { type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo },
+      { type:"rect", x:0, y:0, w:tam.width, h:3, color:K.rojo },
+      { type:"line", x1:18, y1:18, x2:42, y2:18, lineWidth:1, lineColor:K.rojo }, { type:"line", x1:18, y1:18, x2:18, y2:42, lineWidth:1, lineColor:K.rojo },
+      { type:"line", x1:tam.width - 18, y1:tam.height - 18, x2:tam.width - 42, y2:tam.height - 18, lineWidth:1, lineColor:K.rojo },
+      { type:"line", x1:tam.width - 18, y1:tam.height - 18, x2:tam.width - 18, y2:tam.height - 42, lineWidth:1, lineColor:K.rojo }
+    ] }),
     content:c,
     footer:(pag, total) => ({ columns:[
-      { text:"XANA · " + T(nombre), alignment:"left" },
+      { text:"XANA  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 },
       { text:pag + " / " + total, alignment:"right" }
-    ], margin:[36, 14, 36, 0], fontSize:7, color:GRIS }),
-    defaultStyle:{ font:"Roboto", fontSize:9, lineHeight:1.15, color:"#111" },
-    styles:{
-      h1:{ fontSize:22, bold:true, color:ROJO },
-      meta:{ fontSize:9, color:"#333" },
-      h2:{ fontSize:10.5, bold:true, characterSpacing:1.1, color:"#111" },
-      h3:{ fontSize:8.8, bold:true, color:ROJO, characterSpacing:0.4, margin:[0,4,0,2] },
-      statNum:{ fontSize:18, bold:true },
-      derNum:{ fontSize:11.5, bold:true },
-      statNom:{ fontSize:6.4, color:GRIS, characterSpacing:0.6 },
-      nota:{ fontSize:8.4, color:"#333" },
-      diminuto:{ fontSize:6.8, color:GRIS },
-      th:{ fontSize:7, bold:true, color:"#111", characterSpacing:0.5 },
-      lista:{ margin:[0,0,0,4] }
-    }
+    ], margin:[36, 16, 36, 0], fontSize:6.6, color:K.tenue }),
+    defaultStyle:{ font:"Roboto", fontSize:8.6, lineHeight:1.2, color:K.texto }
   };
 }
 
