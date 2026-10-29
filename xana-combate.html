@@ -4996,9 +4996,10 @@ function calcular(lista){
   if(fbc) base.cuerpo = num(fbc.cuerpo);
   const r = razaActual();
   const tr = modsTrabajo();
-  // la ropa (Estilo sin aprender, Atletismo, Sigilo…) y los estados (Inmunosupresores: −2 a Vigor) suman como el trabajo: sin pasar de 10
+  // la ropa (Estilo sin aprender, Atletismo, Sigilo…) y los estados (los de los consumibles y drogas también) van con los del trabajo,
+  // pero pueden pasar de 10 (supera): el 10 es el límite natural de la competencia
   const sit = modsSituacion();
-  Object.keys(sit.comps).forEach(c => { tr.comps[c] = (tr.comps[c] || []).concat(sit.comps[c]); });
+  Object.keys(sit.comps).forEach(c => { tr.comps[c] = (tr.comps[c] || []).concat(sit.comps[c].map(f => Object.assign({}, f, {supera:true}))); });
   const an = analizarCiberware(tr.redHum, lista);
   const M = an.mods;
   const sg = v => (v >= 0 ? "+" : "−") + Math.abs(v);
@@ -5093,7 +5094,7 @@ function calcular(lista){
   const nivelDe = (est, nombre) => { const n0 = nivelBase(est, nombre); return chipDe(nombre) ? Math.max(n0, 3) : n0; };
   // un bonus que dice «aunque no la tengas aprendida» (o la Maestría de Campo del Técnico) activa la competencia a 0
   const activaSin = nombre => (tr.comps[nombre] || []).some(f => f.activa) || (M.compsF[nombre] || []).some(f => f.activa && f.v > 0);
-  /* Competencia: nivel natural (máx. 10) + lo que dé el trabajo (sin pasar de 10) + el ciberware (solo pasa de 10 si la pieza lo permite).
+  /* Competencia: nivel natural (máx. 10) + lo que dé el trabajo (sin pasar de 10) + ropa, estados (consumibles) y ciberware, que sí pueden pasar de 10.
      Devuelve el valor efectivo y el detalle de cada paso. */
   const compEfectiva = (est, nombre) => {
     const nivel = nivelDe(est, nombre);
@@ -5104,13 +5105,12 @@ function calcular(lista){
     if(ch && nivelBase(est, nombre) < 3) pasos.push("Nivel 3 por el " + ch.n);
     (tr.comps[nombre] || []).forEach(f => {
       const antes = v;
-      v = f.v > 0 ? Math.max(antes, Math.min(MAX_COMP, antes + f.v)) : antes + f.v;   // lo que no es ciberware no pasa de 10
+      v = f.v > 0 && !f.supera ? Math.max(antes, Math.min(MAX_COMP, antes + f.v)) : antes + f.v;   // el trabajo no pasa de 10; ropa y estados sí
       pasos.push(sg(v - antes) + " " + f.n + (v - antes !== f.v ? " (máximo natural " + MAX_COMP + ")" : ""));
     });
     (M.compsF[nombre] || []).forEach(f => {
-      const antes = v; v += f.v;
-      if(f.v > 0 && !f.supera && v > Math.max(antes, MAX_COMP)) v = Math.max(antes, MAX_COMP);
-      pasos.push(sg(v - antes) + " " + f.n + " (ciberware)" + (v - antes !== f.v ? " (máximo " + MAX_COMP + ")" : ""));
+      const antes = v; v += f.v;      // el ciberware puede pasar de 10
+      pasos.push(sg(v - antes) + " " + f.n + " (ciberware)");
     });
     return {nivel, v, pasos, activa:nivel <= 0 && activaSin(nombre)};
   };
