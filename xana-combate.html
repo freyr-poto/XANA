@@ -9695,7 +9695,7 @@ function sanearTracker(t){
   out.pjs = (Array.isArray(t.pjs) ? t.pjs : []).filter(p => obj(p) && obj(p.ficha) && typeof p.id === "string")
     .map(p => ({id:p.id, nombre:String(p.nombre || p.ficha["f-nombre"] || "PJ"), ficha:fichaAlDia(sanear(p.ficha)), foto:typeof p.foto === "string" ? p.foto : "", fecha:String(p.fecha || ""), nube:typeof p.nube === "string" ? p.nube : undefined}));
   out.pnjs = (Array.isArray(t.pnjs) ? t.pnjs : []).filter(p => obj(p) && typeof p.id === "string").map(sanearPnj);
-  // PNJ importantes: fichas completas (.json) que actúan como PNJ
+  // PNJ creados: fichas completas (.json) que actúan como PNJ
   out.vips = (Array.isArray(t.vips) ? t.vips : []).filter(p => obj(p) && obj(p.ficha) && typeof p.id === "string")
     .map(p => ({id:p.id, nombre:String(p.nombre || p.ficha["f-nombre"] || "PNJ"), ficha:fichaAlDia(sanear(p.ficha)), foto:typeof p.foto === "string" ? p.foto : "", fecha:String(p.fecha || "")}));
   out.tiempo = sanearTiempo(t.tiempo);
@@ -9817,7 +9817,7 @@ async function incorporarFicha(obj, respaldo, idNube){
   });
   return (nuevo ? "Añadido: " : "Actualizado: ") + nombre;
 }
-/* PNJ importantes: una ficha completa (.json) en su lista aparte. Si ya estaba (mismo nombre), se pone al día. */
+/* PNJ creados: una ficha completa (.json) en su lista aparte. Si ya estaba (mismo nombre), se pone al día. */
 async function incorporarVip(obj, respaldo){
   const foto = await miniatura(obj.retrato);
   const d = prepararFicha(obj);
@@ -9828,7 +9828,7 @@ async function incorporarVip(obj, respaldo){
   const nuevo = !v;
   if(!v){ v = {id:nuevoIdT("v")}; T.vips.push(v); }
   Object.assign(v, {nombre, ficha:d, foto, fecha:new Date().toISOString().slice(0, 10)});
-  return (nuevo ? "PNJ importante añadido: " : "PNJ importante actualizado: ") + nombre;
+  return (nuevo ? "PNJ creado añadido: " : "PNJ creado actualizado: ") + nombre;
 }
 async function importarVips(archivos){
   const hechos = [], malos = [];
@@ -9842,16 +9842,30 @@ async function importarVips(archivos){
   if(malos.length) avisar("Estos archivos no son fichas de XANA (.json de «Copia de seguridad»): " + malos.join(", "), "No se han podido cargar");
   else if(hechos.length) toast(hechos.join(" · "), 4000);
 }
-/* Un PNJ importante entra en el combate (solo una vez): con su ficha, como PNJ (tira su carta solo, es del bando del máster) */
+/* Un PNJ creado entra en el combate (las copias que hagan falta, numeradas como los PNJ): con su ficha, como PNJ (tira su carta solo, es del bando del máster).
+   Con n devuelve la lista de los que entran; sin n, el único que entra. */
 const vipEnCombate = v => !!(T.combate && T.combate.participantes.some(x => x.vip && x.ref === v.id));
-function anyadirVip(v){
-  if(vipEnCombate(v)) return null;
+function anyadirVip(v, n){
+  if(n !== undefined){
+    const k = Math.max(0, Math.min(20, parseInt(n, 10) || 0)), out = [];
+    const base = v.nombre || "PNJ", yaHay = vipEnCombate(v);
+    for(let i = 0; i < k; i++) out.push(anyadirVipUno(v, yaHay || i > 0 ? nombreCopia(base) : nombreLibre(k > 1 ? base + " 1" : base)));
+    return out;
+  }
+  return anyadirVipUno(v, nombreLibre(v.nombre));
+}
+/* Nombre para otra copia: «Barón Vex 2», «Barón Vex 3»… (el primer número libre desde 2) */
+function nombreCopia(base){
+  const usados = new Set((T.combate ? T.combate.participantes : []).map(p => normal(p.nombre)));
+  for(let i = 2; ; i++) if(!usados.has(normal(base + " " + i))) return base + " " + i;
+}
+const copiasVip = v => T.combate ? T.combate.participantes.filter(x => x.vip && x.ref === v.id).length : 0;
+function anyadirVipUno(v, nombre){
   const ficha = clonar(v.ficha);
   const cmb = ficha.combate && typeof ficha.combate === "object" ? ficha.combate : {};
   const heridas = (Array.isArray(cmb.heridas) ? cmb.heridas : []).filter(h => h && h.n && !h.temporal && HERIDAS_CRITICAS[h.z]).map(h => Object.assign({}, h));
   ficha.combate = {cont:cmb.cont || {}, contT:cmb.contT || {}, estados:(Array.isArray(cmb.estados) ? cmb.estados : []).filter(estadoLargo).map(s => Object.assign({}, s)), muerte:0, heridas};
   reponerPorCombate(ficha);
-  const nombre = nombreLibre(v.nombre);
   ficha["f-nombre"] = nombre;
   const p = {id:nuevoIdT("c"), tipo:"pnj", vip:true, ref:v.id, nombre, ficha, carta:"", fuera:false, notas:String(ficha["f-heridas"] || ""), foto:v.foto || "", heridas:heridas.map(h => Object.assign({}, h))};
   cartaPnj(p);
@@ -9859,7 +9873,7 @@ function anyadirVip(v){
   anotarIceArmado(p, conFicha(ficha, () => armarIceInicial()));
   return p;
 }
-/* Al terminar el combate: lo que le ha pasado a un PNJ importante (vida, heridas, usos, munición) se guarda en su ficha si el máster quiere */
+/* Al terminar el combate: lo que le ha pasado a un PNJ creado (vida, heridas, usos, munición) se guarda en su ficha si el máster quiere */
 function guardarVipDeCombate(p){
   const v = T.vips.find(x => x.id === p.ref);
   if(!v) return false;
@@ -10179,7 +10193,9 @@ function empezarCombate(pjIds, pnjCant, vipIds){
   T.combate = {rot:1, turno:null, sel:null, hechos:[], participantes:[], registro:[]};
   HIST.length = 0;
   T.pjs.filter(p => pjIds.includes(p.id)).forEach(anyadirPj);
-  (T.vips || []).filter(v => (vipIds || []).includes(v.id)).forEach(anyadirVip);
+  // vipIds: lista de ids (uno de cada) o {id: cuántos}
+  const cantV = Array.isArray(vipIds) ? vipIds.reduce((o, id) => (o[id] = (o[id] || 0) + 1, o), {}) : (vipIds && typeof vipIds === "object" ? vipIds : {});
+  (T.vips || []).forEach(v => { const n = parseInt(cantV[v.id], 10) || 0; if(n > 0) anyadirVip(v, n); });
   T.pnjs.forEach(t => { const n = num(pnjCant[t.id]); if(n > 0) anyadirPnj(t, n); });
   if(!T.combate.participantes.length){ T.combate = null; return false; }
   ordenar();
@@ -10892,13 +10908,14 @@ function htmlPreparar(){
       ${p.foto ? `<img src="${p.foto}" alt="" style="width:40px;height:40px;border-radius:50%">` : ""}<span><b>${esc(p.nombre)}</b><br><span class="sub">${esc(subPj(p))}</span></span></label>`).join("");
   const pnjs = T.pnjs.map(t => `<div class="tk-tarjeta" style="flex-direction:row;align-items:center;justify-content:space-between"><span><b>${esc(t.nombre)}</b><br><span class="sub">${esc(subPnj(t))}</span></span>
       <span class="tk-cant"><button type="button" class="btn" data-cant="-1" data-k="${esc(t.id)}">−</button><input inputmode="numeric" data-prep-pnj="${esc(t.id)}" value="0" aria-label="Cuántos ${esc(t.nombre)}"><button type="button" class="btn" data-cant="1" data-k="${esc(t.id)}">+</button></span></div>`).join("");
-  const vips = (T.vips || []).map(v => `<label class="tk-tarjeta" style="flex-direction:row;align-items:center"><input type="checkbox" data-prep-vip="${esc(v.id)}" style="width:24px;height:24px">
-      ${v.foto ? `<img src="${v.foto}" alt="" style="width:40px;height:40px;border-radius:50%">` : ""}<span><b>${esc(v.nombre)}</b><br><span class="sub">${esc(subPj(v))}</span></span></label>`).join("");
+  const vips = (T.vips || []).map(v => `<div class="tk-tarjeta" style="flex-direction:row;align-items:center;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px">
+      ${v.foto ? `<img src="${v.foto}" alt="" style="width:40px;height:40px;border-radius:50%">` : ""}<span><b>${esc(v.nombre)}</b><br><span class="sub">${esc(subPj(v))}</span></span></span>
+      <span class="tk-cant"><button type="button" class="btn" data-cantv="-1" data-k="${esc(v.id)}">−</button><input inputmode="numeric" data-prep-vip="${esc(v.id)}" value="0" aria-label="Cuántos ${esc(v.nombre)}"><button type="button" class="btn" data-cantv="1" data-k="${esc(v.id)}">+</button></span></div>`).join("");
   return `<div class="tk-sec"><div class="tk-sec-cab"><h2>PREPARAR COMBATE</h2><p>Elige quién entra. Los PJ salen de las fichas que te han pasado; los PNJ, de tu biblioteca.</p></div>
     ${!T.pjs.length && !T.pnjs.length && !(T.vips || []).length ? `<div class="tk-vacio"><h3>Aún no hay personajes</h3><p>Carga las fichas de los jugadores y crea tus PNJ en «Personajes».</p>
       <button type="button" class="btn principal" data-t="ir-personajes">Ir a Personajes</button></div>` : `
     <h4 class="tk-h4">Personajes jugadores</h4><div class="tk-tarjetas">${pjs || `<p class="cm-vacio">Ninguna ficha cargada.</p>`}</div>
-    ${vips ? `<h4 class="tk-h4">PNJ importantes</h4><div class="tk-tarjetas">${vips}</div>` : ""}
+    ${vips ? `<h4 class="tk-h4">PNJ creados</h4><div class="tk-tarjetas">${vips}</div>` : ""}
     <h4 class="tk-h4">PNJ</h4><div class="tk-tarjetas">${pnjs || `<p class="cm-vacio">Ningún PNJ creado.</p>`}</div>
     <div class="tk-botones"><button type="button" class="btn principal" data-t="empezar">Empezar combate</button></div>`}</div>`;
 }
@@ -11189,16 +11206,16 @@ function pintarPersonajes(){
     return `<article class="tk-tarjeta"><div class="cab">${v.foto ? `<img src="${v.foto}" alt="">` : ""}<div><h3>${esc(v.nombre)}</h3><span class="sub">${esc(subPj(v))}</span></div></div>
       <dl><div><dt>Vida</dt><dd>${R.vida}/${R.vidaMax}</dd></div><div><dt>CB</dt><dd>${R.cb}</dd></div><div><dt>Ini</dt><dd>${R.ini}</dd></div><div><dt>Mov</dt><dd>${R.mov}</dd></div><div><dt>RAM</dt><dd>${R.ram}</dd></div></dl>
       <span class="sub">Ficha completa · cargada el ${esc(v.fecha || "—")}</span>
-      <div class="acc">${T.combate ? (vipEnCombate(v) ? `<span class="sub">En el combate</span>` : `<button type="button" class="btn" data-vip-combate="${esc(v.id)}">Al combate</button>`) : ""}
+      <div class="acc">${T.combate ? `${copiasVip(v) ? `<span class="sub">En el combate: ${copiasVip(v)}</span>` : ""}<span class="tk-cant"><input inputmode="numeric" id="tkNv-${esc(v.id)}" value="1" aria-label="Cuántos"><button type="button" class="btn" data-vip-combate="${esc(v.id)}">Al combate</button></span>` : ""}
         <button type="button" class="btn" data-vip-quitar="${esc(v.id)}">Eliminar</button></div></article>`; }).join("");
   caja.innerHTML = `<section class="tk-sec"><div class="tk-sec-cab"><h2>PERSONAJES JUGADORES</h2>
       <p>${nubeLista() ? "Con la partida en la nube, las fichas de tus jugadores te llegan solas. También puedes cargar un .json (Exportar → Copia de seguridad)." : "Pide a cada jugador su ficha: <b>Exportar → Copia de seguridad (.json)</b>. Si te pasa una nueva, cárgala otra vez y se actualiza."}</p>
       <button type="button" class="btn${nubeLista() ? "" : " principal"}" data-t="cargar">Cargar fichas (.json)</button></div>
       ${nubeLista() ? `<div class="tk-nube" id="tkNube">${htmlNubeT()}</div>` : ""}
       <div class="tk-tarjetas">${pjs || `<div class="tk-vacio">Todavía no has cargado ninguna ficha.</div>`}</div></section>
-    <section class="tk-sec"><div class="tk-sec-cab"><h2>PNJ IMPORTANTES</h2><p>Personajes con ficha completa de XANA (.json de «Copia de seguridad»): en combate actúan como PNJ, uno de cada. Al terminar el combate se te pregunta si guardar lo que les ha pasado.</p>
+    <section class="tk-sec"><div class="tk-sec-cab"><h2>PNJ CREADOS</h2><p>Personajes con ficha completa de XANA (.json de «Copia de seguridad»): en combate actúan como PNJ y puedes meter varios de cada uno. Al terminar el combate se te pregunta si guardar en su ficha lo que les ha pasado (con varias copias, eliges cuál).</p>
       <button type="button" class="btn" data-t="cargar-vip">Importar ficha (.json)</button></div>
-      <div class="tk-tarjetas">${vips || `<div class="tk-vacio">Aún no has importado ningún PNJ importante.</div>`}</div></section>
+      <div class="tk-tarjetas">${vips || `<div class="tk-vacio">Aún no has importado ningún PNJ creado.</div>`}</div></section>
     <section class="tk-sec"><div class="tk-sec-cab"><h2>PNJ</h2><p>Fichas rápidas: estadísticas, competencias de combate y de trato, CB y armas.</p>
       <button type="button" class="btn" data-t="pnj-azar">PNJ al azar</button><button type="button" class="btn principal" data-t="nuevo-pnj">Nuevo PNJ</button></div>
       <div class="tk-tarjetas">${pnjs || `<div class="tk-vacio">Aún no has creado ningún PNJ.</div>`}</div></section>`;
@@ -11403,6 +11420,7 @@ async function accion(b){
   if(b.dataset.t === "hk-desarmar" && sel){ const a = (sel.armados || [])[num(b.dataset.i)]; if(!a) return; antes("quitar hackeo armado · " + sel.nombre);
     sel.armados.splice(num(b.dataset.i), 1); anotar(sel.nombre + ": desarma " + a.nombre + ".", "ataque"); guardarTracker(); pintar(); return; }
   if(b.dataset.vida && sel){ antes("vida · " + sel.nombre); const n = num(b.dataset.vida); cambiarVidaP(sel, n, ""); guardarTracker(); pintar(); return; }
+  if(b.dataset.cantv){ const inp = document.querySelector(`[data-prep-vip="${b.dataset.k}"]`); if(inp) inp.value = Math.max(0, Math.min(20, num(inp.value) + num(b.dataset.cantv))); return; }
   if(b.dataset.cant){ const inp = document.querySelector(`[data-prep-pnj="${b.dataset.k}"]`); if(inp) inp.value = Math.max(0, num(inp.value) + num(b.dataset.cant)); return; }
   if(b.dataset.critZ){
     const h = (HERIDAS_CRITICAS[b.dataset.critZ] || []).find(x => x[0] === num(b.dataset.critN));
@@ -11421,8 +11439,10 @@ async function accion(b){
       guardarTracker(); pintar(); } return; }
   if(b.dataset.pjCombate){ const pj = T.pjs.find(p => p.id === b.dataset.pjCombate); if(pj && T.combate){ antes("añadir " + pj.nombre); const p = anyadirPj(pj); anotar(p.nombre + " entra en el combate.", "combate"); guardarTracker(); toast(pj.nombre + " entra en el combate"); pintar(); } return; }
   if(b.dataset.vipQuitar){ const v = T.vips.find(x => x.id === b.dataset.vipQuitar);
-    if(v && await confirmar("Se borra «" + v.nombre + "» de tus PNJ importantes (si está en el combate, sigue).", "Eliminar")){ T.vips = T.vips.filter(x => x !== v); guardarTracker(); pintar(); } return; }
-  if(b.dataset.vipCombate){ const v = T.vips.find(x => x.id === b.dataset.vipCombate); if(v && T.combate && !vipEnCombate(v)){ antes("añadir " + v.nombre); const p = anyadirVip(v); anotar(p.nombre + " entra en el combate.", "combate"); guardarTracker(); toast(v.nombre + " entra en el combate"); pintar(); } return; }
+    if(v && await confirmar("Se borra «" + v.nombre + "» de tus PNJ creados (si está en el combate, sigue).", "Eliminar")){ T.vips = T.vips.filter(x => x !== v); guardarTracker(); pintar(); } return; }
+  if(b.dataset.vipCombate){ const v = T.vips.find(x => x.id === b.dataset.vipCombate); const i = document.getElementById("tkNv-" + b.dataset.vipCombate);
+    const n = Math.max(1, Math.min(20, num(i && i.value) || 1));
+    if(v && T.combate){ antes("añadir " + v.nombre); const l = anyadirVip(v, n); anotar(l.map(p => p.nombre).join(", ") + (l.length > 1 ? " entran" : " entra") + " en el combate.", "combate"); guardarTracker(); toast(l.map(p => p.nombre).join(", ") + (l.length > 1 ? " entran" : " entra") + " en el combate"); pintar(); } return; }
   if(b.dataset.pnjEditar){ EDITANDO = clonar(T.pnjs.find(t => t.id === b.dataset.pnjEditar)); pintar(); window.scrollTo(0, 0); return; }
   if(b.dataset.pnjDuplicar){ const t = T.pnjs.find(x => x.id === b.dataset.pnjDuplicar); if(t){ const n = clonar(t); n.id = nuevoIdT("n"); n.nombre = t.nombre + " (copia)"; T.pnjs.push(n); guardarTracker(); pintar(); } return; }
   if(b.dataset.pnjQuitar){ const t = T.pnjs.find(x => x.id === b.dataset.pnjQuitar);
@@ -11486,14 +11506,17 @@ async function accion(b){
     case "empezar": {
       const pjIds = [...document.querySelectorAll("[data-prep-pj]")].filter(x => x.checked).map(x => x.dataset.prepPj);
       const cant = {}; document.querySelectorAll("[data-prep-pnj]").forEach(x => { cant[x.dataset.prepPnj] = num(x.value); });
-      const vipIds = [...document.querySelectorAll("[data-prep-vip]")].filter(x => x.checked).map(x => x.dataset.prepVip);
+      const vipIds = {}; document.querySelectorAll("[data-prep-vip]").forEach(x => { vipIds[x.dataset.prepVip] = Math.max(0, Math.min(20, num(x.value))); });
       if(!empezarCombate(pjIds, cant, vipIds)){ toast("Elige al menos un combatiente"); return; }
       pintar(); return;
     }
     case "ordenar": antes("ordenar por iniciativa"); ordenar(); anotar("Se reordena por iniciativa.", "turno"); guardarTracker(); pintar(); return;
     case "anyadir": return dialogoAnyadir();
     case "fuera": if(sel){ antes((sel.fuera ? "volver al combate · " : "fuera de combate · ") + sel.nombre); sel.fuera = !sel.fuera; anotar(sel.nombre + (sel.fuera ? " queda fuera de combate." : " vuelve al combate."), "combate"); if(sel.fuera && c.turno === sel.id) c.turno = null; guardarTracker(); pintar(); } return;
-    case "duplicar": if(sel && sel.vip){ toast("Un PNJ importante solo puede estar una vez en el combate."); return; }
+    case "duplicar":
+      if(sel && sel.vip){ const v = T.vips.find(x => x.id === sel.ref); if(!v){ toast("Ese PNJ creado ya no está en tu lista."); return; }
+        antes("duplicar " + sel.nombre); const n = anyadirVipUno(v, nombreCopia(v.nombre)); c.participantes.splice(c.participantes.indexOf(n), 1); c.participantes.splice(c.participantes.indexOf(sel) + 1, 0, n);
+        anotar(n.nombre + " entra en el combate.", "combate"); guardarTracker(); pintar(); return; }
       if(sel && sel.tipo === "pnj"){ antes("duplicar " + sel.nombre); const n = clonar(sel); n.id = nuevoIdT("c"); n.nombre = nombreLibre(sel.nombre.replace(/ \d+$/, "")); n.ficha["f-nombre"] = n.nombre;
       delete n.ficha["f-vidaActual"]; n.ficha.combate = {cont:{}, estados:[], muerte:0}; n.carta = ""; n.fuera = false; n.heridas = []; delete n.ultimoObjetivo;
       c.participantes.splice(c.participantes.indexOf(sel) + 1, 0, n); anotar(n.nombre + " entra en el combate.", "combate"); guardarTracker(); pintar(); } return;
@@ -11504,13 +11527,14 @@ async function accion(b){
 /* Añadir combatientes sin salir del combate: PJ que aún no están y PNJ de la biblioteca (con cantidad) */
 async function dialogoAnyadir(){
   const fuera = T.pjs.filter(pj => !T.combate.participantes.some(x => x.tipo === "pj" && x.ref === pj.id));
-  const vipsFuera = (T.vips || []).filter(v => !vipEnCombate(v));
+  const vipsFuera = T.vips || [];
   if(!fuera.length && !T.pnjs.length && !vipsFuera.length){ avisar("No hay más personajes: carga fichas o crea PNJ en «Personajes»."); return; }
   const velo = document.createElement("div");
   velo.className = "velo tk-anyadir";
   velo.innerHTML = `<div class="modal ancho" role="dialog" aria-modal="true" aria-label="Añadir combatientes"><h3>Añadir al combate</h3>
     ${fuera.length ? `<h4 class="tk-h4">Personajes jugadores</h4><div class="tk-anyadir-l">${fuera.map(pj => `<label class="tk-anyadir-f"><input type="checkbox" data-add-pj="${esc(pj.id)}"> <b>${esc(pj.nombre)}</b> <span class="sub">${esc(subPj(pj))}</span></label>`).join("")}</div>` : ""}
-    ${vipsFuera.length ? `<h4 class="tk-h4">PNJ importantes</h4><div class="tk-anyadir-l">${vipsFuera.map(v => `<label class="tk-anyadir-f"><input type="checkbox" data-add-vip="${esc(v.id)}"> <b>${esc(v.nombre)}</b> <span class="sub">${esc(subPj(v))}</span></label>`).join("")}</div>` : ""}
+    ${vipsFuera.length ? `<h4 class="tk-h4">PNJ creados</h4><div class="tk-anyadir-l">${vipsFuera.map(v => `<div class="tk-anyadir-f"><span><b>${esc(v.nombre)}</b> <span class="sub">${esc(subPj(v))}${copiasVip(v) ? " · ya en el combate: " + copiasVip(v) : ""}</span></span>
+      <span class="tk-cant"><button type="button" class="btn" data-addcv="-1" data-k="${esc(v.id)}">−</button><input inputmode="numeric" data-add-vip="${esc(v.id)}" value="0" aria-label="Cuántos ${esc(v.nombre)}"><button type="button" class="btn" data-addcv="1" data-k="${esc(v.id)}">+</button></span></div>`).join("")}</div>` : ""}
     ${T.pnjs.length ? `<h4 class="tk-h4">PNJ</h4><div class="tk-anyadir-l">${T.pnjs.map(t => `<div class="tk-anyadir-f"><span><b>${esc(t.nombre)}</b> <span class="sub">${esc(subPnj(t))}</span></span>
       <span class="tk-cant"><button type="button" class="btn" data-addc="-1" data-k="${esc(t.id)}">−</button><input inputmode="numeric" data-add-pnj="${esc(t.id)}" value="0" aria-label="Cuántos ${esc(t.nombre)}"><button type="button" class="btn" data-addc="1" data-k="${esc(t.id)}">+</button></span></div>`).join("")}</div>` : ""}
     <p class="cm-vacio">Los PNJ entran con su carta ya tirada; a los PJ pónsela tú. El orden se recoloca sin cambiar de quién es el turno.</p>
@@ -11520,38 +11544,46 @@ async function dialogoAnyadir(){
   velo.addEventListener("click", ev => {
     if(ev.target === velo) return cerrar();
     const b = ev.target.closest("button"); if(!b) return;
+    if(b.dataset.addcv){ const i = velo.querySelector(`[data-add-vip="${b.dataset.k}"]`); i.value = Math.max(0, Math.min(20, num(i.value) + num(b.dataset.addcv))); return; }
     if(b.dataset.addc){ const i = velo.querySelector(`[data-add-pnj="${b.dataset.k}"]`); i.value = Math.max(0, Math.min(20, num(i.value) + num(b.dataset.addc))); return; }
     if(b.dataset.addb === "no") return cerrar();
     if(b.dataset.addb === "si"){
       const pjs = [...velo.querySelectorAll("[data-add-pj]")].filter(x => x.checked).map(x => T.pjs.find(p => p.id === x.dataset.addPj)).filter(Boolean);
       const pnjs = [...velo.querySelectorAll("[data-add-pnj]")].map(x => ({t:T.pnjs.find(p => p.id === x.dataset.addPnj), n:Math.max(0, Math.min(20, num(x.value)))})).filter(x => x.t && x.n);
-      const vs = [...velo.querySelectorAll("[data-add-vip]")].filter(x => x.checked).map(x => T.vips.find(v => v.id === x.dataset.addVip)).filter(Boolean);
+      const vs = [...velo.querySelectorAll("[data-add-vip]")].map(x => ({v:T.vips.find(v => v.id === x.dataset.addVip), n:Math.max(0, Math.min(20, num(x.value)))})).filter(x => x.v && x.n);
       if(!pjs.length && !pnjs.length && !vs.length){ toast("Elige a alguien"); return; }
       antes("añadir combatientes");
-      const nuevos = pjs.map(anyadirPj).concat(vs.map(anyadirVip).filter(Boolean), ...pnjs.map(x => anyadirPnj(x.t, x.n)));
+      const nuevos = pjs.map(anyadirPj).concat(...vs.map(x => anyadirVip(x.v, x.n)), ...pnjs.map(x => anyadirPnj(x.t, x.n)));
       anotar(nuevos.map(p => p.nombre).join(", ") + (nuevos.length > 1 ? " entran" : " entra") + " en el combate.", "combate");
       cerrar(); guardarTracker(); pintar();
     }
   });
 }
-/* Antes de terminar el combate: ¿se guarda en su ficha lo que les ha pasado a los PNJ importantes? true = seguir terminando, false = cancelar */
+/* Antes de terminar el combate: ¿se guarda en su ficha lo que les ha pasado a los PNJ creados? Si hay varias copias del mismo, solo se puede guardar una
+   (marcar una desmarca las demás). true = seguir terminando, false = cancelar */
 function preguntarVips(){
   const l = T.combate ? T.combate.participantes.filter(p => p.vip && T.vips.some(v => v.id === p.ref)) : [];
   if(!l.length) return Promise.resolve(true);
   return new Promise(res => {
     const velo = document.createElement("div");
     velo.className = "velo tk-vips-fin";
-    velo.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="PNJ importantes"><h3>PNJ importantes</h3>
-      <p>¿Guardas en su ficha lo que les ha pasado en este combate (vida, heridas, munición, usos y estados largos)? Lo que no marques vuelve a como estaba.</p>
-      <div class="tk-anyadir-l">${l.map(p => { const R = resumenFicha(p.ficha); return `<label class="tk-anyadir-f"><input type="checkbox" data-vip-guardar="${esc(p.id)}" checked> <b>${esc(p.nombre)}</b> <span class="sub">vida ${R.vida}/${R.vidaMax}${(p.heridas || []).filter(h => !h.temporal).length ? " · " + (p.heridas || []).filter(h => !h.temporal).map(h => h.n).join(", ") : ""}${p.fuera ? " · fuera de combate" : ""}</span></label>`; }).join("")}</div>
+    const varias = l.some(p => l.filter(q => q.ref === p.ref).length > 1);
+    velo.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="PNJ creados"><h3>PNJ creados</h3>
+      <p>¿Guardas en su ficha lo que les ha pasado en este combate (vida, heridas, munición, usos y estados largos)? Lo que no marques vuelve a como estaba.${varias ? " De un PNJ con varias copias solo se guarda una: elige cuál (o ninguna)." : ""}</p>
+      <div class="tk-anyadir-l">${l.map(p => { const R = resumenFicha(p.ficha); const prim = l.find(q => q.ref === p.ref) === p; return `<label class="tk-anyadir-f"><input type="checkbox" data-vip-guardar="${esc(p.id)}" data-vip-ref="${esc(p.ref)}"${prim ? " checked" : ""}> <b>${esc(p.nombre)}</b> <span class="sub">vida ${R.vida}/${R.vidaMax}${(p.heridas || []).filter(h => !h.temporal).length ? " · " + (p.heridas || []).filter(h => !h.temporal).map(h => h.n).join(", ") : ""}${p.fuera ? " · fuera de combate" : ""}</span></label>`; }).join("")}</div>
       <div class="tk-botones"><button type="button" class="btn" data-vf="cancelar">Cancelar</button><button type="button" class="btn" data-vf="nada">No guardar nada</button><button type="button" class="btn principal" data-vf="si">Guardar los marcados</button></div></div>`;
     document.body.appendChild(velo);
+    velo.addEventListener("change", ev => {
+      const x = ev.target.closest("[data-vip-guardar]");
+      if(x && x.checked) velo.querySelectorAll("[data-vip-guardar]").forEach(y => { if(y !== x && y.dataset.vipRef === x.dataset.vipRef) y.checked = false; });
+    });
     velo.addEventListener("click", ev => {
       const b = ev.target.closest("[data-vf]");
       if(!b && ev.target !== velo) return;
       const que = b ? b.dataset.vf : "cancelar";
       if(que === "si"){
-        const g = [...velo.querySelectorAll("[data-vip-guardar]")].filter(x => x.checked).map(x => l.find(p => p.id === x.dataset.vipGuardar)).filter(Boolean);
+        const vistos = {};
+        const g = [...velo.querySelectorAll("[data-vip-guardar]")].filter(x => x.checked).map(x => l.find(p => p.id === x.dataset.vipGuardar)).filter(p => p && !vistos[p.ref] && (vistos[p.ref] = true));
         g.forEach(guardarVipDeCombate);
         if(g.length) toast("Guardado en su ficha: " + g.map(p => p.nombre).join(", "), 4000);
       }
@@ -12802,7 +12834,7 @@ function referenciaTiempo(){
 }
 function aplicarTiempoPjs(){
   const t = tiempoT(), l = [];
-  T.pjs.concat(T.vips || []).forEach(pj => { const r = conFicha(pj.ficha, () => ponerAlDiaTiempo(t, codigoTiempo(), false)); const x = textoPasoTiempo(r); if(x) l.push(pj.nombre + ": " + x); });      // los PNJ importantes también
+  T.pjs.concat(T.vips || []).forEach(pj => { const r = conFicha(pj.ficha, () => ponerAlDiaTiempo(t, codigoTiempo(), false)); const x = textoPasoTiempo(r); if(x) l.push(pj.nombre + ": " + x); });      // los PNJ creados también
   return l;
 }
 function avanzarTiempo(seg, motivo){
