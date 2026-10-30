@@ -1484,6 +1484,39 @@
   .tk-t-marcha span{font-size:13px;opacity:.85}
   .tk-t-reg li{font-size:13px;padding:5px 0;border-top:1px solid rgba(127,127,127,.15)}
   @media (max-width:600px){ .tk-tabs button{padding:8px 9px} .tk-recursos,.tk-estad{grid-template-columns:repeat(2,minmax(0,1fr))} .tk-ac-clave{grid-template-columns:1fr 1fr} .tk-dano{grid-template-columns:1fr 1fr} }
+  /* Mapa */
+  .tk-mapa{padding:8px 0}
+  .tk-mapa:fullscreen{background:var(--fondo,#0b0d12);padding:8px;display:flex;flex-direction:column}
+  .mp-barra{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+  .mp-barra select{max-width:220px}
+  .mp-aviso{font-size:.9em;opacity:.85;margin:4px 0 6px;min-height:1.2em}
+  .mp-vista{position:relative;overflow:hidden;height:calc(100vh - 260px);min-height:320px;background:#05060a;border:1px solid rgba(255,255,255,.15);border-radius:8px;touch-action:none;user-select:none;-webkit-user-select:none}
+  .tk-mapa:fullscreen .mp-vista{flex:1;height:auto}
+  .mp-lienzo{position:absolute;left:0;top:0;transform-origin:0 0}
+  .mp-lienzo>img{display:block;max-width:none;pointer-events:none}
+  .mp-rejilla{position:absolute;left:0;top:0;pointer-events:none;background-image:linear-gradient(to right,rgba(255,157,46,.85) 2px,transparent 2px),linear-gradient(to bottom,rgba(255,157,46,.85) 2px,transparent 2px)}
+  .mp-rejilla[hidden]{display:none}
+  .mp-regla{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+  .mp-ficha{position:absolute;box-sizing:border-box;cursor:grab;touch-action:none}
+  .mp-ficha .mp-cara{position:absolute;left:6%;top:6%;right:6%;bottom:6%;box-sizing:border-box;border-radius:50%;overflow:hidden;border:3px solid #4aa3ff;background:#1b2130;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.6)}
+  .mp-ficha.mp-pnj .mp-cara{border-color:#ff4d5e}
+  .mp-ficha .mp-cara img{width:100%;height:100%;object-fit:cover;pointer-events:none}
+  .mp-ficha .mp-cara span{color:#fff;font-weight:700;font-size:1.1em}
+  .mp-ficha.mp-turno .mp-cara{box-shadow:0 0 0 4px #ffd23f,0 0 14px #ffd23f}
+  .mp-ficha.mp-sel .mp-cara{outline:3px dashed #fff;outline-offset:2px}
+  .mp-ficha.mp-fuera{opacity:.45;filter:grayscale(1)}
+  .mp-ficha.mp-arrastrando{z-index:5;opacity:.85}
+  .mp-vida{position:absolute;left:12%;bottom:2%;height:8%;max-width:76%;background:#3ddc84;border-radius:3px;pointer-events:none}
+  .mp-num{position:absolute;right:0;top:0;background:#000;color:#fff;border-radius:50%;min-width:1.4em;text-align:center;font-size:.8em;pointer-events:none}
+  .mp-info{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.75);color:#fff;padding:4px 10px;border-radius:6px;pointer-events:none}
+  .mp-info[hidden]{display:none}
+  .mp-bandeja{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+  .mp-ficha.mp-mini{position:relative;width:auto;height:auto;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .mp-ficha.mp-mini .mp-cara{position:relative;left:auto;top:auto;right:auto;bottom:auto;width:48px;height:48px}
+  .mp-ficha.mp-mini small{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mp-ficha.mp-volando{position:fixed;z-index:9999;pointer-events:none;opacity:.9}
+  .mp-ficha.mp-volando small{display:none}
+  .mp-ficha.mp-volando .mp-cara{position:absolute;left:6%;top:6%;right:6%;bottom:6%;width:auto;height:auto}
 </style>
 </head>
 <body class="tracker">
@@ -1493,6 +1526,7 @@
   <span class="marca">XANA<small>TRACKER</small></span>
   <nav class="tk-tabs" role="tablist" aria-label="Apartados">
     <button type="button" role="tab" id="tab-combate" data-tab="combate" aria-selected="true">Combate</button>
+    <button type="button" role="tab" id="tab-mapa" data-tab="mapa" aria-selected="false">Mapa</button>
     <button type="button" role="tab" id="tab-tiempo" data-tab="tiempo" aria-selected="false">Tiempo</button>
     <button type="button" role="tab" id="tab-personajes" data-tab="personajes" aria-selected="false">Personajes</button>
     <button type="button" role="tab" id="tab-referencia" data-tab="referencia" aria-selected="false">Referencia</button>
@@ -1503,6 +1537,7 @@
 </header>
 <main>
   <section class="tk-pag viva" id="pag-combate"></section>
+  <section class="tk-pag tk-mapa" id="pag-mapa"></section>
   <section class="tk-pag tk-tiempo" id="pag-tiempo"></section>
   <section class="tk-pag" id="pag-personajes"></section>
   <section class="tk-pag tk-ref" id="pag-referencia"></section>
@@ -10831,16 +10866,17 @@ function pintar(){
   if(PENDIENTE){ PENDIENTE = false; pintar(); }
 }
 function pintarYa(){
-  ["combate","tiempo","personajes","referencia"].forEach(t => {
+  ["combate","mapa","tiempo","personajes","referencia"].forEach(t => {
     $("#pag-" + t).classList.toggle("viva", t === TAB);
     $("#tab-" + t).setAttribute("aria-selected", t === TAB ? "true" : "false");
   });
   // en pantallas estrechas el panel de iniciativa queda arriba: la barra lleva un acceso al siguiente turno
-  const enCombate = !!T.combate && TAB === "combate";
+  const enCombate = !!T.combate && (TAB === "combate" || TAB === "mapa");
   const bb = $("#tkSigBarra");
   if(bb){ bb.hidden = !enCombate; if(T.combate){ const tp = participante(T.combate.turno); bb.innerHTML = "R" + T.combate.rot + (tp ? " · " + esc(tp.nombre) : "") + " · " + (T.combate.turno ? "Siguiente ▶" : "Empezar ▶"); } }
   const enfoque = document.activeElement && document.activeElement.id;
   if(TAB === "combate") pintarCombateT();
+  if(TAB === "mapa") pintarMapa();
   if(TAB === "personajes") pintarPersonajes();
   if(TAB === "tiempo") pintarTiempo();
   if(TAB === "referencia") pintarReferencia();
@@ -12931,6 +12967,266 @@ function pintarTiempo(){
     <section class="tk-t-grupo"><h3>Registro</h3>
       ${t.registro.length ? `<ul class="tk-t-reg">${t.registro.slice().reverse().map(r => `<li>${esc(r.t)}</li>`).join("")}</ul>` : `<p class="cm-vacio">Todavía no ha pasado el tiempo.</p>`}
     </section>`;
+}
+
+/* ---------- MAPA: imagen con su cuadrícula ya dibujada, calibrada a mano; fichas de los combatientes encima ----------
+   Solo lo ve quien tiene el tracker (el máster pasa la tablet). Las imágenes van en IndexedDB (no caben en localStorage);
+   lo demás (calibración, posiciones) en localStorage aparte del tracker. */
+const CLAVE_MAPA = "xana-tracker-mapa";
+const M = (() => { try{ const m = JSON.parse(localStorage.getItem(CLAVE_MAPA) || "null"); if(m && typeof m === "object") return Object.assign({lista:[], actual:"", rejilla:false}, m); }catch(e){} return {lista:[], actual:"", rejilla:false}; })();
+// M.lista: [{id, nombre, w, h, celda, ox, oy, pos:{idParticipante:{x,y}}}]  (x, y en casillas)
+const MV = {img:null, imgId:"", esc:1, tx:0, ty:0, modo:"", cal:[], punteros:{}, arr:null, regla:null, centrado:""};
+function guardarMapa(){ try{ localStorage.setItem(CLAVE_MAPA, JSON.stringify(M)); }catch(e){ toast("No se ha podido guardar el mapa.", 4000); } }
+const mapaActual = () => M.lista.find(m => m.id === M.actual) || null;
+
+/* IndexedDB: id → dataURL de la imagen */
+function mapaBD(){
+  return new Promise((res, rej) => { const r = indexedDB.open("xana-mapas", 1); r.onupgradeneeded = () => r.result.createObjectStore("img"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function mapaBDHacer(modo, f){
+  const bd = await mapaBD();
+  return new Promise((res, rej) => { const tx = bd.transaction("img", modo); const q = f(tx.objectStore("img")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); });
+}
+const mapaImgLeer = id => mapaBDHacer("readonly", s => s.get(id));
+const mapaImgGuardar = (id, url) => mapaBDHacer("readwrite", s => s.put(url, id));
+const mapaImgBorrar = id => mapaBDHacer("readwrite", s => s.delete(id));
+
+/* Cargar una imagen: se reduce a 4096 px como mucho (JPEG) para que quepa y vaya fluida en la tablet */
+function mapaReducir(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(fr.error);
+    fr.onload = () => { const img = new Image(); img.onerror = () => rej(new Error("imagen")); img.onload = () => {
+      const k = Math.min(1, 4096 / Math.max(img.width, img.height));
+      if(k === 1 && file.size < 6e6) return res({url:fr.result, w:img.width, h:img.height});
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      res({url:c.toDataURL("image/jpeg", 0.88), w:c.width, h:c.height});
+    }; img.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+async function mapaCargar(file){
+  try{
+    const r = await mapaReducir(file);
+    const m = {id:"m" + Date.now().toString(36), nombre:file.name.replace(/\.[^.]+$/, ""), w:r.w, h:r.h, celda:0, ox:0, oy:0, pos:{}};
+    // «taller-30x20.png»: si el nombre trae las casillas, se calibra solo
+    const t = /(\d+)\s*x\s*(\d+)/i.exec(file.name);
+    if(t && +t[1] > 0) { m.celda = r.w / +t[1]; }
+    await mapaImgGuardar(m.id, r.url);
+    M.lista.push(m); M.actual = m.id; guardarMapa();
+    MV.imgId = ""; MV.centrado = "";
+    if(!m.celda){ MV.modo = "calibrar"; MV.cal = []; }
+    pintar();
+    toast(m.celda ? "Mapa cargado y calibrado por el nombre (" + t[1] + " casillas de ancho)." : "Mapa cargado. Ahora calibra la cuadrícula.", 4000);
+  }catch(e){ avisar("No se ha podido cargar esa imagen.", "Mapa"); }
+}
+
+/* Coordenadas: pantalla → píxeles de la imagen → casillas */
+function mapaAImagen(cx, cy){ const v = $("#mpVista").getBoundingClientRect(); return {x:(cx - v.left - MV.tx) / MV.esc, y:(cy - v.top - MV.ty) / MV.esc}; }
+function mapaACasilla(m, px, py){ return {x:Math.floor((px - m.ox) / m.celda), y:Math.floor((py - m.oy) / m.celda)}; }
+const distCasillas = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));      // las diagonales cuentan 1
+
+function mapaCentrar(m){
+  const v = $("#mpVista"); if(!v) return;
+  const r = v.getBoundingClientRect();
+  MV.esc = Math.min(r.width / m.w, r.height / m.h) || 1;
+  MV.tx = (r.width - m.w * MV.esc) / 2; MV.ty = (r.height - m.h * MV.esc) / 2;
+  MV.centrado = m.id;
+}
+function mapaZoom(f, cx, cy){
+  const v = $("#mpVista").getBoundingClientRect();
+  if(cx === undefined){ cx = v.left + v.width / 2; cy = v.top + v.height / 2; }
+  const e = Math.max(0.05, Math.min(8, MV.esc * f)); const k = e / MV.esc;
+  MV.tx = (cx - v.left) - ((cx - v.left) - MV.tx) * k; MV.ty = (cy - v.top) - ((cy - v.top) - MV.ty) * k; MV.esc = e;
+  mapaTransformar();
+}
+function mapaTransformar(){ const l = $("#mpLienzo"); if(l) l.style.transform = `translate(${MV.tx}px,${MV.ty}px) scale(${MV.esc})`; }
+
+function iniciales(n){ return String(n || "?").replace(/ \d+$/, "").split(/\s+/).map(x => x[0] || "").join("").slice(0, 2).toUpperCase(); }
+function htmlFichaMapa(p, m, pos){
+  const R = resumenFicha(p.ficha); const c = m.celda;
+  const pct = R.vidaMax ? Math.max(0, Math.min(100, R.vida / R.vidaMax * 100)) : 0;
+  const turno = T.combate && T.combate.turno === p.id, sel = T.combate && T.combate.sel === p.id;
+  return `<div class="mp-ficha mp-${p.tipo}${turno ? " mp-turno" : ""}${sel ? " mp-sel" : ""}${p.fuera ? " mp-fuera" : ""}" data-mp-ficha="${esc(p.id)}" title="${esc(p.nombre)}"
+    style="left:${m.ox + pos.x * c}px;top:${m.oy + pos.y * c}px;width:${c}px;height:${c}px">
+    <div class="mp-cara">${p.foto ? `<img src="${p.foto}" alt="">` : `<span>${esc(iniciales(p.nombre))}</span>`}</div>
+    <i class="mp-vida" style="width:${pct}%"></i>${/ \d+$/.test(p.nombre) ? `<b class="mp-num">${esc(p.nombre.match(/(\d+)$/)[1])}</b>` : ""}</div>`;
+}
+
+function pintarMapa(){
+  const caja = $("#pag-mapa");
+  const m = mapaActual();
+  if(!caja.querySelector("#mpVista")){
+    caja.innerHTML = `<div class="mp-barra">
+        <select id="mpLista" aria-label="Mapa"></select>
+        <label class="btn">Cargar mapa<input type="file" id="mpArchivo" accept="image/*" hidden></label>
+        <button type="button" class="btn" data-mp="calibrar">Calibrar cuadrícula</button>
+        <button type="button" class="btn" data-mp="rejilla">Ver cuadrícula</button>
+        <button type="button" class="btn" data-mp="regla">Medir</button>
+        <button type="button" class="btn" data-mp="menos" aria-label="Alejar">−</button><button type="button" class="btn" data-mp="mas" aria-label="Acercar">+</button>
+        <button type="button" class="btn" data-mp="centrar">Encajar</button>
+        <button type="button" class="btn" data-mp="completa">Pantalla completa</button>
+        <button type="button" class="btn" data-mp="borrar">Borrar mapa</button></div>
+      <div class="mp-aviso" id="mpAviso"></div>
+      <div class="mp-bandeja" id="mpBandeja"></div>
+      <div class="mp-vista" id="mpVista"><div class="mp-lienzo" id="mpLienzo"><img id="mpImg" alt="" draggable="false"><div class="mp-rejilla" id="mpRejilla"></div><div id="mpFichas"></div><svg class="mp-regla" id="mpRegla"></svg></div>
+        <div class="mp-info" id="mpInfo"></div></div>`;
+    mapaEventos(caja);
+  }
+  $("#mpLista").innerHTML = M.lista.length ? M.lista.map(x => `<option value="${esc(x.id)}"${x.id === M.actual ? " selected" : ""}>${esc(x.nombre)}</option>`).join("") : `<option>Sin mapas</option>`;
+  $("#mpLista").disabled = !M.lista.length;
+  caja.querySelectorAll("[data-mp=calibrar],[data-mp=rejilla],[data-mp=regla],[data-mp=borrar],[data-mp=centrar],[data-mp=mas],[data-mp=menos]").forEach(b => { b.disabled = !m; });
+  caja.querySelector("[data-mp=rejilla]").classList.toggle("principal", !!M.rejilla);
+  caja.querySelector("[data-mp=regla]").classList.toggle("principal", MV.modo === "regla");
+  caja.querySelector("[data-mp=calibrar]").classList.toggle("principal", MV.modo === "calibrar");
+  const img = $("#mpImg");
+  if(!m){ img.removeAttribute("src"); $("#mpFichas").innerHTML = ""; $("#mpBandeja").innerHTML = "";
+    $("#mpAviso").innerHTML = "Carga la imagen de un mapa (con su cuadrícula ya dibujada). Truco: si el archivo se llama, por ejemplo, <b>taller-30x20.png</b>, se calibra solo con 30 casillas de ancho."; return; }
+  if(MV.imgId !== m.id){
+    MV.imgId = m.id; img.removeAttribute("src");
+    mapaImgLeer(m.id).then(url => { if(MV.imgId === m.id && url) img.src = url; }).catch(() => {});
+  }
+  if(MV.centrado !== m.id) mapaCentrar(m);
+  mapaTransformar();
+  // cuadrícula propia (para calibrar o para comprobar): encima de la del mapa
+  const rj = $("#mpRejilla");
+  rj.hidden = !(m.celda && (M.rejilla || MV.modo === "calibrar"));
+  if(m.celda) Object.assign(rj.style, {width:m.w + "px", height:m.h + "px", backgroundSize:`${m.celda}px ${m.celda}px`, backgroundPosition:`${m.ox}px ${m.oy}px`});
+  const av = $("#mpAviso");
+  if(MV.modo === "calibrar") av.innerHTML = `<b>Calibrar:</b> ${MV.cal.length ? "ahora toca la esquina <b>opuesta</b> en diagonal" : "toca la esquina de una casilla"} (las casillas que haya entre los dos toques:
+    <input id="mpCalN" inputmode="numeric" value="${esc(MV.calN || "1")}" style="width:3em"> de ancho). Cuantas más casillas abarques, más preciso.
+    <button type="button" class="btn" data-mp="calibrar">Cancelar</button>`;
+  else if(!m.celda) av.innerHTML = "Este mapa aún no está calibrado: pulsa «Calibrar cuadrícula».";
+  else if(MV.modo === "regla") av.innerHTML = "<b>Medir:</b> arrastra sobre el mapa. Las diagonales cuentan como 1 casilla.";
+  else av.innerHTML = T.combate ? "Arrastra las fichas de «Sin colocar» al mapa (soltadas fuera, vuelven). Toca una ficha para seleccionarla; mientras la mueves ves cuántas casillas avanza." : "No hay combate: empieza uno en «Combate» para poner a los combatientes en el mapa.";
+  // fichas
+  const ps = T.combate ? T.combate.participantes : [];
+  Object.keys(m.pos).forEach(id => { if(!ps.some(p => p.id === id)) delete m.pos[id]; });
+  $("#mpFichas").innerHTML = m.celda ? ps.filter(p => m.pos[p.id]).map(p => htmlFichaMapa(p, m, m.pos[p.id])).join("") : "";
+  const fuera = ps.filter(p => !m.pos[p.id]);
+  $("#mpBandeja").innerHTML = m.celda && fuera.length ? `<span class="sub">Sin colocar:</span>` + fuera.map(p => `<div class="mp-ficha mp-mini mp-${p.tipo}${p.fuera ? " mp-fuera" : ""}" data-mp-ficha="${esc(p.id)}" data-mp-bandeja="1" title="${esc(p.nombre)}">
+      <div class="mp-cara">${p.foto ? `<img src="${p.foto}" alt="">` : `<span>${esc(iniciales(p.nombre))}</span>`}</div><small>${esc(p.nombre)}</small></div>`).join("") : "";
+  mapaInfo();
+}
+function mapaInfo(texto){
+  const i = $("#mpInfo"); if(!i) return;
+  if(texto !== undefined){ i.textContent = texto; i.hidden = !texto; return; }
+  const p = T.combate && participante(T.combate.sel);
+  if(p && mapaActual() && mapaActual().pos[p.id]){ const R = resumenFicha(p.ficha); i.textContent = p.nombre + " · vida " + R.vida + "/" + R.vidaMax + (p.fuera ? " · fuera de combate" : "") + (T.combate.turno === p.id ? " · su turno" : ""); i.hidden = false; }
+  else i.hidden = true;
+}
+
+function mapaEventos(caja){
+  caja.addEventListener("change", async ev => {
+    if(ev.target.id === "mpArchivo"){ const f = ev.target.files[0]; ev.target.value = ""; if(f) await mapaCargar(f); }
+    if(ev.target.id === "mpLista"){ M.actual = ev.target.value; MV.modo = ""; guardarMapa(); pintar(); }
+    if(ev.target.id === "mpCalN") MV.calN = ev.target.value;
+  });
+  caja.addEventListener("input", ev => { if(ev.target.id === "mpCalN") MV.calN = ev.target.value; });
+  caja.addEventListener("click", async ev => {
+    const b = ev.target.closest("[data-mp]"); if(!b) return;
+    const m = mapaActual();
+    switch(b.dataset.mp){
+      case "calibrar": MV.modo = MV.modo === "calibrar" ? "" : "calibrar"; MV.cal = []; pintar(); return;
+      case "rejilla": M.rejilla = !M.rejilla; guardarMapa(); pintar(); return;
+      case "regla": MV.modo = MV.modo === "regla" ? "" : "regla"; pintar(); return;
+      case "mas": return mapaZoom(1.25);
+      case "menos": return mapaZoom(0.8);
+      case "centrar": if(m){ mapaCentrar(m); mapaTransformar(); } return;
+      case "completa": { const el = $("#pag-mapa"); try{ if(document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen(); }catch(e){} setTimeout(() => { if(m){ mapaCentrar(m); mapaTransformar(); } }, 300); return; }
+      case "borrar": if(m && await confirmar("Se borra el mapa «" + m.nombre + "» de este dispositivo.", "Borrar")){ M.lista = M.lista.filter(x => x !== m); M.actual = M.lista.length ? M.lista[0].id : ""; guardarMapa(); mapaImgBorrar(m.id).catch(() => {}); MV.imgId = ""; pintar(); } return;
+    }
+  });
+  const vista = caja.querySelector("#mpVista");
+  vista.addEventListener("wheel", ev => { ev.preventDefault(); mapaZoom(ev.deltaY < 0 ? 1.15 : 1 / 1.15, ev.clientX, ev.clientY); }, {passive:false});
+  // punteros: arrastrar ficha, arrastrar mapa, pellizco para zoom, calibrar, medir
+  caja.addEventListener("pointerdown", ev => {
+    const m = mapaActual(); if(!m) return;
+    const f = ev.target.closest("[data-mp-ficha]");
+    const enVista = ev.target.closest("#mpVista");
+    if(!f && !enVista) return;
+    MV.punteros[ev.pointerId] = {x:ev.clientX, y:ev.clientY};
+    const n = Object.keys(MV.punteros).length;
+    if(n === 2){ MV.arr = {tipo:"pellizco", d:mapaDistPunteros(), esc:MV.esc}; return; }
+    if(f && m.celda && MV.modo === "" && T.combate){
+      const p = participante(f.dataset.mpFichaId || f.dataset.mpFicha); if(!p) return;
+      ev.preventDefault();
+      const desde = m.pos[p.id] ? Object.assign({}, m.pos[p.id]) : null;
+      let fan = f;
+      if(f.dataset.mpBandeja){ fan = f.cloneNode(true); fan.classList.remove("mp-mini"); fan.classList.add("mp-volando"); fan.style.width = fan.style.height = (m.celda * MV.esc) + "px"; document.body.appendChild(fan); }
+      MV.arr = {tipo:"ficha", p, el:fan, bandeja:!!f.dataset.mpBandeja, desde, x0:ev.clientX, y0:ev.clientY, movido:false};
+      mapaMoverFicha(ev);
+      return;
+    }
+    if(!enVista) return;
+    ev.preventDefault();
+    const pi = mapaAImagen(ev.clientX, ev.clientY);
+    if(MV.modo === "calibrar"){
+      MV.cal.push(pi);
+      if(MV.cal.length === 2){
+        const nC = Math.max(1, parseInt(($("#mpCalN") || {}).value || MV.calN || "1", 10) || 1);
+        const a = MV.cal[0], b2 = MV.cal[1]; const celda = Math.abs(b2.x - a.x) / nC;
+        if(celda < 4){ toast("Las dos esquinas están demasiado juntas. Prueba otra vez."); MV.cal = []; pintar(); return; }
+        m.celda = celda; m.ox = ((Math.min(a.x, b2.x) % celda) + celda) % celda; m.oy = ((Math.min(a.y, b2.y) % celda) + celda) % celda;
+        MV.modo = ""; MV.cal = []; guardarMapa(); M.rejilla = true; pintar();
+        toast("Cuadrícula calibrada: comprueba que la naranja coincide con la del mapa (puedes ocultarla con «Ver cuadrícula»).", 5000);
+      } else pintar();
+      return;
+    }
+    if(MV.modo === "regla" && m.celda){ MV.arr = {tipo:"regla", a:mapaACasilla(m, pi.x, pi.y)}; mapaRegla(m, MV.arr.a, MV.arr.a); return; }
+    MV.arr = {tipo:"mapa", x0:ev.clientX, y0:ev.clientY, tx:MV.tx, ty:MV.ty};
+  });
+  window.addEventListener("pointermove", ev => {
+    if(!MV.arr) return;
+    if(MV.punteros[ev.pointerId]) MV.punteros[ev.pointerId] = {x:ev.clientX, y:ev.clientY};
+    const m = mapaActual(); if(!m) return;
+    if(MV.arr.tipo === "pellizco"){ const d = mapaDistPunteros(); if(d){ const c = mapaCentroPunteros(); mapaZoom((MV.arr.esc * d / MV.arr.d) / MV.esc, c.x, c.y); } return; }
+    if(MV.arr.tipo === "mapa"){ MV.tx = MV.arr.tx + ev.clientX - MV.arr.x0; MV.ty = MV.arr.ty + ev.clientY - MV.arr.y0; mapaTransformar(); return; }
+    if(MV.arr.tipo === "ficha"){ mapaMoverFicha(ev); return; }
+    if(MV.arr.tipo === "regla"){ const pi = mapaAImagen(ev.clientX, ev.clientY); mapaRegla(m, MV.arr.a, mapaACasilla(m, pi.x, pi.y)); }
+  });
+  const soltar = ev => {
+    delete MV.punteros[ev.pointerId];
+    const A = MV.arr; if(!A) return;
+    if(A.tipo === "pellizco"){ if(!Object.keys(MV.punteros).length) MV.arr = null; return; }
+    MV.arr = null;
+    const m = mapaActual(); if(!m) return;
+    if(A.tipo === "ficha"){
+      if(A.bandeja) A.el.remove();
+      const p = A.p;
+      if(!A.movido && !A.bandeja){ T.combate.sel = p.id; guardarTracker(); pintar(); return; }
+      const v = $("#mpVista").getBoundingClientRect();
+      const dentro = ev.clientX >= v.left && ev.clientX <= v.right && ev.clientY >= v.top && ev.clientY <= v.bottom;
+      if(!dentro){ if(A.bandeja) return; delete m.pos[p.id]; guardarMapa(); pintar(); return; }       // soltada fuera: vuelve a la bandeja
+      const pi = mapaAImagen(ev.clientX, ev.clientY); const c = mapaACasilla(m, pi.x, pi.y);
+      m.pos[p.id] = c; T.combate.sel = p.id; guardarMapa(); guardarTracker();
+      pintar();
+      if(A.desde){ const d = distCasillas(A.desde, c); if(d) mapaInfo(p.nombre + " se mueve " + d + (d === 1 ? " casilla" : " casillas")); }
+      return;
+    }
+    if(A.tipo === "regla") setTimeout(() => { if(!MV.arr){ const r = $("#mpRegla"); if(r) r.innerHTML = ""; } }, 2500);
+  };
+  window.addEventListener("pointerup", soltar);
+  window.addEventListener("pointercancel", soltar);
+}
+function mapaDistPunteros(){ const l = Object.values(MV.punteros); return l.length >= 2 ? Math.hypot(l[0].x - l[1].x, l[0].y - l[1].y) : 0; }
+function mapaCentroPunteros(){ const l = Object.values(MV.punteros); return {x:(l[0].x + l[1].x) / 2, y:(l[0].y + l[1].y) / 2}; }
+function mapaMoverFicha(ev){
+  const A = MV.arr, m = mapaActual();
+  if(Math.abs(ev.clientX - A.x0) + Math.abs(ev.clientY - A.y0) > 6) A.movido = true;
+  if(A.bandeja){ const s = m.celda * MV.esc; A.el.style.left = (ev.clientX - s / 2) + "px"; A.el.style.top = (ev.clientY - s / 2) + "px"; }
+  else if(A.movido){ const pi = mapaAImagen(ev.clientX, ev.clientY); A.el.style.left = (pi.x - m.celda / 2) + "px"; A.el.style.top = (pi.y - m.celda / 2) + "px"; A.el.classList.add("mp-arrastrando"); }
+  if(A.movido && A.desde){ const pi = mapaAImagen(ev.clientX, ev.clientY); const d = distCasillas(A.desde, mapaACasilla(m, pi.x, pi.y)); mapaInfo(A.p.nombre + ": " + d + (d === 1 ? " casilla" : " casillas")); }
+}
+function mapaRegla(m, a, b){
+  const c = m.celda, cx = q => m.ox + (q.x + 0.5) * c, cy = q => m.oy + (q.y + 0.5) * c;
+  const d = distCasillas(a, b);
+  const r = $("#mpRegla"); r.setAttribute("width", m.w); r.setAttribute("height", m.h); r.setAttribute("viewBox", `0 0 ${m.w} ${m.h}`);
+  r.innerHTML = `<line x1="${cx(a)}" y1="${cy(a)}" x2="${cx(b)}" y2="${cy(b)}" stroke="#ff9d2e" stroke-width="${Math.max(3, c / 10)}" stroke-linecap="round"/>
+    <circle cx="${cx(b)}" cy="${cy(b)}" r="${c / 2.2}" fill="none" stroke="#ff9d2e" stroke-width="${Math.max(2, c / 16)}"/>
+    <text x="${cx(b)}" y="${cy(b) - c * 0.7}" text-anchor="middle" font-size="${Math.max(16, c * 0.6)}" fill="#fff" stroke="#000" stroke-width="${Math.max(2, c / 20)}" paint-order="stroke" font-weight="700">${d}</text>`;
+  mapaInfo(d + (d === 1 ? " casilla" : " casillas"));
 }
 </script>
 </body>
