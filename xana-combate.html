@@ -653,17 +653,6 @@
   .cw-escena.enfocada .cw-mapa{display:block}
   .cw-mapa figcaption{font-size:var(--t-xs);color:var(--apagado);margin-top:6px;max-width:22ch}
   #cwMapa{width:120px;height:270px;display:block;margin:0 auto}
-  #cwMapa .silueta{fill:var(--panel-alto);stroke:var(--apagado);stroke-width:3}
-  #cwMapa .anatomia,#cwMapa .brazo-extra{display:none}
-  #cwMapa .zona{cursor:pointer}
-  #cwMapa .zona .forma{fill:transparent;stroke:transparent;stroke-width:4}
-  #cwMapa .zona .hit{fill:transparent;stroke:transparent;stroke-width:30;pointer-events:all}
-  #cwMapa .zona.equipada .forma{fill:color-mix(in srgb,var(--rosa) 25%,transparent)}
-  #cwMapa .zona.hover .forma{fill:color-mix(in srgb,var(--rosa) 40%,transparent);stroke:var(--rosa-claro)}
-  #cwMapa .zona.activa .forma{fill:color-mix(in srgb,var(--rosa) 55%,transparent);stroke:var(--rosa)}
-  #cwMapa .zona.conflicto .forma{stroke:var(--rojo)}
-  #cwMapa .zona .forma.fina{fill:none}
-  #cwMapa .ojo{fill:var(--apagado)}
   .cw-pista{margin:0;font-size:var(--t-xs);color:var(--apagado)}
   .cw-escena.animando .cw-panel,.cw-escena.animando .cw-rail,.cw-escena.ocupado .cw-panel-cuerpo{pointer-events:none}
   .cw-escena.ocupado .cw-panel-cuerpo{opacity:.65}
@@ -699,31 +688,54 @@
   #cwSvg .anillo{fill:none;stroke:color-mix(in srgb,var(--uva-t) 18%,transparent);stroke-width:1.2;stroke-dasharray:2 7}
   #cwSvg .anillo.fino{stroke-dasharray:none;stroke:color-mix(in srgb,var(--uva-t) 8%,transparent)}
   #cwSvg .suelo{fill:none;stroke:color-mix(in srgb,var(--uva-t) 35%,transparent);stroke-width:1.2}
-  #cwSvg .silueta{fill:url(#cwPiel);stroke:var(--uva-t);stroke-width:2.4;stroke-linejoin:round;pointer-events:none}
-  #cwSvg .anatomia path{fill:none;stroke:color-mix(in srgb,var(--texto) 13%,transparent);stroke-width:1.2;pointer-events:none}
+  /* el avatar (avatar.js): contorno continuo, relleno translúcido, anatomía tenue, ciberware en magenta */
+  :is(#cwSvg,#cwMapa) .av-cuerpo{pointer-events:none}
+  :is(#cwSvg,#cwMapa) .av-borde{fill:var(--uva);stroke:color-mix(in srgb,var(--uva-t) 70%,var(--uva));stroke-width:4.6;stroke-linejoin:round}
+  :is(#cwSvg,#cwMapa) .av-carne{fill:url(#cwCarne)}
+  :is(#cwSvg,#cwMapa) .av-carne.ciber{fill:url(#cwMetal)}
+  :is(#cwSvg,#cwMapa) .av-carne.recub-carne{fill:color-mix(in srgb,var(--recub-carne) 34%,var(--panel))}
+  :is(#cwSvg,#cwMapa) .av-carne.recub-cromo{fill:url(#cwCromo)}
+  :is(#cwSvg,#cwMapa) .av-carne.recub-plastico{fill:color-mix(in srgb,var(--uva-t) 26%,var(--panel))}
+  :is(#cwSvg,#cwMapa) .av-borde.fuera{stroke:var(--rojo)}
+  :is(#cwSvg,#cwMapa) .av-volumen ellipse{fill:url(#cwVolumen)}
+  :is(#cwSvg,#cwMapa) .av-anatomia :is(path,ellipse){fill:none;stroke:color-mix(in srgb,var(--texto) 15%,transparent);stroke-width:1.1;stroke-linecap:round}
+  :is(#cwSvg,#cwMapa) .av-pieza{fill:url(#cwCarne);stroke:color-mix(in srgb,var(--uva-t) 70%,var(--uva));stroke-width:2.4;stroke-linejoin:round}
+  :is(#cwSvg,#cwMapa) :is(.av-extra.ciber,.av-cola.av-ciber,.av-cola.av-pesada) .av-pieza{fill:url(#cwMetal)}
+  :is(#cwSvg,#cwMapa) .av-extra.fuera .av-pieza{stroke:var(--rojo);stroke-dasharray:5 4}
+  :is(#cwSvg,#cwMapa) .av-extra.vacio .av-pieza{fill:color-mix(in srgb,var(--violeta) 30%,transparent);stroke:color-mix(in srgb,var(--uva-t) 55%,transparent);stroke-width:1.6;stroke-dasharray:4 5}
+  :is(#cwSvg,#cwMapa) .av-ciber path,:is(#cwSvg,#cwMapa) .av-linea-ciber{fill:none;stroke:color-mix(in srgb,var(--rosa) 62%,transparent);stroke-width:1.3;stroke-linecap:round}
+  :is(#cwSvg,#cwMapa) .av-ciber .av-linea-luz{stroke:color-mix(in srgb,var(--cereza) 70%,transparent);stroke-width:1.8;stroke-dasharray:3 5}
+  :is(#cwSvg,#cwMapa) .av-junta{fill:var(--violeta);stroke:color-mix(in srgb,var(--rosa) 80%,transparent);stroke-width:1.6}
+  :is(#cwSvg,#cwMapa) .av-luz{fill:var(--rosa-claro);filter:drop-shadow(0 0 3px var(--rosa))}
+  :is(#cwSvg,#cwMapa) .av-nucleo{fill:color-mix(in srgb,var(--cereza) 28%,transparent);stroke:var(--cereza);stroke-width:1.4;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--cereza) 60%,transparent))}
+  :is(#cwSvg,#cwMapa) .av-ciber.recub-carne{opacity:.28}
+  :is(#cwSvg,#cwMapa) .av-ciber.recub-cromo :is(path,.av-junta){stroke:var(--recub-cromo)}
+  :is(#cwSvg,#cwMapa) .av-ciber.fuera :is(path,.av-junta){stroke:var(--rojo)}
+  #cwSvg.fbc .av-carne{fill:url(#cwMetal)}
+  #cwSvg.fbc .av-borde{stroke:color-mix(in srgb,var(--rosa) 70%,var(--uva))}
+  /* regiones pulsables: transparentes; se iluminan al pasar, al elegirlas o si tienen piezas */
   #cwSvg .zona{cursor:pointer;outline:none}
-  #cwSvg .zona .forma{fill:transparent;stroke:transparent;stroke-width:2;transition:fill .18s,stroke .18s}
+  #cwSvg .zona .forma{fill:transparent;stroke:transparent;stroke-width:2;stroke-linejoin:round;transition:fill .18s,stroke .18s}
   #cwSvg .zona .forma.fina{fill:none;stroke-width:4;stroke-linecap:round}
   #cwSvg .zona .hit{fill:transparent;stroke:transparent;stroke-width:24;stroke-linecap:round;pointer-events:all}
-  #cwSvg .zona.equipada .forma{fill:color-mix(in srgb,var(--uva) calc(var(--dens) * 160%),transparent)}
-  #cwSvg .zona .forma.ciber{fill:color-mix(in srgb,var(--uva) 45%,transparent);stroke:var(--uva-t);stroke-width:1.6}
-  #cwSvg .zona.hover .forma,#cwSvg .zona:focus-visible .forma{fill:color-mix(in srgb,var(--rosa) 24%,transparent);stroke:var(--rosa-claro)}
+  #cwSvg .zona.equipada .forma{fill:color-mix(in srgb,var(--rosa) calc(var(--dens) * 40%),transparent)}
+  #cwSvg .zona.hover .forma,#cwSvg .zona:focus-visible .forma{fill:color-mix(in srgb,var(--rosa) 22%,transparent);stroke:var(--rosa-claro)}
   #cwSvg .zona.activa .forma{stroke:var(--rosa);stroke-width:2.6;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--rosa) 55%,transparent))}
   #cwSvg .zona.conflicto .forma{fill:color-mix(in srgb,var(--rojo) 18%,transparent);stroke:var(--rojo)}
   #cwSvg .zona .forma.fina,#cwSvg .zona.equipada .forma.fina{fill:none}
-  #cwSvg .zona.equipada .forma.fina{stroke:var(--uva-t)}
-  /* recubrimiento elegido en cada miembro */
-  #cwSvg .zona .forma.recub-carne,#cwMapa .zona .forma.recub-carne{fill:color-mix(in srgb,var(--recub-carne) 55%,transparent);stroke:color-mix(in srgb,var(--recub-carne) 90%,transparent)}
-  #cwSvg .zona .forma.recub-cromo,#cwMapa .zona .forma.recub-cromo{fill:color-mix(in srgb,var(--recub-cromo) 55%,transparent);stroke:var(--texto)}
-  #cwSvg .zona .forma.recub-plastico,#cwMapa .zona .forma.recub-plastico{fill:color-mix(in srgb,var(--uva-t) 45%,transparent);stroke:color-mix(in srgb,var(--uva-t) 90%,transparent)}
-  #cwSvg .ojo{fill:color-mix(in srgb,var(--texto) 12%,transparent);stroke:var(--texto);stroke-width:1.5;transition:fill .18s}
-  #cwSvg .ojo.ciber{fill:var(--rosa)}
+  #cwSvg .zona.equipada .forma.fina{stroke:color-mix(in srgb,var(--uva-t) 60%,transparent)}
+  #cwMapa .zona{cursor:pointer}
+  #cwMapa .zona :is(.forma,.hit){fill:transparent;stroke:transparent;stroke-width:4;pointer-events:all}
+  #cwMapa .zona.hover .forma{fill:color-mix(in srgb,var(--rosa) 40%,transparent)}
+  #cwMapa .zona.activa .forma{fill:color-mix(in srgb,var(--rosa) 55%,transparent);stroke:var(--rosa)}
+  #cwMapa .zona .forma.fina{fill:none}
+  /* ojos: los de carne apagados; los ciberojos encendidos */
+  :is(#cwSvg,#cwMapa) .ojo{fill:color-mix(in srgb,var(--texto) 10%,var(--violeta));stroke:var(--uva-t);stroke-width:1.4;transition:fill .18s}
+  :is(#cwSvg,#cwMapa) .ojo.ciber{fill:var(--rosa);stroke:var(--rosa-claro);filter:drop-shadow(0 0 4px var(--rosa))}
+  :is(#cwSvg,#cwMapa) .ojo-luz{fill:var(--texto);pointer-events:none}
   #cwSvg .zona.hover .ojo,#cwSvg .zona.activa .ojo{stroke:var(--rosa);stroke-width:2.2}
-  #cwSvg .ojo.extra:not(.ciber){fill:none;stroke-dasharray:2 2}
-  #cwSvg .ojo.fuera,#cwSvg .brazo-extra.fuera{stroke:var(--rojo)}
-  #cwSvg .brazo-extra{fill:none;stroke:var(--texto);stroke-width:14;stroke-linecap:round;opacity:.5;pointer-events:none}
-  #cwSvg .brazo-extra.vacio{stroke-dasharray:4 7;opacity:.35}
-  #cwSvg .brazo-extra.ciber{stroke:var(--rosa);opacity:.8}
+  :is(#cwSvg,#cwMapa) .ojo.extra:not(.ciber){fill:none;stroke-dasharray:2 2}
+  :is(#cwSvg,#cwMapa) .ojo.fuera{stroke:var(--rojo)}
 
   /* panel de región */
   .cw-panel-cab{position:sticky;top:var(--alto-barra);z-index:3;display:grid;gap:10px;padding:2px 0 12px;margin-bottom:14px;background:var(--fondo);border-bottom:1px solid var(--linea-suave)}
@@ -1117,7 +1129,6 @@
   .cw-fbc-btn:hover,.cw-fbc-btn:focus-visible{background:linear-gradient(180deg,color-mix(in srgb,var(--rojo) 32%,transparent),color-mix(in srgb,var(--rojo) 12%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rojo) 50%,transparent),0 0 30px color-mix(in srgb,var(--rojo) 35%,transparent);outline:none}
   .cw-fbc-btn.hecha{border-color:var(--rosa);background:linear-gradient(180deg,color-mix(in srgb,var(--rosa) 16%,transparent),color-mix(in srgb,var(--rosa) 5%,transparent));box-shadow:0 0 22px color-mix(in srgb,var(--rosa) 18%,transparent);text-shadow:0 0 10px color-mix(in srgb,var(--rosa) 50%,transparent)}
   .cw-fbc-estado{margin:0;font-size:var(--t-xs);color:var(--apagado);text-align:center;max-width:42ch}
-  #cwSvg.fbc .silueta{stroke:var(--rosa);stroke-width:3}
   .tag.fbc{color:var(--uva-t);border-color:var(--uva)}
   .cw-tarjeta.fbc{border-color:color-mix(in srgb,var(--rosa) 45%,transparent)}
   .cw-fbc-equipo{margin:4px 0 0;padding-left:18px;font-size:var(--t-s);color:var(--texto-2);line-height:1.55}
@@ -2314,16 +2325,17 @@ const DEDOS = [
   {id:"anular", n:"Anular"}, {id:"menique", n:"Meñique"}
 ];
 
-/* Regiones de la silueta: qué se gestiona en cada una y hacia dónde se acerca la cámara (x, y, ancho, alto) */
+/* Regiones de la silueta: qué se gestiona en cada una y hacia dónde se acerca la cámara (x, y, ancho, alto).
+   La cámara se calcula con la forma real de cada región en el avatar (vistaRegion); «vista» es la de reserva. */
 const REGIONES = [
-  {id:"cabeza", t:"Sistema Nervioso", d:"Equipo neuronal, zócalos y chips",  lado:"izq", ancla:[200, 46],  vista:[130, 20, 140, 150]},
-  {id:"auditivo", t:"Auditivo",       d:"Equipo de ciberaudio y opciones",     lado:"der", ancla:[250, 100], vista:[130, 30, 140, 140]},
-  {id:"ojos",   t:"Ojos",             d:"Ciberojos, opciones y recubrimientos",      lado:"izq", ancla:[182, 90],  vista:[150, 50, 100, 80]},
-  {id:"torso",  t:"Torso",            d:"Ciberequipo interno y externo",       lado:"izq", ancla:[176, 300], vista:[110, 150, 180, 330]},
-  {id:"piel",   t:"Piel y cibermoda",  d:"Cibermoda y piel",        lado:"izq", ancla:[156, 440], vista:[70, 120, 260, 520]},
-  {id:"brazos", t:"Brazos",           d:"Ciberbrazos, monturas y opciones",     lado:"der", ancla:[292, 300], vista:[20, 170, 360, 400]},
-  {id:"manos",  t:"Manos",            d:"Cibermanos y ciberdedos",             lado:"der", ancla:[314, 474], vista:[16, 405, 368, 150]},
-  {id:"piernas",t:"Piernas",          d:"Ciberpiernas, pies y opciones",       lado:"der", ancla:[226, 690], vista:[110, 480, 180, 380]},
+  {id:"cabeza", t:"Sistema Nervioso", d:"Equipo neuronal, zócalos y chips",  lado:"izq", ancla:[200, 52],  vista:[136, 26, 128, 160]},
+  {id:"auditivo", t:"Auditivo",       d:"Equipo de ciberaudio y opciones",     lado:"der", ancla:[244, 100], vista:[136, 50, 128, 100]},
+  {id:"ojos",   t:"Ojos",             d:"Ciberojos, opciones y recubrimientos",      lado:"izq", ancla:[182, 92],  vista:[156, 56, 88, 72]},
+  {id:"torso",  t:"Torso",            d:"Ciberequipo interno y externo",       lado:"izq", ancla:[176, 290], vista:[100, 160, 200, 310]},
+  {id:"piel",   t:"Piel y cibermoda",  d:"Cibermoda y piel",        lado:"izq", ancla:[142, 330], vista:[96, 220, 208, 230]},
+  {id:"brazos", t:"Brazos",           d:"Ciberbrazos, monturas y opciones",     lado:"der", ancla:[290, 300], vista:[40, 180, 320, 290]},
+  {id:"manos",  t:"Manos",            d:"Cibermanos y ciberdedos",             lado:"der", ancla:[300, 486], vista:[60, 430, 280, 110]},
+  {id:"piernas",t:"Piernas",          d:"Ciberpiernas, pies y opciones",       lado:"der", ancla:[224, 600], vista:[126, 424, 148, 430]},
   {id:"borg",   t:"Borgware",         d:"Cuerpos, armazones y capacidad",      lado:"der", ancla:[236, 220], vista:[30, 20, 340, 760]}
 ];
 
@@ -3210,6 +3222,221 @@ const trasTabla = t => { if(t === "inventario"){ pintarRevisionInventario(); if(
 window.anyadirFila = t => { (D[t] = D[t] || []).push({}); guardar(); pintarTabla(t); trasTabla(t); };
 window.quitarFila  = (t,i) => { const f = D[t][i]; D[t].splice(i,1); guardar(); pintarTabla(t); trasTabla(t); if(t === "hackeos" && f && !enTablaTerminal(f) && typeof pintarCiber === "function") pintarCiber(); };
 window.editarFila  = (t,i,k,v) => { D[t][i][k] = v; if(t === "inventario") delete D[t][i].revisado; if(t === "hackeos" && k === "nombre") delete D[t][i].hk; guardar(); trasTabla(t); };
+/* ================= AVATAR ANATÓMICO (SVG) =================
+   El cuerpo de la pestaña Ciberware, dibujado con trazados vectoriales en el mismo sistema de coordenadas de siempre
+   (viewBox 0 0 400 900, la cabeza arriba en el centro, los pies abajo). Todo es modular:
+     · AV_GEO: la geometría de cada parte (cabeza, cuello, torso, pelvis, brazo, mano, pierna, pie, cola). Las partes
+       del lado derecho son el reflejo de las del izquierdo (x → 400 − x), así que solo se dibuja un lado.
+     · avatarDatos(E): lo que hay que dibujar, sacado SOLO del estado real del ciberware (calcularEstado) y de la raza:
+       ojos, brazos y piernas (con su ciberware y recubrimiento), extremidades extra del borgware, cola, FBC…
+     · avatarCuerpo(av): las capas visuales (contorno, relleno, anatomía, ciberware, luces) sin interacción.
+     · avatarZonas(av, att): las regiones que se pueden pulsar, con las mismas formas.
+   Nada de esto cambia reglas, ranuras ni costes: solo pinta lo que ya dice el estado. */
+
+const AV_ESPEJO = "matrix(-1 0 0 1 400 0)";
+const avEspejo = s => `<g transform="${AV_ESPEJO}">${s}</g>`;
+
+/* ---------- Geometría (lado izquierdo de quien mira; el derecho es su reflejo) ----------
+   Canon de 7,5 cabezas: del cráneo (y 40) al suelo (y 850) hay 810 unidades → 1 cabeza = 108.
+   barbilla 148 · pezones 256 (2) · ombligo y codo 364 (3) · entrepierna y muñeca 445 (3,75) · yemas 525 (mitad del muslo)
+   · rodilla 640 (5,5) · tobillo 812 · suelo 850. Hombros ≈ 1,75 cabezas de ancho, caderas ≈ 1,2. */
+const AV_GEO = {
+  cabeza:"M200 40 C224 40 240 58 241 84 C242 98 240 109 236 119 C233 129 226 138 217 143 C211 147 205 148 200 148 C195 148 189 147 183 143 C174 138 167 129 164 119 C160 109 158 98 159 84 C160 58 176 40 200 40 Z",
+  oreja:"M161 84 C154 82 150 90 151 100 C152 109 156 115 163 114 C162 104 162 94 161 84 Z",
+  cuello:"M185 134 L215 134 C215 150 217 162 224 172 L176 172 C183 162 185 150 185 134 Z",
+  torso:"M184 168 C170 177 150 182 132 187 C118 191 108 201 107 216 C107 230 116 240 136 246 C138 270 140 296 144 322 C146 338 146 352 144 364 C142 372 141 380 141 390 L259 390 C259 380 258 372 256 364 C254 352 254 338 256 322 C260 296 262 270 264 246 C284 240 293 230 293 216 C292 201 282 191 268 187 C250 182 230 177 216 168 Z",
+  pelvis:"M141 386 L259 386 C262 400 266 414 266 428 C266 442 262 452 256 460 C240 452 214 446 200 452 C186 446 160 452 144 460 C138 452 134 442 134 428 C134 414 138 400 141 386 Z",
+  /* brazo: hombro → codo → muñeca (un solo trazado para que no quede hueco en el codo) */
+  brazo:"M122 196 C110 200 104 210 104 226 C103 260 101 300 100 340 C99 352 98 360 97 370 C95 395 92 420 89 448 L110 450 C111 424 114 396 117 372 C119 360 121 348 123 336 C126 304 130 270 136 246 C130 234 126 214 122 196 Z",
+  mano:"M89 446 C86 455 85 466.2 86 477.4 C86 488.6 87 497.5 88 505.4 C89 509.8 93 509.8 93 505.4 L93 491.9 C94 500.9 94 511 95 517.7 C96 522.2 100 522.2 100 517.7 L100 493 C101 503.1 101 513.2 102 519.9 C103 524.4 107 524.4 107 519.9 L106 493 C107 502 108 509.8 109 515.4 C110 519.9 114 518.8 113 514.3 C112 504.2 112 493 112 484.1 C114 479.6 117 472.9 119 465 C120 459.4 117 457.2 114 460.6 C112 463.9 111 459.4 110 448.2 Z",
+  pierna:"M136 428 C132 470 136 520 144 570 C148 600 152 622 154 640 C152 660 152 680 156 710 C160 740 166 780 168 812 L188 812 C187 790 187 770 189 740 C192 712 193 690 192 660 C192 640 194 620 196 590 C198 550 199 500 199 452 C186 446 160 448 142 442 Z",
+  pie:"M166 808 L189 808 C191 820 192 832 191 840 C190 848 185 851 177 851 L160 851 C154 851 152 847 154 843 C158 836 163 828 166 818 Z",
+  /* pierna digitígrada: rodilla alta, corvejón atrás, metatarso largo y dedos en garra */
+  piernaDigit:"M136 428 C132 470 136 516 144 556 C148 576 152 592 154 606 C150 626 144 656 142 690 C141 714 146 730 156 742 C162 770 166 796 168 820 L184 820 C183 796 180 772 176 748 C178 726 182 700 186 676 C190 652 193 628 194 600 C197 560 199 500 199 452 C186 446 160 448 142 442 Z",
+  pieDigit:"M165 816 L185 816 L188 840 L192 851 L182 848 L177 851 L171 848 L162 851 L164 840 Z",
+  /* par extra (Hombros artificiales…): sale de la espalda, por DETRÁS del cuerpo y de los brazos de serie, y se abre hacia
+     fuera para que se vea. Mientras la plaza está vacía se dibuja solo su contorno discontinuo: no hay brazos de carne extra. */
+  brazoExtra:"M128 228 C112 256 92 286 64 322 C60 330 60 338 64 344 C58 368 52 392 46 414 L64 418 C68 396 72 372 78 350 C84 342 86 336 84 330 C104 302 124 276 144 252 Z",
+  /* lo que asoma del brazo extra (para la región pulsable: la parte tapada por el cuerpo no se resalta) */
+  brazoExtraZona:"M101 300 C90 310 76 314 64 322 C60 330 60 338 64 344 C58 368 52 392 46 414 L64 418 C68 396 72 372 78 350 C84 342 86 336 84 330 C90 322 96 314 102 306 Z",
+  manoExtra:"M46.4 413.2 C42.1 420.6 39.1 430.3 37.9 440.3 C35.8 450.2 35 458.2 34.4 465.4 C34.4 469.4 38 470.2 38.8 466.3 L41.3 454.4 C40.5 462.5 38.6 471.4 38.2 477.5 C38.3 481.6 41.8 482.4 42.7 478.4 L47.3 456.7 C46.3 465.8 44.4 474.7 44 480.7 C44 484.9 47.6 485.6 48.4 481.7 L52.6 457.8 C51.8 465.9 51.2 473 51 478.1 C51 482.2 54.8 482 54.7 477.9 C55.7 468.8 57.8 458.9 59.5 451.1 C62.1 447.5 66 442.2 69.2 435.6 C71.2 430.8 68.9 428.3 65.7 430.8 C63.3 433.3 63.2 429.2 64.5 419.1 Z",
+  /* cola (detrás del cuerpo, sale del sacro y asoma por el lado derecho) */
+  cola:"M206 420 C236 440 270 466 292 506 C308 536 312 572 304 604 C298 628 286 644 272 652 C282 634 290 612 290 588 C290 560 280 532 262 506 C246 484 226 466 204 452 Z",
+  colaPesada:"M206 414 C244 434 282 462 304 504 C322 540 326 580 316 616 C310 638 298 656 282 666 L270 690 L266 660 C280 640 290 614 290 586 C290 556 278 528 258 504 C242 484 222 468 200 456 Z"
+};
+/* puntos de referencia (articulaciones y apoyos), lado izquierdo */
+const AV_PT = { hombro:[118, 212], codo:[110, 352], muneca:[99, 447], cadera:[166, 450], rodilla:[174, 640], tobillo:[178, 810],
+  rodillaDigit:[172, 604], corvejon:[158, 740], dedosDigit:[176, 818],
+  hombroExtra:[136, 242], codoExtra:[72, 338], munecaExtra:[55, 416], mano:[100, 484], manoExtra:[52, 448] };
+
+/* ---------- Datos: qué dibujar, desde el estado real ---------- */
+function avatarDatos(E){
+  const recubDe = P => { const c = P && E.cont["recub:" + P.id]; const r = c && c.recs[0]; return r && typeof tipoRecubrimiento === "function" ? tipoRecubrimiento(defDe(r).n) : ""; };
+  const baseDe = P => defDe(P && (P.rec || P.cubre));
+  const cuenta = {};
+  E.lista.forEach(r => { const g = typeof regionDeRec === "function" ? regionDeRec(r, E) : null; if(g) cuenta[g] = (cuenta[g] || 0) + 1; });
+  const manoCiber = P => { const c = E.cont["mano:" + P.id]; return !!(P.ciber || (c && c.recs.length)); };
+  const dedos = P => { const c = E.cont["dedos:" + P.id]; return c ? c.recs.length : 0; };
+  const nombres = E.lista.map(r => (defDe(r) || {}).n || "");
+  const colaPieza = nombres.find(n => /^Cola\b/.test(n));
+  let raza = ""; try{ raza = val("f-raza"); }catch(e){}
+  let colaRaza = raza === "Dracónido";
+  try{ if(raza === "Vastaya") colaRaza = (D.vastaya || []).some(t => /\bcola\b/i.test(String(t || ""))); }catch(e){}
+  let fbc = false; try{ fbc = esFBC(); }catch(e){}
+  return {
+    ojos:(E.pos.ojo || []).map(P => ({id:P.id, ciber:!!P.ciber, fuera:!!P.fuera, extra:!!P.extra, recub:recubDe(P)})),
+    brazos:(E.pos.brazo || []).map(P => ({id:P.id, i:P.i, ciber:!!P.ciber, fuera:!!P.fuera, extra:!!P.extra, recub:recubDe(P), mano:manoCiber(P), dedos:dedos(P)})),
+    piernas:(E.pos.pierna || []).map(P => { const p = baseDe(P); return {id:P.id, i:P.i, ciber:!!P.ciber, fuera:!!P.fuera, extra:!!P.extra, recub:recubDe(P), digit:!!(p && /digit[ií]grad/i.test(p.n))}; }),
+    cola:colaPieza ? (/pesada/i.test(colaPieza) ? "pesada" : "ciber") : colaRaza ? "natural" : "",
+    neural:!!(E.G.neural || E.G.zocalo), audio:!!E.G.audio, fbc, cuenta
+  };
+}
+
+/* ---------- Piezas de dibujo ---------- */
+const avPath = (d, cls, extra) => `<path class="${cls}" d="${d}"${extra || ""}/>`;
+/* lado de cada extremidad: impares a la izquierda de quien mira, pares a la derecha (como las plazas: brazo1 izquierdo…) */
+const avLado = i => i % 2 === 1 ? "izq" : "der";
+const avEnLado = (lado, s) => lado === "izq" ? s : avEspejo(s);
+/* desplazamiento de las parejas extra (3.ª pareja y siguientes bajan un poco más) */
+const avPar = i => Math.floor((i - 1) / 2);
+
+function avGeoBrazo(B){
+  const par = avPar(B.i);
+  if(par === 0) return {t:"", brazo:AV_GEO.brazo, mano:AV_GEO.mano, h:AV_PT.hombro, c:AV_PT.codo, m:AV_PT.muneca, centroMano:AV_PT.mano};
+  const dy = (par - 1) * 46;
+  const t = dy ? ` transform="translate(0 ${dy})"` : "";
+  return {brazo:AV_GEO.brazoExtra, zona:AV_GEO.brazoExtraZona, mano:AV_GEO.manoExtra, h:AV_PT.hombroExtra, c:AV_PT.codoExtra, m:AV_PT.munecaExtra, centroMano:AV_PT.manoExtra, t, extra:true};
+}
+function avGeoPierna(Pn){
+  const par = avPar(Pn.i);
+  const dx = par ? -26 * par : 0;
+  const t = dx ? ` transform="translate(${dx} 0)"` : "";
+  return Pn.digit ? {pierna:AV_GEO.piernaDigit, pie:AV_GEO.pieDigit, t, extra:par > 0} : {pierna:AV_GEO.pierna, pie:AV_GEO.pie, t, extra:par > 0};
+}
+
+/* Detalles anatómicos de base (siempre, muy tenues): clavículas, pecho, costillas, abdomen, ingles, rodillas, codos… */
+function avAnatomia(av){
+  const lado = `
+    <path d="M184 180 C168 184 150 188 132 192"/>
+    <path d="M200 212 C186 220 166 224 148 228 C144 242 148 256 160 262 C174 266 190 262 200 254"/>
+    <path d="M148 282 C158 284 168 286 178 288 M150 302 C160 304 169 306 178 308"/>
+    <path d="M184 290 L196 290 M184 314 L196 314 M184 338 L196 338"/>
+    <path d="M158 378 C170 408 186 432 200 448"/>
+    <path d="M104 344 C108 350 114 352 120 352"/>
+    <path d="M150 470 C160 520 168 570 172 620"/>
+    <ellipse cx="${AV_PT.rodilla[0]}" cy="${AV_PT.rodilla[1]}" rx="9" ry="11"/>
+    <path d="M172 670 C170 700 170 740 172 780"/>
+    <path d="M168 118 C172 128 180 137 190 142"/>`;
+  return `<g class="av-anatomia" aria-hidden="true">${lado}${avEspejo(lado)}
+    <path d="M200 176 L200 356"/><path d="M197 362 Q200 367 203 362"/><path d="M190 126 Q200 132 210 126"/><path d="M193 106 L200 112 L207 106"/></g>`;
+}
+
+/* Capa de ciberware de una extremidad: placas, articulaciones mecánicas y luces */
+function avCiberBrazo(g, B){
+  const [hx, hy] = g.h, [cx, cy] = g.c, [mx, my] = g.m;
+  const placas = g.extra
+    ? `<path d="M${hx - 6} ${hy + 30} L${hx + 4} ${hy + 34} M${cx - 2} ${cy + 28} L${cx + 12} ${cy + 26}"/>`
+    : `<path d="M103 262 C112 266 122 268 131 266 M102 302 C110 304 119 304 127 302 M95 400 C101 402 108 402 115 400 M92 426 C98 428 105 428 112 426"/>
+       <path d="M114 236 L118 300 M104 376 L100 432"/>`;
+  return `<g class="av-ciber av-brazo${B.recub ? " recub-" + B.recub : ""}${B.fuera ? " fuera" : ""}">${placas}
+    <circle class="av-junta" cx="${hx}" cy="${hy}" r="${g.extra ? 6 : 9}"/><circle class="av-junta" cx="${cx}" cy="${cy}" r="${g.extra ? 6 : 8}"/><circle class="av-junta" cx="${mx}" cy="${my}" r="${g.extra ? 4.5 : 6}"/>
+    <circle class="av-luz" cx="${hx}" cy="${hy}" r="2.2"/><circle class="av-luz" cx="${cx}" cy="${cy}" r="1.8"/></g>`;
+}
+function avCiberMano(g, B){
+  const [x, y] = g.centroMano;
+  if(g.extra) return `<g class="av-ciber av-mano"><circle class="av-luz" cx="${x}" cy="${y}" r="1.8"/></g>`;
+  return `<g class="av-ciber av-mano"><path d="M86 486.3 C94 490.8 102 490.8 110 486.3 M90 502 L92 515.4 M96 504.2 L97 519.9 M102 503.1 L103 517.7"/>
+    <circle class="av-luz" cx="${x}" cy="${y - 16}" r="2"/>${B.dedos ? `<circle class="av-luz" cx="97" cy="519" r="1.6"/><circle class="av-luz" cx="104" cy="521" r="1.6"/>` : ""}</g>`;
+}
+function avCiberPierna(g, Pn){
+  const [rx, ry] = AV_PT.rodilla, [tx, ty] = AV_PT.tobillo, [dx, dy] = AV_PT.rodillaDigit, [cx, cy] = AV_PT.corvejon, [px, py] = AV_PT.dedosDigit;
+  const det = Pn.digit
+    ? `<path d="M138 500 C156 504 178 504 198 500 M141 540 C158 544 178 544 197 540 M146 680 L166 684 M160 776 L176 776"/>
+       <circle class="av-junta" cx="${dx}" cy="${dy}" r="10"/><circle class="av-junta" cx="${cx}" cy="${cy}" r="8"/><circle class="av-junta" cx="${px}" cy="${py}" r="5"/>
+       <circle class="av-luz" cx="${dx}" cy="${dy}" r="2.2"/><circle class="av-luz" cx="${cx}" cy="${cy}" r="2"/>`
+    : `<path d="M138 500 C156 504 178 504 198 500 M141 556 C158 560 178 560 197 556 M162 742 C170 744 180 744 188 742 M176 580 L178 620 M170 680 L172 770"/>
+       <circle class="av-junta" cx="${rx}" cy="${ry}" r="10"/><circle class="av-junta" cx="${tx}" cy="${ty}" r="6.5"/>
+       <circle class="av-luz" cx="${rx}" cy="${ry}" r="2.2"/><circle class="av-luz" cx="${tx}" cy="${ty}" r="1.8"/>`;
+  return `<g class="av-ciber av-pierna${Pn.recub ? " recub-" + Pn.recub : ""}${Pn.fuera ? " fuera" : ""}">${det}</g>`;
+}
+
+/* Cuerpo completo (sin interacción): contorno continuo + relleno + anatomía + ciberware + luces */
+function avatarCuerpo(av){
+  const partes = [];      // [d, lado, transform, clase] — todas las partes del cuerpo base
+  const add = (d, lado, t, cls) => partes.push({d, lado, t:t || "", cls:cls || ""});
+  add(AV_GEO.cuello, "c"); add(AV_GEO.torso, "c"); add(AV_GEO.pelvis, "c"); add(AV_GEO.cabeza, "c");
+  ["izq", "der"].forEach(l => add(AV_GEO.oreja, l));
+  const mat = x => (x.ciber ? " ciber" : "") + (x.recub ? " recub-" + x.recub : "") + (x.fuera ? " fuera" : "");
+  av.brazos.filter(B => avPar(B.i) === 0).forEach(B => { const g = avGeoBrazo(B); add(g.brazo, avLado(B.i), g.t, mat(B)); add(g.mano, avLado(B.i), g.t, B.mano || B.ciber ? " ciber" + (B.recub ? " recub-" + B.recub : "") : ""); });
+  av.piernas.filter(Pn => avPar(Pn.i) === 0).forEach(Pn => { const g = avGeoPierna(Pn); add(g.pierna, avLado(Pn.i), g.t, mat(Pn)); add(g.pie, avLado(Pn.i), g.t, mat(Pn)); });
+  const pinta = cls => partes.map(p => { const s = `<path class="${cls}${p.cls}" d="${p.d}"${p.t}/>`; return p.lado === "der" ? avEspejo(s) : s; }).join("");
+  let h = "";
+  // cola y extremidades extra van detrás del cuerpo, con su propio contorno
+  if(av.cola) h += `<g class="av-cola av-${av.cola}">${avPath(av.cola === "pesada" ? AV_GEO.colaPesada : AV_GEO.cola, "av-pieza")}
+    ${av.cola !== "natural" ? `<path class="av-linea-ciber" d="M226 438 L232 452 M252 456 L256 472 M274 480 L276 498 M290 512 L290 530 M298 550 L296 568"/>` : ""}</g>`;
+  av.piernas.filter(Pn => avPar(Pn.i) > 0).forEach(Pn => { const g = avGeoPierna(Pn);
+    h += avEnLado(avLado(Pn.i), `<g class="av-extra${Pn.ciber ? " ciber" : " vacio"}${Pn.fuera ? " fuera" : ""}"${g.t}>${avPath(g.pierna, "av-pieza")}${avPath(g.pie, "av-pieza")}</g>`); });
+  // brazos extra: detrás del cuerpo y de los brazos de serie, abiertos hacia fuera
+  av.brazos.filter(B => avPar(B.i) > 0).forEach(B => { const g = avGeoBrazo(B);
+    h += avEnLado(avLado(B.i), `<g class="av-extra${B.ciber ? " ciber" : " vacio"}${B.fuera ? " fuera" : ""}"${g.t}>${avPath(g.brazo, "av-pieza")}${avPath(g.mano, "av-pieza")}${B.ciber ? avCiberBrazo(g, B) : ""}</g>`); });
+  // 1. contorno: todas las partes con trazo ancho; 2. relleno encima (tapa las costuras interiores: la silueta queda continua)
+  h += `<g class="av-contorno">${pinta("av-borde")}</g><g class="av-relleno">${pinta("av-carne")}</g>`;
+  // brillo interior (volumen): pecho, abdomen y muslos
+  h += `<g class="av-volumen" aria-hidden="true"><ellipse cx="200" cy="262" rx="56" ry="62"/><ellipse cx="200" cy="96" rx="30" ry="36"/></g>`;
+  h += avAnatomia(av);
+  // ciberware de serie (brazos, manos, piernas)
+  av.brazos.filter(B => avPar(B.i) === 0).forEach(B => { const g = avGeoBrazo(B);
+    h += avEnLado(avLado(B.i), `<g${g.t}>${B.ciber ? avCiberBrazo(g, B) : ""}${B.mano ? avCiberMano(g, B) : ""}</g>`); });
+  av.piernas.filter(Pn => avPar(Pn.i) === 0).forEach(Pn => { const g = avGeoPierna(Pn); if(Pn.ciber) h += avEnLado(avLado(Pn.i), `<g${g.t}>${avCiberPierna(g, Pn)}</g>`); });
+  // sistema nervioso: puertos en las sienes y la columna encendida; auditivo: placa en la oreja; torso: nodos internos; piel: trazas
+  const c = av.cuenta || {};
+  if(av.neural) h += `<g class="av-ciber av-neural"><path class="av-linea-luz" d="M200 136 L200 ${Math.min(380, 180 + (c.cabeza || 1) * 40)}"/>
+    <circle class="av-luz" cx="166" cy="96" r="2.2"/><circle class="av-luz" cx="234" cy="96" r="2.2"/><path d="M168 70 C180 60 220 60 232 70"/></g>`;
+  if(av.audio) h += `<g class="av-ciber av-audio">${["izq", "der"].map(l => avEnLado(l, `<path d="M156 92 L156 108"/><circle class="av-luz" cx="156" cy="100" r="2"/>`)).join("")}</g>`;
+  if(c.torso) h += `<g class="av-ciber av-interno"><circle class="av-nucleo" cx="200" cy="246" r="${Math.min(14, 7 + c.torso)}"/>${
+    [[178, 288], [222, 288], [184, 316], [216, 316], [190, 344], [210, 344]].slice(0, Math.min(6, c.torso)).map(([x, y]) => `<circle class="av-luz" cx="${x}" cy="${y}" r="2"/>`).join("")}</g>`;
+  if(c.piel) h += `<g class="av-ciber av-piel">${["izq", "der"].map(l => avEnLado(l, `<path d="M140 252 L144 290 L142 330 M106 280 L104 316 L106 336"/>`)).join("")}</g>`;
+  if(av.fbc) h += `<g class="av-ciber av-fbc"><path d="M176 172 L224 172 M146 230 L254 230 M142 386 L258 386 M186 136 L214 136"/>
+    <path d="M200 172 L200 386"/><circle class="av-luz" cx="200" cy="200" r="2.6"/></g>`;
+  return h;
+}
+
+/* Regiones pulsables con las mismas formas (encima de todo, transparentes salvo al pasar por encima) */
+function avatarZonas(av, att, cls){
+  const ciber = x => (x.ciber ? " ciber" : "") + (x.recub ? " recub-" + x.recub : "") + (x.extra ? " extra" : "") + (x.fuera ? " fuera" : "");
+  // ojos extra en pirámide sobre la frente: filas que crecen hacia abajo (1, 2, 3…); si sobran huecos, se quitan de arriba
+  const nExtra = Math.max(0, av.ojos.length - 2);
+  let n = 0; while(n * (n + 1) / 2 < nExtra) n++;
+  const tallas = []; let falta = n * (n + 1) / 2 - nExtra;
+  for(let f = 1; f <= n; f++){ const q = Math.min(f, falta); falta -= q; if(f - q) tallas.push(f - q); }
+  const filas = tallas.length, paso = filas > 2 ? 11 : 13, rExtra = filas > 2 ? 4 : 4.5;
+  const pos = []; tallas.forEach((t, f) => { for(let j = 0; j < t; j++) pos.push([200 + (j - (t - 1) / 2) * 16, 76 - (filas - 1 - f) * paso]); });
+  const ojoPt = i => i < 2 ? [i === 0 ? 182 : 218, 92] : pos[i - 2];
+  let h = "";
+  h += `<g ${att("torso")}><title>Torso</title>${avPath(AV_GEO.torso, "forma")}${avPath(AV_GEO.pelvis, "forma")}</g>`;
+  const fina = "M136 246 C138 270 140 296 144 322 C146 338 146 352 144 364 C142 384 138 402 136 428";
+  h += `<g ${att("piel")}><title>Piel y cibermoda</title>${avPath(fina, "forma fina")}${avEspejo(avPath(fina, "forma fina"))}${avPath(fina, "hit")}${avEspejo(avPath(fina, "hit"))}</g>`;
+  h += `<g ${att("cabeza")}><title>Sistema Nervioso</title>${avPath(AV_GEO.cabeza, "forma")}${avPath(AV_GEO.cuello, "forma")}</g>`;
+  h += `<g ${att("auditivo")}><title>Auditivo</title>${avPath(AV_GEO.oreja, "forma")}${avEspejo(avPath(AV_GEO.oreja, "forma"))}</g>`;
+  h += `<g ${att("brazos")}><title>Brazos</title>${av.brazos.map(B => { const g = avGeoBrazo(B);
+      return avEnLado(avLado(B.i), `<path class="forma${ciber(B)}" d="${g.zona || g.brazo}"${g.t}/>`); }).join("")}
+    ${avPath("M118 214 L110 340 L99 446", "hit")}${avEspejo(avPath("M118 214 L110 340 L99 446", "hit"))}</g>`;
+  h += `<g ${att("manos")}><title>Manos</title>${av.brazos.map(B => { const g = avGeoBrazo(B), [x, y] = g.centroMano;
+      return avEnLado(avLado(B.i), `<path class="forma${B.mano ? " ciber" : ""}${B.extra ? " extra" : ""}" d="${g.mano}"${g.t}/><circle class="hit" cx="${x}" cy="${y}" r="${g.extra ? 18 : 28}"${g.t}/>`); }).join("")}</g>`;
+  h += `<g ${att("piernas")}><title>Piernas</title>${av.piernas.map(Pn => { const g = avGeoPierna(Pn);
+      return avEnLado(avLado(Pn.i), `<path class="forma${ciber(Pn)}${Pn.digit ? " digit" : ""}" d="${g.pierna}"${g.t}/><path class="forma${ciber(Pn)}" d="${g.pie}"${g.t}/>`); }).join("")}</g>`;
+  h += `<g ${att("ojos")}><title>Ojos</title><rect class="hit" x="166" y="${Math.min(74, 70 - (filas - 1) * paso)}" width="68" height="${Math.max(32, 106 - Math.min(74, 70 - (filas - 1) * paso))}" rx="12"/>
+    ${av.ojos.map((O, i) => { const [x, y] = ojoPt(i); return `<circle class="ojo${ciber(O)}" cx="${x}" cy="${y}" r="${i < 2 ? 7.5 : rExtra}"/>${O.ciber ? `<circle class="ojo-luz" cx="${x}" cy="${y}" r="${i < 2 ? 2.6 : 1.6}"/>` : ""}`; }).join("")}</g>`;
+  return h;
+}
+
+/* Silueta para las exportaciones (papel): las mismas partes, en un solo color */
+function avatarPapel(){
+  const parte = (d, lado) => lado === "der" ? avEspejo(`<path d="${d}"/>`) : `<path d="${d}"/>`;
+  const l = [[AV_GEO.cuello, "c"], [AV_GEO.torso, "c"], [AV_GEO.pelvis, "c"], [AV_GEO.cabeza, "c"]];
+  ["izq", "der"].forEach(s => { [AV_GEO.oreja, AV_GEO.brazo, AV_GEO.mano, AV_GEO.pierna, AV_GEO.pie].forEach(d => l.push([d, s])); });
+  return l.map(([d, s]) => parte(d, s)).join("");
+}
 /* ================= CIBERWARE =================
    Todo el sistema de ranuras vive en este bloque:
      · REGLAS: qué sitios (contenedores) tiene el cuerpo según lo instalado, qué consume cada pieza,
@@ -3219,7 +3446,6 @@ window.editarFila  = (t,i,k,v) => { D[t][i][k] = v; if(t === "inventario") delet
    El personaje guarda una sola lista: D.implantes = [{id, k, donde, dedo?, par?, secundario?, nota?}]
    (k = clave de la pieza en el catálogo; donde = id del contenedor). */
 
-const SILUETA_D = "M200 34 C227 34 246 58 246 94 C246 118 238 136 226 145 L224 168 C246 173 262 181 270 194 C280 210 288 232 296 262 C304 292 312 340 318 392 C322 428 324 456 323 474 C322 486 310 488 306 476 C302 462 298 436 293 402 C287 360 280 322 272 292 L262 258 C260 276 258 300 256 330 C253 372 250 408 250 440 C250 500 247 556 243 612 C240 660 237 722 236 780 C235 800 236 814 239 826 C241 836 232 842 218 842 C205 842 199 835 199 822 C199 792 202 742 203 698 C204 640 203 578 200 534 C197 578 196 640 197 698 C198 742 201 792 201 822 C201 835 195 842 182 842 C168 842 159 836 161 826 C164 814 165 800 164 780 C163 722 160 660 157 612 C153 556 150 500 150 440 C150 408 147 372 144 330 C142 300 140 276 138 258 L128 292 C120 322 113 360 107 402 C102 436 98 462 94 476 C90 488 78 486 77 474 C76 456 78 428 82 392 C88 340 96 292 104 262 C112 232 120 210 130 194 C138 181 154 173 176 168 L174 145 C162 136 154 118 154 94 C154 58 173 34 200 34 Z";
 
 /* ---------- Catálogo unificado (catálogo del máster + piezas base) ---------- */
 const PIEZAS = {};
@@ -4445,11 +4671,6 @@ function escalaConfig(p){
 const nombreInstalado = (p, rec) => esVersiones(p) ? (rec ? nombrePieza(p, rec) : p.n) : p.n + (esConfigurable(p) && rec ? " · " + etiquetaValor(p, valorConfig(p, rec)) : "");
 
 /* ================= LA FIGURA ================= */
-function puntosOjosExtra(n){
-  const out = [];
-  for(let i = 0; i < n; i++){ const fila = Math.floor(i / 5), k = i % 5; out.push([200 + (k - 2) * 15, 66 - fila * 13]); }
-  return out;
-}
 function claseRegion(id, E, cuenta, conflictos){
   return "zona" + (REGION === id ? " activa" : "") + (HOVER === id ? " hover" : "") +
     (conflictos.has(id) ? " conflicto" : cuenta[id] ? " equipada" : "");
@@ -4462,39 +4683,30 @@ function pintarFigura(E){
   E.lista.forEach(r => { const g = regionDeRec(r, E); if(g) cuenta[g] = (cuenta[g] || 0) + 1; });
   const dens = id => `style="--dens:${Math.min(.34, .14 + (cuenta[id] || 0) * .03).toFixed(2)}"`;
   const att = id => `data-region="${id}" class="${claseRegion(id, E, cuenta, conflictos)}" ${dens(id)} tabindex="0" role="button" aria-label="${esc(REGION_DE(id).t)}${cuenta[id] ? ": " + plural(cuenta[id], "pieza", "piezas") : ""}"`;
-  const B = E.pos.brazo, O = E.pos.ojo, P = E.pos.pierna;
-  const recub = (l, i) => { const c = l[i] && E.cont["recub:" + l[i].id]; const r = c && c.recs[0]; return r ? " recub-" + tipoRecubrimiento(defDe(r).n) : ""; };
-  const ciber = (l, i) => (l[i] && l[i].ciber ? " ciber" : "") + recub(l, i);
-  // los brazos extra del borgware no se dibujan en la silueta: se gestionan en las regiones Brazos y Manos
-  let h = "";
-  h += `<path class="silueta" d="${SILUETA_D}"/>`;
-  // líneas anatómicas muy tenues: columna, clavículas, cintura, rodillas
-  h += `<g class="anatomia"><path d="M200 176 V520"/><path d="M162 190 Q200 202 238 190"/><path d="M156 440 Q200 452 244 440"/>
-    <path d="M170 690 h20 M210 690 h20"/><path d="M110 330 l12 6 M290 330 l-12 6"/></g>`;
-  h += `<g ${att("torso")}><title>Torso</title><path class="forma" d="M152 180 L248 180 L262 258 L256 330 L250 440 L250 518 L150 518 L150 440 L144 330 L138 258 Z"/></g>`;
-  h += `<g ${att("piel")}><title>Piel y cibermoda</title><path class="forma fina" d="M138 258 L150 440 L150 518 M262 258 L250 440 L250 518"/><path class="hit" d="M138 258 L150 440 L150 518 M262 258 L250 440 L250 518"/></g>`;
-  h += `<g ${att("cabeza")}><title>Sistema Nervioso</title><path class="forma" d="M200 34 C227 34 246 58 246 94 C246 118 238 136 226 145 L224 168 L176 168 L174 145 C162 136 154 118 154 94 C154 58 173 34 200 34 Z"/></g>`;
-  h += `<g ${att("auditivo")}><title>Auditivo</title><path class="forma" d="M154 84 C144 82 140 92 142 102 C144 112 150 118 156 116 Z"/><path class="forma" d="M246 84 C256 82 260 92 258 102 C256 112 250 118 244 116 Z"/></g>`;
-  h += `<g ${att("brazos")}><title>Brazos</title>
-    <path class="forma${ciber(B,0)}" d="M130 194 L104 262 L82 392 L79 452 L97 456 L107 402 L128 292 L140 262 Z"/>
-    <path class="forma${ciber(B,1)}" d="M270 194 L296 262 L318 392 L321 452 L303 456 L293 402 L272 292 L260 262 Z"/>
-    <path class="hit" d="M128 210 L96 330 L86 450 M272 210 L304 330 L314 450"/></g>`;
-  h += `<g ${att("manos")}><title>Manos</title>
-    <circle class="forma${B[0] && B[0].ciber ? " ciber" : ""}" cx="86" cy="474" r="16"/><circle class="forma${B[1] && B[1].ciber ? " ciber" : ""}" cx="314" cy="474" r="16"/>
-    <circle class="hit" cx="86" cy="478" r="30"/><circle class="hit" cx="314" cy="478" r="30"/></g>`;
-  h += `<g ${att("piernas")}><title>Piernas</title>
-    <path class="forma${ciber(P,0)}" d="M150 520 L199 534 L201 842 L161 842 L164 780 L157 612 Z"/>
-    <path class="forma${ciber(P,1)}" d="M250 520 L201 534 L199 842 L239 842 L236 780 L243 612 Z"/></g>`;
-  h += `<g ${att("ojos")}><title>Ojos</title>
-    <rect class="hit" x="164" y="76" width="72" height="28" rx="12"/>
-    <circle class="ojo${ciber(O,0)}" cx="182" cy="90" r="8.5"/><circle class="ojo${ciber(O,1)}" cx="218" cy="90" r="8.5"/>
-    ${puntosOjosExtra(Math.max(0, O.length - 2)).map((pt, i) => `<circle class="ojo extra${ciber(O, i + 2)}${O[i+2].fuera ? " fuera" : ""}" cx="${pt[0]}" cy="${pt[1]}" r="5.5"/>`).join("")}</g>`;
+  // el avatar (avatar.js): el cuerpo con su ciberware, sacado del estado real, y encima las regiones que se pulsan
+  const av = avatarDatos(E);
+  const h = `<g class="av-cuerpo" aria-hidden="true">${avatarCuerpo(av)}</g><g class="av-zonas">${avatarZonas(av, att)}</g>`;
   fig.innerHTML = h;
   const svg = $("#cwSvg");
-  if(svg) svg.classList.toggle("fbc", esFBC());
+  if(svg) svg.classList.toggle("fbc", av.fbc);
   // mapa pequeño de todo el cuerpo (vista de región): la misma figura, sin foco de teclado duplicado
   const mapa = $("#cwMapaFig");
   if(mapa) mapa.innerHTML = h.replace(/ tabindex="0"/g, "").replace(/<title>[^<]*<\/title>/g, "");
+}
+/* Cámara de una región: el rectángulo que ocupa su forma real en el avatar (con margen), para que el zoom encuadre
+   bien aunque haya brazos o piernas de más. Si no se puede medir (región sin forma, como Borgware), la de REGIONES. */
+function vistaRegion(id){
+  const reg = REGION_DE(id), g = document.querySelector(`#cwFigura g[data-region="${id}"]`);
+  let b = null;
+  try{ b = g && g.getBBox(); }catch(e){}
+  if(!b || !b.width || !b.height) return reg.vista;
+  const m = Math.max(12, Math.max(b.width, b.height) * .12);
+  let w = Math.max(84, b.width + m * 2), hh = Math.max(72, b.height + m * 2);
+  // ni tan ancha ni tan alta que se vea como una tira: proporción entre 1:3 y 3:1
+  if(w / hh > 3) hh = w / 3; if(hh / w > 3) w = hh / 3;
+  const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+  const x = Math.max(-20, Math.min(420 - w, cx - w / 2)), y = Math.max(0, Math.min(900 - hh, cy - hh / 2));
+  return [x, y, w, hh].map(v => Math.round(v));
 }
 
 /* ---------- Tamaño y movimiento ---------- */
@@ -4568,7 +4780,7 @@ function irARegion(id){
   pintarPanelCabecera();
   $("#cwPanelCuerpo").classList.add("llegando");
   $("#cwPanelCuerpo").innerHTML = "";
-  cambiarDeVista(reg.vista, () => { pintarPanel(); $("#cwPanelCuerpo").classList.remove("llegando"); enfocarPanel(); dibujarGuias(); });
+  cambiarDeVista(vistaRegion(id), () => { pintarPanel(); $("#cwPanelCuerpo").classList.remove("llegando"); enfocarPanel(); dibujarGuias(); });
 }
 function volverGeneral(){
   if(ANIMANDO || OCUPADO || !REGION) return;
@@ -5582,7 +5794,9 @@ const normalizar = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLow
    porque el SVG sale a un PDF o a otra ventana donde no llegan las variables. */
 const COLORES_PAPEL = {relleno:"#EFEAF4", trazo:"#3A3046", tinta:"#16101F", acento:"#7323A8", gris:"#6B6178"};
 function figuraSVG(clase){
-  return `<svg ${clase ? `class="${clase}" ` : ""}viewBox="0 0 400 900" xmlns="http://www.w3.org/2000/svg"><path d="${SILUETA_D}" fill="${COLORES_PAPEL.relleno}" stroke="${COLORES_PAPEL.trazo}" stroke-width="2.6" stroke-linejoin="round"/></svg>`;
+  // el mismo avatar (avatar.js), en un solo color: primero el contorno de todas las partes y encima el relleno, así la silueta queda continua
+  const partes = avatarPapel();
+  return `<svg ${clase ? `class="${clase}" ` : ""}viewBox="0 0 400 900" xmlns="http://www.w3.org/2000/svg"><g fill="${COLORES_PAPEL.trazo}" stroke="${COLORES_PAPEL.trazo}" stroke-width="5.2" stroke-linejoin="round">${partes}</g><g fill="${COLORES_PAPEL.relleno}">${partes}</g></svg>`;
 }
 
 
