@@ -266,9 +266,6 @@
   .campo.ancho{grid-column:1/-1}
   .dinero-fila{display:flex;gap:6px;align-items:stretch}
   .dinero-fila input{flex:1;min-width:0}
-  .hk-compacto{display:grid;grid-template-columns:minmax(0,1fr) 96px auto auto;grid-template-areas:"n d e x" "f f f f";gap:4px;align-items:center;margin:4px 0 8px}
-  .hk-compacto input,.hk-compacto select{min-width:0;font-size:var(--t-s)}
-  .hk-compacto > :nth-child(1){grid-area:n}.hk-compacto > :nth-child(2){grid-area:f}.hk-compacto > :nth-child(3){grid-area:d}.hk-compacto > :nth-child(4){grid-area:e}.hk-compacto > :nth-child(5){grid-area:x}
   .velo.hk-velo .hk-modal{width:min(720px,96vw);max-width:none;max-height:92vh;overflow:auto}
   .term-sin{margin:6px 0 0}
   .inv-pestanyas{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0;border-bottom:1px solid var(--linea)}
@@ -521,6 +518,8 @@
     display:flex;gap:14px;align-items:center;flex-wrap:wrap;
     box-shadow:var(--sombra-arriba)}
   #reparto[hidden]{display:none}
+  .rep-sin-tope{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-s);color:var(--texto);white-space:nowrap;cursor:pointer}
+  .rep-sin-tope input{width:18px;height:18px;margin:0;accent-color:var(--rosa)}
   #reparto .marcador{display:flex;gap:16px;align-items:baseline}
   #reparto .m{text-align:center;min-width:56px}
   #reparto .m b{display:block;font-family:var(--display);font-size:var(--t-xl);line-height:1;
@@ -891,8 +890,36 @@
   .hk-previa p{margin:6px 0;font-size:var(--t-s);line-height:1.45} .hk-previa span{color:var(--apagado)} .hk-linea code{font-size:var(--t-s);color:var(--rosa)}
   .hk-comp{color:var(--apagado)}
   .hk-botones{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
-  td.hk-mandos{white-space:nowrap} .hk-editar{border:0;background:none;color:var(--rosa);cursor:pointer;font-size:var(--t-m);padding:2px 6px}
-  td.hk-ram{font-variant-numeric:tabular-nums;font-size:var(--t-s);white-space:nowrap} td.hk-ram.mal{color:var(--rojo-t);text-decoration:line-through}
+  /* hackeos como módulos */
+  .hk-modulos{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin:8px 0 10px}
+  .hk-vacio{grid-column:1/-1;margin:0;padding:14px;border:1px dashed var(--linea);border-radius:var(--r-m);color:var(--apagado);font-size:var(--t-s);text-align:center}
+  .hk-mod{--hk:var(--rosa);position:relative;display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px 12px 10px 14px;background:var(--panel-alto);
+    border:1px solid var(--linea);border-radius:var(--r-m);overflow:hidden;transition:border-color .15s}
+  .hk-mod::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--hk)}
+  .hk-mod:hover,.hk-mod:focus-within{border-color:color-mix(in srgb,var(--hk) 60%,var(--linea))}
+  .hk-mod.g-baraja{--hk:var(--uva-t)} .hk-mod.g-hielo{--hk:var(--sano)} .hk-mod.g-ice{--hk:var(--cereza)} .hk-mod.g-mano{--hk:var(--apagado)}
+  .hk-mod-cab{display:flex;align-items:center;gap:8px;min-width:0}
+  .hk-verbo{flex:none;font-family:var(--display);font-weight:700;font-size:var(--t-xs);letter-spacing:.08em;color:var(--hk);border:1px solid color-mix(in srgb,var(--hk) 55%,transparent);
+    background:color-mix(in srgb,var(--hk) 12%,transparent);border-radius:var(--r-s);padding:3px 7px;text-transform:uppercase}
+  .hk-grupo{font-size:var(--t-xs);color:var(--apagado)}
+  .hk-mod .hk-nombre{flex:1;min-width:0;font-family:var(--display);font-weight:700;font-size:var(--t-l);letter-spacing:.04em;text-transform:uppercase;
+    background:transparent;border:1px solid transparent;border-radius:var(--r-s);padding:2px 6px;color:var(--texto)}
+  .hk-mod .hk-nombre:hover{border-color:var(--linea)} .hk-mod .hk-nombre:focus{border-color:var(--rosa);background:var(--campo);outline:none}
+  .hk-ram{flex:none;display:inline-flex;align-items:baseline;gap:3px;font-family:var(--display);font-weight:700;font-size:var(--t-l);color:var(--texto);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hk-ram:not(:empty)::after{content:"RAM";font-size:var(--t-xs);font-weight:600;color:var(--apagado);letter-spacing:.06em}
+  .hk-ram.mal{color:var(--rojo-t);text-decoration:line-through} .hk-ram.sin{color:var(--apagado);text-decoration:none} .hk-ram.sin::after{content:none}
+  .hk-chips{display:flex;flex-wrap:wrap;gap:5px} .hk-chips:empty{display:none}
+  .hk-chip{font-size:var(--t-xs);padding:2px 8px;border-radius:var(--r-pill);border:1px solid var(--linea);color:var(--texto-2);background:var(--panel)}
+  .hk-chip.obj{border-color:color-mix(in srgb,var(--hk) 45%,var(--linea));color:var(--texto)}
+  .hk-mod-ef{margin:0;font-size:var(--t-s);line-height:1.4;color:var(--apagado);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .hk-mod-pie{display:flex;align-items:center;gap:5px;margin-top:auto;padding-top:8px;border-top:1px solid var(--linea)}
+  .hk-mod-pie select{width:auto;max-width:112px;min-width:0;font-size:var(--t-s);padding:4px 24px 4px 8px}
+  .hk-mod-pie .btn{min-height:32px;padding:4px 9px;white-space:nowrap}
+  .hk-quitar{border:0;background:none;color:var(--apagado);cursor:pointer;font-size:var(--t-m);padding:4px 6px;border-radius:var(--r-s)} .hk-quitar:hover{color:var(--rojo-t)}
+  .hk-campo{display:grid;gap:3px} .hk-campo span{font-size:var(--t-xs);color:var(--apagado)}
+  .hk-campo input,.hk-campo textarea{width:100%;font-size:var(--t-s)} .hk-linea{font-family:ui-monospace,Consolas,monospace}
+  .hk-campo textarea{resize:vertical;min-height:48px}
+  .hk-mod.compacto{margin:6px 0 8px;padding:8px 10px 8px 12px;gap:6px} .hk-mod.compacto .hk-nombre{font-size:var(--t-m)} .hk-mod.compacto .hk-mod-ef{-webkit-line-clamp:2}
   .ar-grupo{margin-top:12px}
   .ar-grupo h4{font-family:var(--display);font-size:var(--t-xs);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--texto);border-left:3px solid var(--uva);padding-left:8px;line-height:1.3;margin:0 0 8px;display:flex;gap:8px;align-items:center}
   .ar-grupo h4 span{font-size:var(--t-xs);color:var(--apagado);border:1px solid var(--linea);border-radius:var(--r-pill);padding:0 7px;letter-spacing:0}
@@ -2867,6 +2894,8 @@ const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, m =>
 const val = k => (D[k] === undefined || D[k] === null) ? "" : String(D[k]).trim();
 
 const TOPE_CREACION = 6;
+/* Tope que se aplica ahora: 6 en el modo creación, salvo que se marque «Sin tope de 6» (entonces solo los máximos naturales, 8 y 10) */
+const topeCreacion = () => D.modoCreacion && !D.sinTopeCreacion ? TOPE_CREACION : null;
 
 const esClaveNumero = clave => clave.startsWith("stat_") || clave.startsWith("comp_");
 
@@ -2877,9 +2906,10 @@ const maximoNatural = clave => clave.startsWith("stat_") ? 8 : 10;
 function marcarTope(el){
   if(!el) return;
   const n = num(el.value);
-  el.classList.toggle("tope", !!D.modoCreacion && n === TOPE_CREACION);
+  const tope = topeCreacion(), max = maximoNatural(el.id.startsWith("s-") ? "stat_" : "comp_");
+  el.classList.toggle("tope", !!D.modoCreacion && n === (tope || max));
   if(el.id === "s-cuerpo" && D.fbc){ el.classList.remove("tope", "excede"); return; }   // lo fija el cuerpo FBC
-  el.classList.toggle("excede", (!!D.modoCreacion && n > TOPE_CREACION) || n > maximoNatural(el.id.startsWith("s-") ? "stat_" : "comp_"));
+  el.classList.toggle("excede", (tope !== null && n > tope) || n > max);
 }
 /* Fuera del modo creación: no se puede escribir más allá del máximo natural */
 function limitarNatural(el, clave){
@@ -2890,8 +2920,16 @@ function limitarNatural(el, clave){
 /* Tecleo en modo creación. Antes, si el cursor quedaba detrás de la cifra (segundo clic
    en la misma casilla, tableta, etc.), la nueva tecla formaba "13", "45"... y se recortaba
    a 6: la casilla parecía atascada en 6. Ahora la cifra nueva sustituye a la anterior. */
-function corregirTecleo(el, ev){
+function corregirTecleo(el, ev, clave){
   let v = el.value.replace(/\D/g, "");
+  const tope = topeCreacion(), max = maximoNatural(clave || (el.id.startsWith("s-") ? "stat_" : "comp_"));
+  // sin el tope de 6: se puede escribir «10» en una competencia; si dos cifras se pasan del máximo, la nueva sustituye a la anterior
+  if(tope === null){
+    if(v.length > 1 && num(v) > max){ const tecla = ev && typeof ev.data === "string" && /\d/.test(ev.data) ? ev.data.replace(/\D/g, "").slice(-1) : ""; v = tecla || v.slice(-1); }
+    if(v !== "" && num(v) > max){ v = String(max); toast("El máximo natural es " + max); }
+    if(v !== el.value) el.value = v;
+    return;
+  }
   if(v.length > 1){
     const tecla = ev && typeof ev.data === "string" && /\d/.test(ev.data) ? ev.data.replace(/\D/g, "").slice(-1) : "";
     v = tecla || v.slice(-1);
@@ -2915,7 +2953,7 @@ function cambiarNumero(el, clave, delta){
   let n = num(el.value) + delta;
   const min = clave.startsWith("stat_") && D.modoCreacion ? 1 : 0;
   if(n < min) n = min;
-  if(D.modoCreacion && delta > 0 && n > TOPE_CREACION){
+  if(topeCreacion() !== null && delta > 0 && n > TOPE_CREACION){
     toast("En el modo creación el tope es " + TOPE_CREACION);
     return;
   }
@@ -2935,7 +2973,7 @@ function enlazar(el, clave, alCambiar){
   const esNumero = esClaveNumero(clave);
 
   el.addEventListener("input", ev => {
-    if(esNumero && D.modoCreacion) corregirTecleo(el, ev);
+    if(esNumero && D.modoCreacion) corregirTecleo(el, ev, clave);
     else if(esNumero) limitarNatural(el, clave);
     D[clave] = el.value;
     if(esNumero) marcarTope(el);
@@ -3253,25 +3291,67 @@ const esDefensivo = f => { let sp = null; try{ sp = specDeFila(f); }catch(e){ sp
 const selectDondeHackeo = (f, i) => `<select aria-label="Dónde va" title="Ranura: cargado en el terminal · Guardado: compilado, sin cargar · Chip: hackeo rápido en el zócalo · IETS: la ranura de programa defensivo del IETS (solo ICE o BLACK.ICE)" onchange="moverHackeo(${i},this.value)">${DONDE_HACKEO.map(([v, n]) =>
   `<option value="${v}"${(f.donde || "ranura") === v ? " selected" : ""}${v === "iets" && (f.donde || "ranura") !== "iets" && !esDefensivo(f) ? " disabled" : ""}>${n}${v === "iets" && (f.donde || "ranura") !== "iets" && !esDefensivo(f) ? " (solo ICE)" : ""}</option>`).join("")}</select>`;
 const enTablaTerminal = f => ["ranura", "guardado"].includes(f.donde || "ranura");
+/* Hackeos como módulos: cada uno es una tarjeta con su verbo, nombre, coste, objetivo y parámetros en etiquetas y el efecto.
+   Lo único que se escribe es el NOMBRE (la línea XANA//SHELL se rehace sola); el resto se cambia con el constructor (✎).
+   «Escribir a mano» (en la tarjeta o abajo) abre la línea y el efecto como texto libre, para lo que no quepa en el constructor. */
+const vacioHackeo = f => !String(f.nombre || "").trim() && !String(f.efecto || "").trim();
+function specSeguro(f){ try{ return specDeFila(f); }catch(e){ return null; } }      // hackeos.js puede no haberse cargado aún
+function chipsSpec(s){
+  const g = grupoHk(s), O = (HK_OBJETIVOS[g] || {})[s.obj], out = [];
+  if(O) out.push({t:(g === "ice" ? "Carga: " : "") + O.n, c:"obj"});
+  if(s.far) out.push({t:"alcance " + s.far * 10 + " casillas", c:"par"});
+  if(s.amp) out.push({t:"amp " + s.amp, c:"par"});
+  if(s.hold) out.push({t:"hold " + s.hold, c:"par"});
+  ["quiet", "wait", "chain", "hunt"].forEach(k => { if(s[k]) out.push({t:k, c:"par"}); });
+  if((g === "hielo" || g === "ice") && s.nivel !== "" && s.nivel !== undefined) out.push({t:"nivel " + (13 + num(s.nivel)), c:"par"});
+  return out;
+}
+const GRUPO_HK = {realidad:"Realidad", baraja:"Dados", hielo:"Hielo", ice:"Hielo negro"};
+function htmlModuloHackeo(f, i, compacto){
+  const sp = specSeguro(f), manual = !sp || !!f.manual;
+  const g = sp ? grupoHk(sp) : "mano";
+  const cls = "hk-mod g-" + g + (manual ? " manual" : "") + (compacto ? " compacto" : "");
+  const ram = `<span class="hk-ram" id="hk-ram-${i}" title="Coste en RAM"></span>`;
+  const quitar = `<button type="button" class="hk-quitar" onclick="quitarFila('hackeos',${i})" aria-label="Quitar el hackeo" title="Quitar">✕</button>`;
+  const mandos = `<div class="hk-mod-pie">${selectDondeHackeo(f, i)}
+      <button type="button" class="btn fina hk-editar" data-hk-editar="${i}" title="Cambiar verbo, objetivo y parámetros con el constructor">✎ Editar</button>
+      ${sp ? `<button type="button" class="btn fina fantasma" onclick="hackeoAMano(${i},${manual ? 0 : 1})" title="${manual ? "Volver a la tarjeta (solo el nombre)" : "Escribir la línea y el efecto como texto libre"}">${manual ? "Módulo" : "A mano"}</button>` : ""}<span class="crece"></span>${quitar}</div>`;
+  if(manual) return `<article class="${cls}" data-hk-i="${i}">
+      <div class="hk-mod-cab"><span class="hk-verbo">${sp ? esc(sp.verbo) : "A mano"}</span><span class="hk-grupo">${sp ? esc(GRUPO_HK[g] || "") : "texto libre"}</span><span class="crece"></span>${ram}</div>
+      <label class="hk-campo"><span>Línea</span><input class="hk-linea" value="${esc(f.nombre || "")}" placeholder="NOMBRE :: VERBO(objetivo) parámetros // RAM" aria-label="Línea del hackeo" spellcheck="false" oninput="editarFila('hackeos',${i},'nombre',this.value)"></label>
+      <label class="hk-campo"><span>Efecto</span><textarea class="hk-efecto" rows="2" placeholder="Qué hace, coste de RAM y tiempo de subida" aria-label="Efecto" oninput="editarFila('hackeos',${i},'efecto',this.value)">${esc(f.efecto || "")}</textarea></label>
+      ${mandos}</article>`;
+  const ef = String(f.efecto || "").trim() || efectoSpec(sp);
+  return `<article class="${cls}" data-hk-i="${i}">
+      <div class="hk-mod-cab"><span class="hk-verbo" title="${esc(GRUPO_HK[g] || "")}">${esc(sp.verbo)}${sp.verbo === "BOOST" ? "=" + sp.n : ""}</span>
+        <input class="hk-nombre" value="${esc(sp.nombre || "")}" placeholder="Nombre" aria-label="Nombre del hackeo" spellcheck="false" oninput="nombrarHackeo(${i},this.value)">${ram}</div>
+      <div class="hk-chips">${chipsSpec(sp).map(c => `<span class="hk-chip ${c.c}">${esc(c.t)}</span>`).join("")}</div>
+      <p class="hk-mod-ef" title="${esc(ef)}">${esc(ef)}</p>
+      ${mandos}</article>`;
+}
 function pintarTablaHackeos(filas){
-  $("#hackeos").innerHTML = filas.map((f, i) => !enTablaTerminal(f) ? "" : `<tr>${COLUMNAS.hackeos.map(col =>
-      `<td><input value="${esc(f[col.k])}" placeholder="${esc(col.p)}" oninput="editarFila('hackeos',${i},'${col.k}',this.value)"></td>`).join("")}
-     <td>${selectDondeHackeo(f, i)}</td>
-     <td class="hk-ram" id="hk-ram-${i}"></td>
-     <td class="hk-mandos"><button type="button" class="hk-editar" data-hk-editar="${i}" aria-label="Editar con el constructor" title="Editar con el constructor">✎</button><button class="quitar" onclick="quitarFila('hackeos',${i})" aria-label="Quitar">×</button></td></tr>`).join("");
+  const l = filas.map((f, i) => enTablaTerminal(f) && (!vacioHackeo(f) || f.manual) ? htmlModuloHackeo(f, i) : "").join("");
+  $("#hackeos").innerHTML = l || `<p class="hk-vacio">Aún no tienes hackeos en el terminal. Constrúyelo con los menús o escríbelo a mano.</p>`;
   pintarRamHackeos();
 }
-/* Fila compacta para los chips y el IETS (en el Sistema Nervioso) */
-function htmlHackeoCompacto(f, i){
-  return `<div class="hk-compacto"><input value="${esc(f.nombre || "")}" placeholder="NOMBRE :: VERBO(objetivo) // RAM" aria-label="Hackeo" oninput="editarFila('hackeos',${i},'nombre',this.value)">
-    <input value="${esc(f.efecto || "")}" placeholder="Efecto" aria-label="Efecto" oninput="editarFila('hackeos',${i},'efecto',this.value)">
-    ${selectDondeHackeo(f, i)}<button type="button" class="hk-editar" data-hk-editar="${i}" aria-label="Editar con el constructor" title="Editar con el constructor">✎</button><button type="button" class="quitar" onclick="quitarFila('hackeos',${i})" aria-label="Quitar">×</button></div>`;
-}
+/* Solo el nombre: rehace la línea con el mismo verbo, objetivo y parámetros */
+window.nombrarHackeo = (i, v) => {
+  const f = D.hackeos[i], sp = f && specSeguro(f); if(!sp) return;
+  sp.nombre = v;
+  f.nombre = lineaSpec(sp); f.hk = normalizarSpec(sp);
+  guardar(); trasTabla("hackeos");
+};
+/* Pasar una tarjeta a texto libre (1) o volver al módulo (0) */
+window.hackeoAMano = (i, si) => { const f = D.hackeos[i]; if(!f) return; if(si) f.manual = true; else delete f.manual; guardar(); pintarTabla("hackeos"); if(typeof pintarCiber === "function") pintarCiber();
+  const el = document.querySelector(`[data-hk-i="${i}"] ${si ? ".hk-linea" : ".hk-nombre"}`); if(el) try{ el.focus(); }catch(e){} };
+/* Los chips y el programa del IETS (en el Sistema Nervioso): el mismo módulo, más pequeño */
+function htmlHackeoCompacto(f, i){ return htmlModuloHackeo(f, i, true); }
 window.moverHackeo = (i, v) => { if(!D.hackeos[i]) return;
   if(v === "iets" && !esDefensivo(D.hackeos[i])){ toast("El IETS solo carga programas defensivos: ICE o BLACK.ICE.", 4000); pintarTabla("hackeos"); return; }
   D.hackeos[i].donde = v; guardar(); pintarTabla("hackeos"); trasTabla("hackeos"); if(typeof pintarCiber === "function") pintarCiber(); };
 const trasTabla = t => { if(t === "inventario"){ pintarRevisionInventario(); if(typeof pintarEspacio === "function") pintarEspacio(); } if(t === "hackeos"){ pintarTerminal(); pintarRamHackeos(); } };
-window.anyadirFila = t => { (D[t] = D[t] || []).push({}); guardar(); pintarTabla(t); trasTabla(t); };
+window.anyadirFila = t => { (D[t] = D[t] || []).push(t === "hackeos" ? {manual:true} : {}); guardar(); pintarTabla(t); trasTabla(t);
+  if(t === "hackeos"){ const l = document.querySelectorAll("#hackeos .hk-linea"); if(l.length) try{ l[l.length - 1].focus(); }catch(e){} } };
 window.quitarFila  = (t,i) => { const f = D[t][i]; D[t].splice(i,1); guardar(); pintarTabla(t); trasTabla(t); if(t === "hackeos" && f && !enTablaTerminal(f) && typeof pintarCiber === "function") pintarCiber(); };
 window.editarFila  = (t,i,k,v) => { D[t][i][k] = v; if(t === "inventario") delete D[t][i].revisado; if(t === "hackeos" && k === "nombre") delete D[t][i].hk; guardar(); trasTabla(t); };
 /* ================= AVATAR ANATÓMICO (SVG) =================
@@ -6443,10 +6523,12 @@ function pintarReparto(){
   const partes = [`${p.stats} en estadísticas`, `${p.comps} en competencias`];
   if(p.gratis) partes.push(`${p.gratis} gratis por raza`);
   const excesos = [];
-  ESTADISTICAS.forEach(e => { if(num(D["stat_"+e.c]) > TOPE_CREACION && !(e.c === "cuerpo" && D.fbc)) excesos.push(e.n + " " + num(D["stat_"+e.c])); });
+  const tope = topeCreacion();
+  if(tope !== null) ESTADISTICAS.forEach(e => { if(num(D["stat_"+e.c]) > tope && !(e.c === "cuerpo" && D.fbc)) excesos.push(e.n + " " + num(D["stat_"+e.c])); });
   $("#rep-nota").textContent = partes.join(" · ") +
     (p.libre < 0 ? `. Te has pasado por ${-p.libre}` : "") +
-    (excesos.length ? `. Por encima del tope: ${excesos.join(", ")} (no se toca)` : ". Tope de 6 en cada estadística y competencia") + ".";
+    (excesos.length ? `. Por encima del tope: ${excesos.join(", ")} (no se toca)` : tope !== null ? ". Tope de 6 en cada estadística y competencia" : ". Sin tope de 6: máximo 8 en estadísticas y 10 en competencias") + ".";
+  const cb = $("#sinTope6"); if(cb) cb.checked = !!D.sinTopeCreacion;
 }
 
 function activarCreacion(activo){
@@ -8512,6 +8594,7 @@ function pintarRamHackeos(){
     el.textContent = c.v === null ? "—" : c.v + (pesoHackeo(h) > 1 && donde === "ranura" ? " · 2 ranuras" : "");
     el.title = (c.txt ? "Coste " + c.txt : "") + (noCabe ? (c.txt ? "\n" : "") + (t ? "No cabe en las ranuras del terminal." : "Sin ciberterminal.") : "");
     el.classList.toggle("mal", !!noCabe);
+    el.classList.toggle("sin", c.v === null);
   });
 }
 const cambioTerminal = () => { guardar(); pintarTerminal(); pintarTabla("hackeos"); if(typeof pintarPosesiones === "function") pintarPosesiones(); if(typeof pintarArmamento === "function") pintarArmamento(); if(typeof recalcular === "function") recalcular(); };
@@ -8830,7 +8913,8 @@ function armarIceInicial(){
   return hechos;
 }
 /* Fila de la tabla de hackeos de la ficha a partir de una especificación */
-const filaDeSpec = (s, antes) => Object.assign({}, antes || {}, {nombre:lineaSpec(s), efecto:efectoSpec(s), hk:normalizarSpec(s), donde:(antes && antes.donde) || "ranura"});
+// hecho con el constructor: vuelve a ser un módulo (deja de estar «escrito a mano»)
+const filaDeSpec = (s, antes) => { const f = Object.assign({}, antes || {}, {nombre:lineaSpec(s), efecto:efectoSpec(s), hk:normalizarSpec(s), donde:(antes && antes.donde) || "ranura"}); delete f.manual; return f; };
 
 
 /* ================= NEW-02: BUSCADOR DE REGLAS =================
