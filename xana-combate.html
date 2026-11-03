@@ -340,7 +340,7 @@
   .stat-mando{display:flex;align-items:center;gap:4px}
   .stat-mando .pm{flex:0 0 26px;width:26px;height:30px;opacity:.55}
   /* VIS-12: fuera del modo creación no se ven los − y + (el número se edita pulsándolo) */
-  body:not(.creando) .stat-mando .pm{display:none}
+  body:not(.creando):not(.avanzando) .stat-mando .pm{display:none}
   .stat input{font-size:var(--t-2xl)!important;line-height:1.1;padding:0!important;height:40px}
   .stat-mando .pm:hover,.stat:focus-within .pm{opacity:1}
   .stat-mando input{flex:1}
@@ -530,7 +530,17 @@
   #reparto .m.libre.cero b{color:var(--aviso)}
   #reparto .nota{flex:1;min-width:180px;font-size:var(--t-xs);color:var(--apagado)}
   #reparto .presu{width:74px}
-  body.creando{padding-bottom:96px}
+  body.creando,body.avanzando{padding-bottom:96px}
+  #avance{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--panel);border-top:2px solid var(--sano);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;gap:14px;align-items:center;flex-wrap:wrap;box-shadow:var(--sombra-arriba)}
+  #avance[hidden]{display:none}
+  #avance .m{text-align:center;min-width:56px} #avance .m small{color:var(--apagado);font-size:var(--t-xs);letter-spacing:.03em;display:block}
+  #avance .presu{width:74px;color:var(--sano)}
+  #avance .nota{flex:1;min-width:180px;font-size:var(--t-xs);color:var(--apagado)}
+  .comp .pm-av{display:none;width:24px;height:28px;padding:0}
+  body.avanzando .comp{grid-template-columns:1fr 24px 40px 24px 34px}
+  body.avanzando .comp .pm-av{display:block}
+  body.avanzando .stat input,body.avanzando .comp input{border:1px solid var(--linea);background:color-mix(in srgb,var(--sano) 7%,transparent);cursor:default}
   /* margen extra al final: los desplegables y selectores de la parte baja se pueden abrir y leer enteros */
   @media screen{ body::after{content:"";display:block;height:45vh} }
   body.creando .stat input,body.creando .comp input{border:1px solid var(--linea);background:color-mix(in srgb,var(--rosa) 7%,transparent)}
@@ -1069,8 +1079,11 @@
   .cm-her{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;border:1px solid color-mix(in srgb,var(--rojo) 50%,transparent);background:color-mix(in srgb,var(--rojo) 7%,transparent);border-radius:var(--r-m);padding:7px 10px;font-size:var(--t-s);line-height:1.35}
   .cm-her > b{color:var(--rojo-t);grid-column:1} .cm-her > small{color:var(--apagado);grid-column:1}
   .cm-her > span{grid-column:1} .cm-her .trat{font-size:var(--t-xs);color:var(--apagado)}
-  .cm-her .btn{grid-column:2;grid-row:1/5;align-self:center;min-height:34px}
+  .cm-her-b{grid-column:2;grid-row:1/6;align-self:center;display:flex;flex-direction:column;gap:4px}
+  .cm-her .btn{min-height:34px}
   .cm-her.temporal{border-style:dashed}
+  .cm-her.estab,.tk-herida.estab{border-color:color-mix(in srgb,var(--aviso) 60%,transparent);background:color-mix(in srgb,var(--aviso) 7%,transparent)}
+  .cm-her-estab{font-weight:600;color:var(--aviso)}
   .cm-her-notas{margin-top:8px;border:1px dashed var(--linea);border-radius:var(--r-m);padding:6px 10px;font-size:var(--t-xs)}
   .cm-her-notas small{color:var(--apagado)} .cm-her-notas p{margin:2px 0 6px}
   .nube-elegir{display:grid;gap:8px;margin:10px 0}
@@ -1585,7 +1598,10 @@
   .tk-herida{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;border:1px solid color-mix(in srgb,var(--rojo) 50%,transparent);background:color-mix(in srgb,var(--rojo) 7%,transparent);border-radius:var(--r-m);padding:6px 9px;font-size:var(--t-s);line-height:1.35}
   .tk-herida > b{color:var(--rojo-t);grid-column:1} .tk-herida > small{color:var(--apagado)}
   .tk-herida > span{grid-column:1} .tk-herida .trat{font-size:var(--t-xs);color:var(--apagado)}
-  .tk-herida .btn{grid-column:2;grid-row:1/4;align-self:center;min-height:34px}
+  .cm-her-b{grid-column:2;grid-row:1/6;align-self:center;display:flex;flex-direction:column;gap:4px}
+  .tk-herida .btn{min-height:34px}
+  .tk-herida.estab{border-color:color-mix(in srgb,var(--aviso) 60%,transparent);background:color-mix(in srgb,var(--aviso) 7%,transparent)}
+  .cm-her-estab{font-weight:600;color:var(--aviso)}
   /* acciones del turno */
   /* TRK-02: qué toca ahora (fija arriba del panel del combatiente) */
   .tk-quetoca{position:sticky;top:var(--alto-tk);z-index:6;display:flex;align-items:center;gap:10px;background:var(--panel-alto);border:1px solid var(--rosa);border-radius:var(--r-l);padding:8px 10px;box-shadow:var(--sombra-2)}
@@ -2948,7 +2964,24 @@ function rellenarVacio(el, clave){
   D[clave] = el.value;
 }
 
+/* Coste de las estadísticas: subir a un nivel cuesta la mitad de ese nivel, redondeando arriba
+   (a 2: 1 punto · a 3 y 4: 2 · a 5 y 6: 3 · a 7 y 8: 4). El 1 de partida es gratis. Las competencias: 1 punto por nivel (las ×2, 2). */
+const costeSubirStat = n => Math.max(0, Math.ceil(n / 2));
+function costeStat(nivel){ let s = 0; for(let k = 2; k <= nivel; k++) s += costeSubirStat(k); return s; }
+function costeSubir(clave, nuevo){
+  if(clave.startsWith("stat_")) return costeSubirStat(nuevo);
+  const m = clave.match(/^comp_([a-z]+)_/), est = m && m[1];
+  const nombre = est ? ((COMPETENCIAS[est] || []).map(t => t.split("|")[0]).find(n => claveComp(est, n) === clave) || "") : "";
+  return est && nombre ? multiplicador(est, nombre) : 1;
+}
+const nombreDeClave = clave => {
+  if(clave.startsWith("stat_")){ const e = ESTADISTICAS.find(x => "stat_" + x.c === clave); return e ? e.n : clave; }
+  for(const e of ESTADISTICAS) for(const t of (COMPETENCIAS[e.c] || [])){ const n = t.split("|")[0]; if(claveComp(e.c, n) === clave) return n; }
+  return clave;
+};
+
 function cambiarNumero(el, clave, delta){
+  if(D.modoAvance && !D.modoCreacion) return cambiarAvance(el, clave, delta);
   if(clave === "stat_cuerpo" && D.fbc){ toast("Tu Cuerpo base lo fija el cuerpo FBC (" + D.fbc.n + ")"); return; }
   let n = num(el.value) + delta;
   const min = clave.startsWith("stat_") && D.modoCreacion ? 1 : 0;
@@ -3226,13 +3259,13 @@ window.quitarVastaya = i => { D.vastaya.splice(i,1); guardar(); pintarVastaya();
 function compsTodas(){ try{ return localStorage.getItem("xana-comps-todas") === "1"; }catch(e){ return false; } }
 function marcarCompsVisibles(){
   const caja = document.getElementById("comps"); if(!caja) return;
-  const todas = !!D.modoCreacion || compsTodas();
+  const todas = !!D.modoCreacion || !!D.modoAvance || compsTodas();
   caja.classList.toggle("solo-aprendidas", !todas);
   let ocultas = 0;
   caja.querySelectorAll(".comp-grupo").forEach(g => { const filas = [...g.querySelectorAll(".comp")].filter(f => !f.hidden);
     const vis = filas.filter(f => !f.classList.contains("sinaprender")).length; ocultas += filas.length - vis; g.classList.toggle("vacio", !vis); });
   const b = document.getElementById("btnCompsTodas");
-  if(b){ b.hidden = !!D.modoCreacion; b.textContent = compsTodas() ? "Solo las aprendidas" : "Ver todas"; b.setAttribute("aria-pressed", compsTodas() ? "true" : "false"); }
+  if(b){ b.hidden = !!D.modoCreacion || !!D.modoAvance; b.textContent = compsTodas() ? "Solo las aprendidas" : "Ver todas"; b.setAttribute("aria-pressed", compsTodas() ? "true" : "false"); }
   const n = document.getElementById("comps-ocultas");
   if(n) n.textContent = !todas && ocultas ? " Hay " + ocultas + " sin aprender ocultas." : "";
 }
@@ -3246,7 +3279,9 @@ function pintarComps(){
         (deRaza.has(nombre) ? ' <i class="raza">raza</i>' : '');
       return `<div class="comp">
         <span title="${esc(nombre)}">${esc(nombre)}${etiquetas}</span>
+        <button class="pm pm-av" type="button" tabindex="-1" data-av="-1" data-clave="${clave}" aria-label="Bajar ${esc(nombre)}">−</button>
         <input id="${clave}" inputmode="numeric" autocomplete="off" value="${esc(D[clave] || 0)}">
+        <button class="pm pm-av" type="button" tabindex="-1" data-av="1" data-clave="${clave}" aria-label="Subir ${esc(nombre)}">+</button>
         <b data-total="${s.c}" data-de="${clave}">0</b></div>`;
     }).join("");
     const extra = s.c === "tecnologia" ? `<div class="comp" id="fila-cirugia" hidden>
@@ -3255,7 +3290,7 @@ function pintarComps(){
         <b data-total="tecnologia">0</b></div>` : "";
     return `<div class="comp-grupo"><h4>${s.n} <span class="comp-stat" data-stat-de="${s.c}"></span></h4>${filas}${extra}</div>`;
   }).join("");
-  document.querySelectorAll(".comp input").forEach(el => { enlazar(el, el.id); marcarTope(el); });
+  document.querySelectorAll(".comp input").forEach(el => { enlazar(el, el.id); marcarTope(el); el.readOnly = !!D.modoAvance; });
   recalcular();
 }
 
@@ -6492,7 +6527,7 @@ function multiplicador(est, nombre){
 function contarPuntos(){
   let stats = 0, comps = 0, gratis = 0;
   // con un FBC, el Cuerpo lo pone el cuerpo nuevo: no se paga con puntos
-  ESTADISTICAS.forEach(e => { if(!(e.c === "cuerpo" && D.fbc)) stats += Math.max(0, num(D["stat_"+e.c])); });
+  ESTADISTICAS.forEach(e => { if(!(e.c === "cuerpo" && D.fbc)) stats += costeStat(num(D["stat_"+e.c])); });
 
   const deRaza = new Set(compsDeRaza());
   ESTADISTICAS.forEach(e => {
@@ -6527,7 +6562,9 @@ function pintarReparto(){
   if(tope !== null) ESTADISTICAS.forEach(e => { if(num(D["stat_"+e.c]) > tope && !(e.c === "cuerpo" && D.fbc)) excesos.push(e.n + " " + num(D["stat_"+e.c])); });
   $("#rep-nota").textContent = partes.join(" · ") +
     (p.libre < 0 ? `. Te has pasado por ${-p.libre}` : "") +
-    (excesos.length ? `. Por encima del tope: ${excesos.join(", ")} (no se toca)` : tope !== null ? ". Tope de 6 en cada estadística y competencia" : ". Sin tope de 6: máximo 8 en estadísticas y 10 en competencias") + ".";
+    (excesos.length ? `. Por encima del tope: ${excesos.join(", ")} (no se toca)` : tope !== null ? ". Tope de 6 en cada estadística y competencia" : ". Sin tope de 6: máximo 8 en estadísticas y 10 en competencias") +
+    ". Subir una estadística cuesta: a 2, 1 punto · a 3–4, 2 · a 5–6, 3 · a 7–8, 4 (el 1 es gratis). Competencias: 1 por nivel (×2: 2).";
+  document.querySelectorAll("#stats [data-paso='1']").forEach(b => { const n = num(D["stat_" + b.dataset.est]) + 1; b.title = "Subir a " + n + " cuesta " + costeSubirStat(n) + (costeSubirStat(n) === 1 ? " punto" : " puntos"); });
   const cb = $("#sinTope6"); if(cb) cb.checked = !!D.sinTopeCreacion;
 }
 
@@ -6554,6 +6591,66 @@ function activarCreacion(activo){
   document.querySelectorAll(".stat input, .comp input").forEach(marcarTope);
   guardar();
   recalcular();
+}
+
+/* ---------- Modo avance: subir estadísticas y competencias con los puntos que da el máster ----------
+   D.puntosAvance: los puntos que tienes para gastar. D.avance = {base:{clave:nivel}} al entrar: solo se puede bajar (y recuperar
+   los puntos) lo que hayas subido en esta vez. D.avances: el historial de lo que se ha subido (para el máster).
+   Las competencias se suben con 1 punto (×2: 2), pero en la partida hay que pasar tiempo practicando: la ficha lo recuerda. */
+const puntosAvance = () => Math.max(0, num(D.puntosAvance));
+function cambiarAvance(el, clave, delta){
+  if(clave === "stat_cuerpo" && D.fbc){ toast("Tu Cuerpo base lo fija el cuerpo FBC (" + D.fbc.n + ")"); return; }
+  const actual = num(D[clave]), base = num(((D.avance || {}).base || {})[clave] !== undefined ? D.avance.base[clave] : actual);
+  const nombre = nombreDeClave(clave);
+  if(delta > 0){
+    const nuevo = actual + 1, max = maximoNatural(clave), coste = costeSubir(clave, nuevo);
+    if(nuevo > max){ toast("El máximo natural es " + max + ": lo superan los bonificadores (ciberware, rol, ropa, estados)"); return; }
+    if(puntosAvance() < coste){ toast("Subir " + nombre + " a " + nuevo + " cuesta " + coste + (coste === 1 ? " punto" : " puntos") + " y tienes " + puntosAvance() + "."); return; }
+    D.puntosAvance = String(puntosAvance() - coste);
+    D[clave] = String(nuevo);
+    D.avances = (Array.isArray(D.avances) ? D.avances : []).concat([{k:clave, n:nombre, de:actual, a:nuevo, coste, f:new Date().toISOString().slice(0, 10)}]).slice(-40);
+    if(!clave.startsWith("stat_")) toast(nombre + " sube a " + nuevo + ". En la partida, tu personaje tiene que dedicarle tiempo (entrenar, practicar, estudiar): díselo al máster.", 5000);
+  } else {
+    if(actual <= base){ toast("Solo puedes bajar lo que hayas subido en este avance."); return; }
+    const coste = costeSubir(clave, actual);
+    D.puntosAvance = String(puntosAvance() + coste);
+    D[clave] = String(actual - 1);
+    const l = Array.isArray(D.avances) ? D.avances : [];
+    for(let i = l.length - 1; i >= 0; i--) if(l[i].k === clave && l[i].a === actual){ l.splice(i, 1); break; }
+  }
+  el.value = D[clave];
+  marcarTope(el);
+  guardar();
+  recalcular();
+  pintarAvance();
+}
+function pintarAvance(){
+  const caja = $("#avance"); if(!caja) return;
+  const p = $("#av-puntos"); if(p && document.activeElement !== p) p.value = String(puntosAvance());
+  const base = (D.avance || {}).base || {};
+  const esta = (Array.isArray(D.avances) ? D.avances : []).filter(x => base[x.k] !== undefined && x.a > num(base[x.k]));
+  $("#av-nota").textContent = esta.length ? "Esta vez: " + esta.map(x => x.n + " " + x.de + "→" + x.a + " (" + x.coste + ")").join(" · ")
+    : "Estadística: a 2, 1 punto · a 3–4, 2 · a 5–6, 3 · a 7–8, 4. Competencia: 1 punto por nivel (×2: 2), y en la partida hay que dedicarle tiempo.";
+  document.querySelectorAll("#stats [data-paso='1']").forEach(b => { if(!D.modoAvance) return; const n = num(D["stat_" + b.dataset.est]) + 1; b.title = "Subir a " + n + " cuesta " + costeSubirStat(n) + (costeSubirStat(n) === 1 ? " punto" : " puntos"); });
+}
+function activarAvance(activo){
+  if(activo && D.modoCreacion) activarCreacion(false);
+  D.modoAvance = !!activo;
+  if(D.modoAvance){
+    const base = {};
+    ESTADISTICAS.forEach(e => { base["stat_" + e.c] = num(D["stat_" + e.c]); (COMPETENCIAS[e.c] || []).forEach(t => { const k = claveComp(e.c, t.split("|")[0]); base[k] = num(D[k]); }); });
+    // al recargar la página se mantiene la base con la que se entró
+    if(!D.avance || !D.avance.base) D.avance = {base};
+  } else delete D.avance;
+  document.body.classList.toggle("avanzando", D.modoAvance);
+  const caja = $("#avance"); if(caja) caja.hidden = !D.modoAvance;
+  const b = $("#btnAvance");
+  if(b){ b.textContent = D.modoAvance ? "Salir del avance" : "Modo avance"; b.setAttribute("aria-pressed", D.modoAvance ? "true" : "false"); }
+  // en el avance, los números solo cambian con ± (así se cobran los puntos)
+  document.querySelectorAll(".stat input, .comp input").forEach(el => { el.readOnly = D.modoAvance; });
+  guardar();
+  marcarCompsVisibles();
+  pintarAvance();
 }
 
 /* Los botones actúan aunque haya una casilla con el foco: el mousedown no roba el foco,
@@ -6733,7 +6830,7 @@ const HERIDAS_SIN_MANO = ["Brazo amputado", "Mano amputada", "Brazo roto", "Braz
 function manosDisponibles(){
   let total = 2;
   try{ const E = estado(); total = E.cap && E.cap.brazo ? E.cap.brazo.total : 2; }catch(e){}
-  const her = (D.combate && Array.isArray(D.combate.heridas) ? D.combate.heridas : []).filter(h => h && HERIDAS_SIN_MANO.some(n => String(h.n || "").indexOf(n) === 0)).length;
+  const her = (D.combate && Array.isArray(D.combate.heridas) ? D.combate.heridas : []).filter(h => heridaActiva(h) && HERIDAS_SIN_MANO.some(n => String(h.n || "").indexOf(n) === 0)).length;
   return Math.max(0, total - her - manosQueNoSonMano());
 }
 /* Manos de ciberware que no sirven como mano (la Mano-Clemñón sin mejorar): no empuñan ni agarran */
@@ -9068,6 +9165,7 @@ function arrancar(){
   paso(iniciarConsumibles);
   paso(pintarConsumibles);
   paso(() => activarCreacion(!!D.modoCreacion));
+  paso(() => activarAvance(!!D.modoAvance && !D.modoCreacion));
   paso(recalcular);
 }
 
@@ -10313,6 +10411,17 @@ function textoRemedio(r){
   const d = difRemedio(r);
   return d ? "Primeros Auxilios " + d.pa + " (a ti mismo) · Enfermería " + d.enf + " (a otro)" : "sin remedio rápido";
 }
+/* Remedio rápido (RED): la herida no se cura, solo se le quitan los efectos el resto del día (h.estab = true hasta que el reloj
+   de la partida pasa la medianoche). Las que en Tratamiento dicen «Solo remedio rápido» sí se curan del todo con él.
+   La cura de verdad (Tratamiento / Cirugía) es el botón «Curada del todo». */
+const remedioCura = h => /remedio rápido/i.test(String(h && h.trat || ""));
+const heridaActiva = h => !!h && !h.estab;
+const tieneHerida = (l, n) => (l || []).some(h => h.n === n && heridaActiva(h));
+/* Aplica un remedio rápido logrado a la herida h de la lista l. Devuelve «curada» o «estabilizada». */
+function aplicarRemedio(l, h){
+  if(remedioCura(h)){ const k = l.indexOf(h); if(k >= 0) l.splice(k, 1); return "curada"; }
+  h.estab = true; return "estabilizada";
+}
 /* Las heridas que ya no existen en la tabla pasan a la que las sustituye (Objeto clavado → Hemorragia) */
 const HERIDA_RENOMBRADA = {"Objeto clavado":"Hemorragia"};
 function migrarHeridas(l){
@@ -10346,7 +10455,7 @@ function textoHeridasFicha(){
 function penalHeridas(p){
   const out = {todas:0, distancia:0, cc:0, mov:0, noEsquiva:false, noEsquivaDe:"", fuentes:[], items:[]};
   const poner = (a, v, h, txt) => { out[a] += a === "mov" ? v : -v; out.items.push({a, v:-v, n:h.n}); out.fuentes.push(txt); };
-  (p && p.heridas || []).forEach(h => {
+  (p && p.heridas || []).filter(heridaActiva).forEach(h => {
     const e = h.efecto || ""; let m;
     if((m = e.match(/^[−-](\d+) a todas las acciones/))) poner("todas", num(m[1]), h, "−" + m[1] + " a todo (" + h.n + ")");
     if((m = e.match(/[−-](\d+) a los ataques a distancia/))) poner("distancia", num(m[1]), h, "−" + m[1] + " a distancia (" + h.n + ")");
@@ -11023,9 +11132,10 @@ function pintarCombate(){
           <button type="button" class="btn fina" data-cm="estado-otro">Añadir</button>
           <button type="button" class="btn fina" data-cm="rotacion" ${M.estados.length ? "" : "disabled"}>Nueva rotación (−1)</button></div>
         <h4 class="cm-her-t">Heridas críticas</h4>
-        ${HK.length ? `<ul class="cm-her-lista">${HK.map((h, i) => `<li class="cm-her${h.temporal ? " temporal" : ""}"><b>${esc(h.n)}</b><small>${esc(String(h.z || "").toLowerCase())}${h.temporal ? " · temporal, quedan " + num(h.rot) + " rot." : ""}</small>
+        ${HK.length ? `<ul class="cm-her-lista">${HK.map((h, i) => `<li class="cm-her${h.temporal ? " temporal" : ""}${h.estab ? " estab" : ""}"><b>${esc(h.n)}</b><small>${esc(String(h.z || "").toLowerCase())}${h.temporal ? " · temporal, quedan " + num(h.rot) + " rot." : ""}</small>
+          ${h.estab ? `<span class="cm-her-estab">Remedio rápido: sin efectos hasta la medianoche. No está curada.</span>` : ""}
           <span>${esc(h.efecto || "")}</span>${h.remedio || h.trat ? `<span class="trat">Remedio rápido: ${esc(textoRemedio(h.remedio))} · Tratamiento: ${esc(h.trat || "—")}</span>` : ""}
-          ${vivoYo ? "" : `<button type="button" class="btn fina" data-cm="herida-curar" data-i="${i}" aria-label="Marcar ${esc(h.n)} como curada">Curada</button>`}</li>`).join("")}</ul>`
+          ${vivoYo ? "" : `<div class="cm-her-b">${h.estab ? `<button type="button" class="btn fina" data-cm="herida-remedio-fin" data-i="${i}" title="Se acaba el remedio rápido: vuelven los efectos">Se pasa el remedio</button>` : ""}<button type="button" class="btn fina" data-cm="herida-curar" data-i="${i}" title="Tratamiento o cirugía: la herida desaparece" aria-label="Marcar ${esc(h.n)} como curada del todo">Curada del todo</button></div>`}</li>`).join("")}</ul>`
           : `<p class="cm-vacio">Ninguna. Se apuntan desde la tabla de heridas críticas (abajo) o las pone el máster en el combate.</p>`}
         ${vivoYo && HK.length ? `<p class="cm-nota">Estás en el combate del máster: él marca las heridas como curadas.</p>` : ""}
         ${String(D["f-heridas"] || "").trim() ? `<div class="cm-her-notas"><small>Notas de heridas de antes</small><p>${esc(D["f-heridas"]).replace(/\n/g, "<br>")}</p><button type="button" class="btn fina" data-cm="heridas-notas-quitar">Quitar notas</button></div>` : ""}
@@ -11131,6 +11241,7 @@ function accionCombate(b){
     }
     case "reponer": reponerContador(K, b.dataset.k); break;
     case "herida-curar": { const x = K.heridas.splice(num(b.dataset.i), 1)[0]; if(x) toast(x.n + ": curada"); break; }
+    case "herida-remedio-fin": { const x = K.heridas[num(b.dataset.i)]; if(x){ delete x.estab; toast(x.n + ": se pasa el remedio rápido, vuelven sus efectos"); } break; }
     case "heridas-notas-quitar": conDeshacer("Notas de heridas borradas.", () => { delete D["f-heridas"]; guardar(); pintarCombate(); }); return;
     case "muerte": K.muerte = n ? num(K.muerte) + 1 : 0; break;
     case "cb-reparar": K.cbMenos = n ? Math.max(0, num(K.cbMenos) - n) : 0; break;
@@ -11293,6 +11404,8 @@ function pasarTiempoFicha(delta, opc){
     K.heridas = (K.heridas || []).filter(h => !h.temporal || h.rot === undefined || num(h.rot) > 0);
   }
   if(opc.dias > 0){ D.usosDia = {}; r.dia = true; r.usos = r.usos.concat(reponerUsosPor(["día"]));
+    // el remedio rápido dura el resto del día: a medianoche vuelven los efectos de la herida
+    (K.heridas || []).forEach(h => { if(h.estab){ delete h.estab; r.fin.push(h.n + " (se pasa el remedio rápido)"); } });
     // Penoxicilina: +2 de vida por cada día que pasa (y se acaba al llegar al máximo)
     if(K.estados.some(s => s.n === "Penoxicilina")){
       const C = calcular(), antes = Math.max(0, Math.min(C.vidaMax, C.vida)), ahora = Math.min(C.vidaMax, antes + 2 * opc.dias);
@@ -11421,7 +11534,7 @@ function sanearTracker(t){
       participantes:c.participantes.filter(p => obj(p) && obj(p.ficha) && typeof p.id === "string").map(p => ({
         id:p.id, tipo:p.tipo === "pj" ? "pj" : "pnj", ref:String(p.ref || ""), vip:p.tipo !== "pj" && !!p.vip ? true : undefined, nombre:String(p.nombre || "?"), ficha:fichaAlDia(sanear(p.ficha)),
         carta:p.carta === undefined || p.carta === null ? "" : String(p.carta).slice(0, 3), fuera:!!p.fuera, notas:String(p.notas || ""), foto:typeof p.foto === "string" ? p.foto : "",
-        heridas:migrarHeridas((Array.isArray(p.heridas) ? p.heridas : []).filter(h => obj(h) && HERIDAS_CRITICAS[h.z]).map(h => Object.assign({z:h.z, n:String(h.n || ""), efecto:String(h.efecto || ""), remedio:String(h.remedio || ""), trat:String(h.trat || "")}, h.temporal ? {temporal:true, rot:Math.max(0, num(h.rot))} : {}))),
+        heridas:migrarHeridas((Array.isArray(p.heridas) ? p.heridas : []).filter(h => obj(h) && HERIDAS_CRITICAS[h.z]).map(h => Object.assign({z:h.z, n:String(h.n || ""), efecto:String(h.efecto || ""), remedio:String(h.remedio || ""), trat:String(h.trat || "")}, h.temporal ? {temporal:true, rot:Math.max(0, num(h.rot))} : {}, h.estab ? {estab:true} : {}))),
         eventos:Array.isArray(p.eventos) && p.eventos.length ? p.eventos.filter(e => obj(e) && typeof e.id === "string").slice(-60) : undefined,
         inicio:obj(p.inicio) ? {vida:num(p.inicio.vida), vidaMax:num(p.inicio.vidaMax), balas:num(p.inicio.balas), con:obj(p.inicio.con) ? p.inicio.con : {}} : undefined,
         ultimoObjetivo:typeof p.ultimoObjetivo === "string" ? p.ultimoObjetivo : undefined, murosRotos:Math.max(0, num(p.murosRotos)) || undefined,
@@ -11709,7 +11822,7 @@ function instalarCiberPnj(d, lista){
   return conFicha(d, () => lista.map(c => ({k:c.k, motivo:instalarEnPnj(c.k, c.valor)})).filter(x => x.motivo));
 }
 /* TRK-05: una estadística que el máster deja vacía (0) vale según el nivel del PNJ: Débil 1, Normal 2, Curtido 3, Élite 4, Jefe 5 */
-const STAT_POR_NIVEL = {debil:1, normal:2, curtido:3, elite:4, jefe:5};
+const STAT_POR_NIVEL = {debil:1, normal:2, curtido:3, elite:3, jefe:4};
 const statPnj = (t, c) => num(t.stats && t.stats[c]) || STAT_POR_NIVEL[t.nivel] || 2;
 function fichaDePnj(t){
   const d = {"f-nombre":t.nombre, "f-raza":t.raza || "", "f-cb-cuerpo":t.cb ? String(t.cb) : "", "f-cb-cabeza":t.cb ? String(t.cb) : "", implantes:[], combate:{cont:{}, estados:[]}, pnj:true};
@@ -11756,13 +11869,15 @@ function fichaDePnj(t){
 }
 
 /* ---------- PNJ al azar por nivel de amenaza ----------
-   Los rangos son una propuesta para el tracker (no salen del PDF): se pueden retocar a mano después de generar. */
+   A la escala de los PJ con el coste de estadísticas que escala (40 puntos): un PJ recién creado es nivel Normal
+   (estadística principal 5, el resto 2–3, competencias fuertes 3–5). st = el resto de estadísticas · stP = la principal del
+   arquetipo (la segunda, una menos) · prin / sec = competencias principal y secundarias. Se pueden retocar a mano después. */
 const NIVELES_PNJ = [
-  {id:"debil",   n:"Débil",   st:[1, 3], prin:[1, 2], sec:[0, 1], cb:[0, 2],   ciber:[0, 0]},
-  {id:"normal",  n:"Normal",  st:[2, 4], prin:[2, 4], sec:[1, 2], cb:[2, 6],   ciber:[0, 1]},
-  {id:"curtido", n:"Curtido", st:[3, 5], prin:[4, 5], sec:[2, 3], cb:[6, 10],  ciber:[1, 2]},
-  {id:"elite",   n:"Élite",   st:[4, 6], prin:[5, 7], sec:[3, 4], cb:[10, 14], ciber:[2, 3]},
-  {id:"jefe",    n:"Jefe",    st:[5, 8], prin:[7, 9], sec:[4, 5], cb:[14, 18], ciber:[3, 4]}
+  {id:"debil",   n:"Débil",   st:[1, 2], stP:[3, 4], prin:[1, 3], sec:[0, 1], cb:[0, 2],   ciber:[0, 0]},
+  {id:"normal",  n:"Normal",  st:[2, 3], stP:[5, 5], prin:[3, 5], sec:[1, 2], cb:[2, 6],   ciber:[0, 1]},
+  {id:"curtido", n:"Curtido", st:[2, 4], stP:[6, 6], prin:[5, 6], sec:[2, 3], cb:[6, 10],  ciber:[1, 2]},
+  {id:"elite",   n:"Élite",   st:[3, 4], stP:[7, 7], prin:[6, 7], sec:[3, 4], cb:[10, 14], ciber:[2, 3]},
+  {id:"jefe",    n:"Jefe",    st:[3, 5], stP:[8, 8], prin:[7, 9], sec:[4, 5], cb:[14, 18], ciber:[3, 4]}
 ];
 /* [nombre de la pieza, nivel mínimo (0 = débil … 4 = jefe)] */
 const ARQUETIPOS_PNJ = {
@@ -11805,7 +11920,8 @@ function generarPnj(nivelId, tipoId, base){
   t.id = base && base.id || ""; t.raza = base && base.raza || "";
   t.nombre = A.nombres[iN];
   ESTADISTICAS.forEach(e => { t.stats[e.c] = azar(N.st[0], N.st[1]); });
-  A.st.forEach((c, i) => { t.stats[c] = Math.min(8, Math.max(t.stats[c], N.st[1] - i) + (i ? 0 : 1)); });
+  // la estadística principal del arquetipo en su valor del nivel; la segunda, una menos (nunca por debajo del resto)
+  A.st.forEach((c, i) => { t.stats[c] = Math.min(8, Math.max(t.stats[c], azar(N.stP[0], N.stP[1]) - i)); });
   // armas: la principal con la competencia alta; la secundaria, más baja
   A.armas[iN].forEach((tipoA, i) => {
     const T0 = TIPOS_ARMA[tipoA];
@@ -12082,7 +12198,7 @@ function golpeCasco(q, id){
 function dolorPorAccion(p){
   if(!p || !p.ficha) return;
   const sangra = conFicha(p.ficha, () => datosCombate().estados.some(s => s.n === "Sangrando"));
-  const hemo = (p.heridas || []).some(h => h.n === "Hemorragia");
+  const hemo = tieneHerida(p.heridas, "Hemorragia");
   const n = (sangra ? (ESTADOS_DEF.Sangrando.alActuar || {}).dados || 1 : 0) + (hemo ? 2 : 0);
   if(!n) return;
   const dd = tirarDados(n), d = dd.split("").reduce((a, v) => a + num(v), 0);
@@ -12324,7 +12440,7 @@ function resolverAtaque(S){
     else if(menciona(/50% de daño adicional de daño ([a-záéíóú ,y]+)/)){ tras = Math.floor(tras * 1.5); L.push("+50% por daño " + A.tipoDanyo + " → " + tras); }
   }
   if(S.modo === "cabeza"){
-    const craneo = (q.heridas || []).some(h => h.n === "Cráneo roto");
+    const craneo = tieneHerida(q.heridas, "Cráneo roto");
     const blindado = inmuneCabeza(q);
     const mult = blindado ? 1 : craneo ? 3 : 2;
     if(mult > 1){ tras *= mult; L.push("× " + mult + " a la cabeza" + (craneo ? " (cráneo roto)" : "") + " → " + tras); }
@@ -13021,9 +13137,9 @@ function htmlDetalle(p){
               <div class="cm-estados-mandos">
               <input id="tkEstadoN" placeholder="Nombre" aria-label="Nombre de la condición"><input id="tkEstadoR" inputmode="numeric" value="1" aria-label="Rotaciones" class="in-corto centro">
               <button type="button" class="btn fina" data-cm="estado-otro">Añadir</button></div></details></div>
-          <div class="tk-bloque-e"><h4>Heridas críticas</h4>${(p.heridas || []).length ? `<ul class="tk-heridas">${p.heridas.map((h, i) => `<li class="tk-herida"><b>${esc(h.n)}</b> <small>${esc(h.z.toLowerCase())}${h.temporal ? " · " + h.rot + " rot." : ""}</small>
-              <span>${esc(h.efecto)}</span><span class="trat">Remedio rápido: ${esc(h.remedio)} · Tratamiento: ${esc(h.trat)}</span>
-              <button type="button" class="btn fina" data-herida-quitar="${i}" aria-label="Marcar ${esc(h.n)} como curada">Curada</button></li>`).join("")}</ul>` : `<p class="cm-vacio">Ninguna.</p>`}</div>
+          <div class="tk-bloque-e"><h4>Heridas críticas</h4>${(p.heridas || []).length ? `<ul class="tk-heridas">${p.heridas.map((h, i) => `<li class="tk-herida${h.estab ? " estab" : ""}"><b>${esc(h.n)}</b> <small>${esc(h.z.toLowerCase())}${h.temporal ? " · " + h.rot + " rot." : ""}</small>
+              ${h.estab ? `<span class="cm-her-estab">Remedio rápido: sin efectos hasta la medianoche. No está curada.</span>` : ""}<span>${esc(h.efecto)}</span><span class="trat">Remedio rápido: ${esc(h.remedio)} · Tratamiento: ${esc(h.trat)}</span>
+              <div class="cm-her-b">${h.estab ? `<button type="button" class="btn fina" data-herida-remedio-fin="${i}" title="Se acaba el remedio rápido: vuelven los efectos">Se pasa el remedio</button>` : ""}<button type="button" class="btn fina" data-herida-quitar="${i}" title="Tratamiento o cirugía: la herida desaparece" aria-label="Marcar ${esc(h.n)} como curada del todo">Curada del todo</button></div></li>`).join("")}</ul>` : `<p class="cm-vacio">Ninguna.</p>`}</div>
         </section>
       </div>
       <div class="tk-recursos">
@@ -13282,6 +13398,7 @@ async function accion(b){
   if(b.dataset.cm && sel) return accionParticipante(b, sel);
   if(b.dataset.dan && sel){ const inp = $("#tkDanyo"); const v = inp ? inp.value : ""; if(!num(v)){ toast("Escribe la cantidad"); if(inp) inp.focus(); return; }
     antes("daño o curación · " + sel.nombre); danyo(sel, v, b.dataset.dan); guardarTracker(); pintar(); return; }
+  if(b.dataset.heridaRemedioFin !== undefined && sel){ const h = (sel.heridas || [])[num(b.dataset.heridaRemedioFin)]; if(h && h.estab){ antes("fin del remedio · " + sel.nombre); delete h.estab; anotar(sel.nombre + ": se pasa el remedio rápido de " + h.n + ", vuelven sus efectos.", "herida"); guardarTracker(); pintar(); } return; }
   if(b.dataset.heridaQuitar !== undefined && sel){ antes("curar herida · " + sel.nombre); const h = sel.heridas.splice(num(b.dataset.heridaQuitar), 1)[0]; if(h) anotar(sel.nombre + ": se cura " + h.n + ".", "herida"); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "deshacer"){ deshacer(); return; }
   if(b.dataset.t === "mov" && sel){ antes("movimiento · " + sel.nombre); const t = turnoDe(sel); t.mov = !t.mov; anotar(sel.nombre + (t.mov ? ": usa su Movimiento." : ": recupera el Movimiento."), "turno"); guardarTracker(); pintar(); return; }
@@ -14496,7 +14613,7 @@ function aplicarConsumibleA(q, def, efectos, p){
    propio: tratarse uno mismo (Primeros Auxilios); si no, tratar a otro (Enfermería). Cada uno con su dificultad. */
 function tratables(q, propio){
   const out = [];
-  (q.heridas || []).forEach(h => { const d = difRemedio(h.remedio); if(d) out.push({tipo:"herida", n:h.n, dif:propio ? d.pa : d.enf, h}); });
+  (q.heridas || []).forEach(h => { const d = h.estab ? null : difRemedio(h.remedio); if(d) out.push({tipo:"herida", n:h.n, dif:propio ? d.pa : d.enf, h}); });
   conFicha(q.ficha, () => datosCombate().estados.forEach(s => { const c = (ESTADOS_DEF[s.n] || {}).curar; if(c && !out.some(x => x.n === s.n)) out.push({tipo:"estado", n:s.n, dif:propio ? c.pa : c.enf}); }));
   return out;
 }
@@ -14676,8 +14793,11 @@ async function accionTurno(p, id){
     const narrT = p.nombre + (propio ? " intenta tratarse" : " intenta curar a " + q.nombre);
     if(!r.exito){ anotar(txt + " → no lo consigue.", "cura", narrT + ", pero no lo consigue."); }
     else {
-      anotar(txt + " → lo consigue.", "cura", p.nombre + (propio ? " se trata: " : " cura a " + q.nombre + ": ") + String(r.t.n).toLowerCase() + ".");
-      if(r.t.tipo === "herida"){ const k = (q.heridas || []).indexOf(r.t.h); if(k >= 0) q.heridas.splice(k, 1); anotar(q.nombre + ": " + r.t.n + " curada.", "herida"); }
+      const estabiliza = r.t.tipo === "herida" && !remedioCura(r.t.h);
+      anotar(txt + " → lo consigue.", "cura", p.nombre + (estabiliza ? (propio ? " se estabiliza " : " estabiliza a " + q.nombre + " ") + "la " + String(r.t.n).toLowerCase() + " con un remedio rápido." : (propio ? " se trata: " : " cura a " + q.nombre + ": ") + String(r.t.n).toLowerCase() + "."));
+      if(r.t.tipo === "herida"){ q.heridas = q.heridas || []; const fin = q.heridas.indexOf(r.t.h) >= 0 ? aplicarRemedio(q.heridas, r.t.h) : "";
+        if(fin === "curada") anotar(q.nombre + ": " + r.t.n + " curada (con el remedio rápido basta).", "herida");
+        else if(fin) anotar(q.nombre + ": " + r.t.n + " estabilizada con un remedio rápido: sin efectos hasta la medianoche, pero sigue sin curar.", "herida"); }
       else quitarEstadoA(q, r.t.n, "curado por " + (propio ? "sí mismo" : p.nombre));
     }
   }
