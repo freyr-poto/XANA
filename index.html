@@ -1489,7 +1489,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
      sistema visual cambiados por la paleta del jugador (rojo por defecto), esquinas de visor, líneas de barrido y paneles que se
      despliegan al cambiar de pestaña. Va en html.holo; el menú «⋯» deja volver a la vista clásica (src/holo.js). */
   :root{
-    --holo-rojo:#FF3B3B; --holo-ambar:#FFAA2B; --holo-cian:#35DCFF; --holo-verde:#3DFF88; --holo-violeta:#B36BFF; --holo-blanco:#E8EEF5;
+    --holo-rojo:#FF3B3B; --holo-ambar:#FFAA2B; --holo-cian:#35DCFF; --holo-verde:#3DFF88; --holo-violeta:#B36BFF; --holo-rosa:#FF6AC8; --holo-blanco:#E8EEF5;
     --holo-acento:#3FE6FF; --holo-acento-2:#FF4FD8; --holo-peligro:#B83A0A; --holo-base:#0B0506; --holo-gris:#B9AEB0; --holo-tinta:#FFF4F2;
   }
   html.holo{--hp:var(--holo-rojo);--ha:var(--holo-acento)}
@@ -1497,6 +1497,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   html.holo[data-paleta="cian"]{--hp:var(--holo-cian);--ha:var(--holo-acento-2)}
   html.holo[data-paleta="verde"]{--hp:var(--holo-verde)}
   html.holo[data-paleta="violeta"]{--hp:var(--holo-violeta)}
+  html.holo[data-paleta="rosa"]{--hp:var(--holo-rosa)}
   html.holo[data-paleta="blanco"]{--hp:var(--holo-blanco);--ha:var(--holo-rojo)}
   html.holo{
     --violeta:color-mix(in srgb,var(--hp) 30%,var(--holo-base)); --violeta-sup:color-mix(in srgb,var(--hp) 12%,var(--holo-base));
@@ -1679,7 +1680,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .holo-paletas button{width:26px;height:26px;border:2px solid var(--linea);background:var(--c);cursor:pointer}
   .holo-paletas button[aria-pressed=true]{border-color:var(--texto);box-shadow:0 0 10px var(--c)}
   .holo-paletas [data-paleta=rojo]{--c:var(--holo-rojo)} .holo-paletas [data-paleta=ambar]{--c:var(--holo-ambar)} .holo-paletas [data-paleta=cian]{--c:var(--holo-cian)}
-  .holo-paletas [data-paleta=verde]{--c:var(--holo-verde)} .holo-paletas [data-paleta=violeta]{--c:var(--holo-violeta)} .holo-paletas [data-paleta=blanco]{--c:var(--holo-blanco)}
+  .holo-paletas [data-paleta=verde]{--c:var(--holo-verde)} .holo-paletas [data-paleta=violeta]{--c:var(--holo-violeta)} .holo-paletas [data-paleta=rosa]{--c:var(--holo-rosa)} .holo-paletas [data-paleta=blanco]{--c:var(--holo-blanco)}
   html:not(.holo) .holo-paletas,html:not(.holo) .holo-paleta-t{display:none}
   @media (prefers-reduced-motion:reduce){ html.holo :is(.holo-pasada,.holo-noticias div,.retrato::after,.cw-cuerpo::after){animation:none!important} }
   @media print{ .holo-capa,.holo-arranque,.holo-noticias{display:none!important} }
@@ -1712,7 +1713,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
         <button class="btn fina holo-paleta-t" id="btnSonidos" type="button" role="menuitem" aria-pressed="true">Sonidos</button>
         <small class="holo-paleta-t">Paleta</small><div class="holo-paletas" role="group" aria-label="Paleta de colores">
           <button type="button" data-paleta="rojo" aria-label="Rojo"></button><button type="button" data-paleta="ambar" aria-label="Ámbar"></button><button type="button" data-paleta="cian" aria-label="Cian"></button>
-          <button type="button" data-paleta="verde" aria-label="Verde"></button><button type="button" data-paleta="violeta" aria-label="Violeta"></button><button type="button" data-paleta="blanco" aria-label="Blanco"></button></div></div>
+          <button type="button" data-paleta="verde" aria-label="Verde"></button><button type="button" data-paleta="violeta" aria-label="Violeta"></button><button type="button" data-paleta="rosa" aria-label="Rosa"></button><button type="button" data-paleta="blanco" aria-label="Blanco"></button></div></div>
       <button class="btn fina peligro" id="btnLimpiar" role="menuitem">Vaciar la ficha</button>
     </div>
   </div>
@@ -10240,7 +10241,7 @@ document.addEventListener("click", ev => { if(ev.target.closest && ev.target.clo
 /*</UI>*/
 /*<UI>*//* ================= VIS-50 · VISTA HOLOGRÁFICA (redOS) =================
    La clase html.holo la pone un script del <head> (antes de pintar) según la preferencia guardada en «xana-vista»:
-   {clasica:true|false, paleta:"rojo"|"ambar"|"cian"|"verde"|"violeta"|"blanco"}.
+   {clasica:true|false, paleta:"rojo"|"ambar"|"cian"|"verde"|"violeta"|"rosa"|"blanco"}.
    Aquí: capas de fondo, arranque (una vez por sesión: enlace neural → pantalla de redOS con su sonido), despliegue de paneles
    al cambiar de pestaña, títulos que se descifran, gráfico de estadísticas, constantes vitales en barritas, retrato pixelado,
    reloj de la partida, noticias de Wyrm y el menú de vista y paleta.
@@ -10405,8 +10406,7 @@ function holoReloj(cambia){
   const r = document.getElementById("holoReloj"); if(!r) return;
   const t = typeof ahoraJuego === "function" ? ahoraJuego() : null;
   const enNube = typeof NUBE !== "undefined" && NUBE && NUBE.codigo;
-  const txt = t === null ? (enNube ? "ESPERANDO EL RELOJ<br>DEL MÁSTER" : "SIN RELOJ DE PARTIDA<br>WYRM C.C.") : (() => { const dia = Math.floor(t / 86400) + 1, s = ((t % 86400) + 86400) % 86400, dos = n => String(n).padStart(2, "0");
-    return `DÍA <b>${dia}</b> · ${dos(Math.floor(s / 3600))}:${dos(Math.floor(s / 60) % 60)}<br>${enNube ? "● SINCRONIZADO" : "ÚLTIMO VISTO · SIN NUBE"}`; })();
+  const txt = t === null ? (enNube ? "ESPERANDO EL RELOJ<br>DEL MÁSTER" : "SIN RELOJ DE PARTIDA<br>WYRM C.C.") : `${(f => dosCifras(f.d) + "/" + dosCifras(f.m) + "/" + dosCifras(f.a % 100))(fechaDe(t))} · <b>${horaDe(t)}</b><br>${enNube ? "● SINCRONIZADO" : "ÚLTIMO VISTO · SIN NUBE"}`;
   if(r.innerHTML !== txt) r.innerHTML = txt;
   r.classList.toggle("vivo", !!enNube && t !== null);
   if(cambia && holoActiva() && !holoQuieto()){ r.classList.remove("cambia"); void r.offsetWidth; r.classList.add("cambia"); }
