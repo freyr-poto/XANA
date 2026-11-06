@@ -2313,6 +2313,8 @@
   #plSvg .txt{fill:var(--texto);font-family:var(--mono);font-weight:600;text-anchor:middle}
   :is(#plSvg,.pl-pieza svg) .ico{fill:none;stroke:var(--texto);stroke-width:2;stroke-linejoin:round}
   #plSvg .selm{fill:none;stroke:var(--rosa);stroke-width:.12;stroke-dasharray:.4 .2}
+  :is(#plSvg,.pl-pieza svg) .puerta{fill:none;stroke:var(--texto);stroke-width:.1;stroke-linecap:round}
+  #plSvg .recuadro{fill:color-mix(in srgb,var(--uva) 12%,transparent);stroke:var(--uva);stroke-width:.06;stroke-dasharray:.3 .15;pointer-events:none}
   #plSvg .fantasma{fill:color-mix(in srgb,var(--rosa) 18%,transparent);stroke:var(--rosa);stroke-width:.05;pointer-events:none}
   @media (max-width:1100px){ .pl-cuerpo{grid-template-columns:minmax(0,1fr)} .pl-herr{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));max-height:none} .pl-insp{order:3} }
   /* VIS-27: en el móvil, las pestañas abajo, con icono */
@@ -15885,17 +15887,21 @@ function eventosGolpes(caja){
 }
 /* ===== tracker/tk-planos.js · Creador de planos por módulos (TEC-05: se concatena en el orden de ORDEN.txt) =====
    El máster monta un plano con módulos de 4×4 casillas (pasillo, giros, T, cruce, fondo y habitaciones de varios módulos),
-   objetos de una casilla (coberturas y decorado) y fichas circulares de sistemas de seguridad.
-   - Las paredes no se dibujan a mano: salen solas en el borde entre suelo y vacío, así que un pasillo que toca una
-     habitación ya queda abierto a ella.
+   objetos de una casilla (coberturas y decorado), fichas circulares de sistemas de seguridad, y paredes y puertas que van
+   en los BORDES entre casillas.
+   - Las paredes de fuera salen solas en el borde entre suelo y vacío, así que un pasillo que toca una habitación ya queda
+     abierto a ella. Entre dos habitaciones que se tocan también hay pared, salvo donde se pone una puerta.
+   - Las paredes que pone el máster (dentro de las habitaciones) se juntan solas con las de al lado.
+   - Varias piezas a la vez: recuadro (arrastrar desde el vacío, o con Mayúsculas desde cualquier sitio) y Mayúsculas+clic.
    - «Usar como mapa de combate» lo pasa a imagen (calibrada: una casilla = tantos píxeles) y lo añade a la pestaña Mapa;
      desde ahí se publica a los jugadores como cualquier otro mapa.
-   - En los golpes, los campos de imagen ofrecen «Plano: …»: se guarda una copia del plano en ese momento.
+   - En los golpes, los campos de imagen ofrecen los planos: se guarda una copia del plano en ese momento.
    - Las coberturas solo se dibujan («A cubierto» se pone a mano mirando el mapa).
-   Los planos van en IndexedDB (Almacen, clave «xana-planos»). */
+   Los planos van en IndexedDB (Almacen, clave «xana-planos»).
+   Bordes: {x, y, o}; o:"h" es el borde de arriba de la casilla (x, y); o:"v", el de su izquierda. */
 const CLAVE_PLANOS = "xana-planos";
 const PL_MOD = 4;                                  // casillas por módulo
-const PL = {lista:[], actual:"", cargado:false, herr:{t:"sel", k:""}, sel:null, arr:null, tGuardar:0};
+const PL = {lista:[], actual:"", cargado:false, herr:{t:"sel", k:""}, sel:[], arr:null, tGuardar:0};
 /* Colores de las imágenes que salen del plano (mapa de combate, golpes): no pueden leer las variables de la página */
 const COLORES_PLANO = {color:{fondo:"#0C0D12", suelo:"#262A36", rej:"#3A4152", muro:"#E2E7F0", obj:"#AEB7C9", objR:"#3D4353", seg:"#FF5470", segR:"#3E1422", txt:"#FFFFFF"}, foto:{fondo:"#000000", suelo:"#3A3A3A", rej:"#555555", muro:"#FFFFFF", obj:"#CCCCCC", objR:"#5E5E5E", seg:"#FFFFFF", segR:"#808080", txt:"#FFFFFF"}, linea:{fondo:"", suelo:"rgba(255,255,255,.12)", rej:"rgba(255,255,255,.2)", muro:"#FFFFFF", obj:"rgba(255,255,255,.8)", objR:"rgba(255,255,255,.14)", seg:"#FFFFFF", segR:"rgba(255,255,255,.3)", txt:"#FFFFFF"}};
 
@@ -15910,10 +15916,15 @@ const PL_MODS = {
   sala:{n:"Habitación", base:null}
 };
 function rango2(x0, x1, y0, y1){ const l = []; for(let x = x0; x <= x1; x++) for(let y = y0; y <= y1; y++) l.push([x, y]); return l; }
-const PL_OBJS = {caja:"Cajas (cobertura)", barricada:"Barricada (cobertura)", columna:"Columna", mesa:"Mesa", terminal:"Terminal", servidor:"Servidor", barril:"Barril", planta:"Planta", escombros:"Escombros", puerta:"Puerta"};
+const PL_OBJS = {caja:"Cajas (cobertura)", barricada:"Barricada (cobertura)", columna:"Columna", mesa:"Mesa", terminal:"Terminal", servidor:"Servidor", barril:"Barril", planta:"Planta", escombros:"Escombros"};
 const PL_SEG = {camara:"Cámara", torreta:"Torreta", dron:"Dron", laser:"Sensor láser", cerradura:"Cerradura", alarma:"Alarma", nodo:"Nodo de red", guardia:"Guardia"};
+const PL_BORDES = {muro:"Pared", puerta:"Puerta"};
+const PL_LISTA = {mod:"mods", obj:"objs", seg:"segs", muro:"muros", puerta:"puertas"};
+const PL_PLURAL = {mod:"módulos", obj:"objetos", seg:"fichas", muro:"paredes", puerta:"puertas"};
+const PL_NOMBRE = t => ({mod:"módulo", obj:"objeto", seg:"ficha", muro:"pared", puerta:"puerta"})[t];
 const plId = p => p + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
 const planoActual = () => PL.lista.find(p => p.id === PL.actual) || null;
+const claveBorde = (x, y, o) => o + x + "," + y;
 
 /* ---------- Geometría ---------- */
 /* Casillas de suelo de un módulo, ya giradas (rot: 0-3, de 90° en sentido horario) y en coordenadas del plano */
@@ -15928,33 +15939,51 @@ const tamModulo = m => m.tipo === "sala" ? [m.w, m.h] : [1, 1];
 function sueloPlano(pl){
   const W = pl.ancho * PL_MOD, H = pl.alto * PL_MOD, s = new Uint8Array(W * H), dueno = new Int16Array(W * H);
   pl.mods.forEach((m, i) => celdasModulo(m).forEach(([x, y]) => { if(x >= 0 && y >= 0 && x < W && y < H){ s[y * W + x] = 1; dueno[y * W + x] = m.tipo === "sala" ? i + 1 : 0; } }));
-  const puertas = new Set(pl.objs.filter(o => o.tipo === "puerta").map(o => o.x + "," + o.y));
+  const puertas = new Set((pl.puertas || []).map(b => claveBorde(b.x, b.y, b.o)));
   const en = (x, y) => x >= 0 && y >= 0 && x < W && y < H && s[y * W + x] === 1;
-  // entre dos casillas de suelo hay pared si son de habitaciones distintas y ninguna de las dos tiene puerta
-  const separa = (x, y, x2, y2) => { const a = dueno[y * W + x], b = dueno[y2 * W + x2]; return a > 0 && b > 0 && a !== b && !puertas.has(x + "," + y) && !puertas.has(x2 + "," + y2); };
-  return {W, H, s, en, separa};
+  // entre dos casillas de suelo hay pared si son de habitaciones distintas (y no hay puerta en ese borde)
+  const separa = (x, y, x2, y2) => { const a = dueno[y * W + x], b = dueno[y2 * W + x2]; return a > 0 && b > 0 && a !== b; };
+  return {W, H, s, en, separa, puertas};
 }
 
 /* ---------- Formas: una lista que se dibuja igual en SVG (editor) y en canvas (imágenes) ---------- */
 function formasPlano(pl, opc){
   opc = opc || {};
   const S = sueloPlano(pl), f = [], {W, H} = S;
-  // suelo: tramos por filas
   for(let y = 0; y < H; y++){ let x = 0; while(x < W){ if(!S.en(x, y)){ x++; continue; } let x2 = x; while(S.en(x2 + 1, y)) x2++; f.push({t:"rect", x, y, w:x2 - x + 1, h:1, c:"suelo"}); x = x2 + 1; } }
-  // rejilla de casillas (solo sobre el suelo)
   let d = "";
   for(let y = 0; y < H; y++) for(let x = 0; x < W; x++) if(S.en(x, y)){ if(S.en(x + 1, y)) d += `M${x + 1} ${y}v1`; if(S.en(x, y + 1)) d += `M${x} ${y + 1}h1`; }
   if(d) f.push({t:"path", d, c:"rej"});
-  // paredes: el borde entre suelo y vacío
+  const muros = murosPlano(pl, S);
+  // se juntan los tramos seguidos para que las paredes salgan como una sola línea
   d = "";
-  for(let y = 0; y < H; y++) for(let x = 0; x < W; x++) if(S.en(x, y)){
-    if(!S.en(x, y - 1)) d += `M${x} ${y}h1`; if(!S.en(x, y + 1) || S.separa(x, y, x, y + 1)) d += `M${x} ${y + 1}h1`;
-    if(!S.en(x - 1, y)) d += `M${x} ${y}v1`; if(!S.en(x + 1, y) || S.separa(x, y, x + 1, y)) d += `M${x + 1} ${y}v1`;
-  }
+  const hay = (x, y, o) => muros.has(claveBorde(x, y, o));
+  for(let y = 0; y <= H; y++){ let x = 0; while(x < W){ if(!hay(x, y, "h")){ x++; continue; } let x2 = x; while(hay(x2 + 1, y, "h")) x2++; d += `M${x} ${y}H${x2 + 1}`; x = x2 + 1; } }
+  for(let x = 0; x <= W; x++){ let y = 0; while(y < H){ if(!hay(x, y, "v")){ y++; continue; } let y2 = y; while(hay(x, y2 + 1, "v")) y2++; d += `M${x} ${y}V${y2 + 1}`; y = y2 + 1; } }
   if(d) f.push({t:"path", d, c:"muro"});
+  (pl.puertas || []).forEach(b => f.push(...formasPuerta(b)));
   pl.objs.forEach(o => f.push(...formasObjeto(o)));
   pl.segs.forEach(o => f.push(...formasSeguridad(o, opc.etiquetas !== false)));
   return f;
+}
+/* Bordes con pared: los de fuera, los de entre habitaciones y los que ha puesto el máster; donde hay puerta, no */
+function murosPlano(pl, S){
+  S = S || sueloPlano(pl);
+  const muros = new Set(), {W, H} = S;
+  for(let y = 0; y < H; y++) for(let x = 0; x < W; x++) if(S.en(x, y)){
+    if(!S.en(x, y - 1)) muros.add(claveBorde(x, y, "h"));
+    if(!S.en(x, y + 1) || S.separa(x, y, x, y + 1)) muros.add(claveBorde(x, y + 1, "h"));
+    if(!S.en(x - 1, y)) muros.add(claveBorde(x, y, "v"));
+    if(!S.en(x + 1, y) || S.separa(x, y, x + 1, y)) muros.add(claveBorde(x + 1, y, "v"));
+  }
+  (pl.muros || []).forEach(b => muros.add(claveBorde(b.x, b.y, b.o)));
+  S.puertas.forEach(k => muros.delete(k));
+  return muros;
+}
+/* Puerta en un borde: la hoja abierta y el arco por donde barre */
+function formasPuerta(b){
+  if(b.o === "h") return [{t:"path", d:`M${b.x} ${b.y}v.9`, c:"puerta"}, {t:"path", d:`M${b.x} ${b.y + .9}A.9 .9 0 0 0 ${b.x + .9} ${b.y}`, c:"objL"}];
+  return [{t:"path", d:`M${b.x} ${b.y}h.9`, c:"puerta"}, {t:"path", d:`M${b.x + .9} ${b.y}A.9 .9 0 0 1 ${b.x} ${b.y + .9}`, c:"objL"}];
 }
 /* Un objeto de una casilla: dibujo sencillo dentro de la casilla (x, y), girado si hace falta */
 function formasObjeto(o){
@@ -15970,8 +15999,6 @@ function formasObjeto(o){
     case "barril": return [{t:"circle", cx, cy, r:.32, c:"obj"}, {t:"circle", cx, cy, r:.18, c:"objL"}];
     case "planta": return [{t:"circle", cx, cy, r:.14, c:"obj"}, {t:"path", d:[0, 1, 2, 3, 4, 5].map(i => { const a = i * Math.PI / 3; return `M${cx + Math.cos(a) * .14} ${cy + Math.sin(a) * .14}L${cx + Math.cos(a) * .4} ${cy + Math.sin(a) * .4}`; }).join(""), c:"objL"}];
     case "escombros": return [{t:"path", d:`M${x + .15} ${y + .7}l.18 -.2l.16 .14l-.1 .18zM${x + .5} ${y + .25}l.24 .06l-.04 .22l-.22 -.06zM${x + .55} ${y + .62}l.2 .04l-.1 .2z`, c:"obj"}];
-    case "puerta": return gira ? [{t:"rect", x:cx - .07, y, w:.14, h:1, c:"obj"}, {t:"path", d:`M${cx} ${y}A1 1 0 0 1 ${x + 1} ${y + .9}`, c:"objL"}]
-                              : [{t:"rect", x, y:cy - .07, w:1, h:.14, c:"obj"}, {t:"path", d:`M${x} ${cy}A1 1 0 0 0 ${x + .9} ${y}`, c:"objL"}];
   }
   return [{t:"rect", x:x + .2, y:y + .2, w:.6, h:.6, c:"obj"}];
 }
@@ -16006,7 +16033,7 @@ function canvasPlano(pl, estilo, px){
   const g = c.getContext("2d");
   if(C.fondo){ g.fillStyle = C.fondo; g.fillRect(0, 0, c.width, c.height); }
   g.scale(px, px); g.lineJoin = "round"; g.lineCap = "square";
-  const estilos = {suelo:{f:C.suelo}, rej:{s:C.rej, w:.03}, muro:{s:C.muro, w:.16}, obj:{f:C.objR, s:C.obj, w:.06}, objL:{s:C.obj, w:.05}, seg:{f:C.segR, s:C.seg, w:.07}, segL:{s:C.seg, w:.06}, txt:{f:C.txt}};
+  const estilos = {suelo:{f:C.suelo}, rej:{s:C.rej, w:.03}, muro:{s:C.muro, w:.16}, puerta:{s:C.muro, w:.1}, obj:{f:C.objR, s:C.obj, w:.06}, objL:{s:C.obj, w:.05}, seg:{f:C.segR, s:C.seg, w:.07}, segL:{s:C.seg, w:.06}, txt:{f:C.txt}};
   formasPlano(pl, {etiquetas:estilo !== "foto"}).forEach(s => {
     const e = estilos[s.c]; if(!e) return;
     if(s.t === "text"){ g.fillStyle = e.f; g.font = `600 ${s.s}px sans-serif`; g.textAlign = "center"; g.fillText(s.txt, s.x, s.y); return; }
@@ -16031,9 +16058,15 @@ function sanearPlano(p){
     if(m.tipo === "sala"){ o.w = n(m.w, 1, ancho - o.mx, 2); o.h = n(m.h, 1, alto - o.my, 2); }
     return o;
   }).slice(0, 400);
-  const casilla = (l, cat, extra) => (Array.isArray(l) ? l : []).filter(o => o && cat[o.tipo]).map(o => Object.assign({id:typeof o.id === "string" && o.id ? o.id : plId("o"), tipo:o.tipo, x:n(o.x, 0, W - 1, 0), y:n(o.y, 0, H - 1, 0)}, extra(o))).slice(0, 800);
+  const id = (o, p) => typeof o.id === "string" && o.id ? o.id : plId(p);
+  const casilla = (l, cat, extra) => (Array.isArray(l) ? l : []).filter(o => o && cat[o.tipo]).map(o => Object.assign({id:id(o, "o"), tipo:o.tipo, x:n(o.x, 0, W - 1, 0), y:n(o.y, 0, H - 1, 0)}, extra(o))).slice(0, 800);
+  const borde = l => { const vistos = new Set(); return (Array.isArray(l) ? l : []).filter(b => b && (b.o === "h" || b.o === "v")).map(b => ({id:id(b, "b"), o:b.o, x:n(b.x, 0, b.o === "h" ? W - 1 : W, 0), y:n(b.y, 0, b.o === "h" ? H : H - 1, 0)}))
+    .filter(b => { const k = claveBorde(b.x, b.y, b.o); if(vistos.has(k)) return false; vistos.add(k); return true; }).slice(0, 3000); };
+  // las puertas de antes iban en una casilla: pasan al borde de arriba (o al de la izquierda si estaban giradas)
+  const puertasViejas = (Array.isArray(p.objs) ? p.objs : []).filter(o => o && o.tipo === "puerta").map(o => ({o:(o.rot || 0) % 2 ? "v" : "h", x:o.x, y:o.y}));
   return {id:typeof p.id === "string" && p.id ? p.id : plId("p"), nombre:String(p.nombre || "Plano").slice(0, 80), ancho, alto, mods,
-    objs:casilla(p.objs, PL_OBJS, o => o.rot ? {rot:n(o.rot, 0, 3, 0)} : {}), segs:casilla(p.segs, PL_SEG, o => o.n ? {n:String(o.n).slice(0, 24)} : {})};
+    objs:casilla(p.objs, PL_OBJS, o => o.rot ? {rot:n(o.rot, 0, 3, 0)} : {}), segs:casilla(p.segs, PL_SEG, o => o.n ? {n:String(o.n).slice(0, 24)} : {}),
+    muros:borde(p.muros), puertas:borde((Array.isArray(p.puertas) ? p.puertas : []).concat(puertasViejas))};
 }
 async function cargarPlanos(){
   if(PL.cargado) return;
@@ -16046,15 +16079,78 @@ function guardarPlanos(){
   PL.tGuardar = setTimeout(() => { Almacen.escribir(CLAVE_PLANOS, {lista:PL.lista, actual:PL.actual}).catch(() => toast("No se ha podido guardar el plano en este navegador.", 5000)); }, 300);
 }
 function planoEjemplo(){
+  const linea = (o, x, y, n) => Array.from({length:n}, (z, i) => o === "h" ? {o, x:x + i, y} : {o, x, y:y + i});
   return sanearPlano({nombre:"Planta de mantenimiento", ancho:8, alto:6, mods:[
     {tipo:"sala", mx:0, my:0, w:2, h:2}, {tipo:"recto", mx:2, my:1, rot:1}, {tipo:"te", mx:3, my:1}, {tipo:"recto", mx:4, my:1, rot:1}, {tipo:"sala", mx:5, my:0, w:3, h:2},
     {tipo:"fin", mx:6, my:2, rot:2}, {tipo:"recto", mx:3, my:2}, {tipo:"cruz", mx:3, my:3}, {tipo:"recto", mx:2, my:3, rot:1}, {tipo:"giroD", mx:1, my:3},
     {tipo:"recto", mx:4, my:3, rot:1}, {tipo:"giroI", mx:5, my:3}, {tipo:"sala", mx:0, my:4, w:3, h:2}, {tipo:"sala", mx:3, my:4, w:2, h:2}, {tipo:"sala", mx:5, my:4, w:3, h:2}],
     objs:[{tipo:"servidor", x:1, y:1}, {tipo:"servidor", x:2, y:1}, {tipo:"servidor", x:3, y:1}, {tipo:"terminal", x:5, y:5}, {tipo:"mesa", x:24, y:3}, {tipo:"caja", x:22, y:5}, {tipo:"caja", x:23, y:5},
-      {tipo:"caja", x:25, y:10}, {tipo:"barricada", x:10, y:5, rot:1}, {tipo:"columna", x:3, y:19}, {tipo:"columna", x:8, y:19}, {tipo:"escombros", x:5, y:21}, {tipo:"puerta", x:13, y:16},
-      {tipo:"barril", x:29, y:21}, {tipo:"planta", x:30, y:17}, {tipo:"mesa", x:16, y:20}, {tipo:"puerta", x:11, y:20, rot:1}, {tipo:"puerta", x:20, y:20, rot:1}],
+      {tipo:"caja", x:25, y:10}, {tipo:"barricada", x:10, y:5, rot:1}, {tipo:"columna", x:3, y:19}, {tipo:"columna", x:8, y:19}, {tipo:"escombros", x:5, y:21},
+      {tipo:"barril", x:29, y:21}, {tipo:"planta", x:30, y:17}, {tipo:"mesa", x:16, y:20}],
     segs:[{tipo:"camara", x:7, y:0, n:"C-01"}, {tipo:"camara", x:31, y:0, n:"C-02"}, {tipo:"camara", x:0, y:23, n:"C-03"}, {tipo:"torreta", x:13, y:9, n:"T-1"}, {tipo:"cerradura", x:14, y:15},
-      {tipo:"nodo", x:29, y:6, n:"Nodo"}, {tipo:"dron", x:27, y:19, n:"D-1"}, {tipo:"laser", x:21, y:15}, {tipo:"guardia", x:9, y:17}, {tipo:"alarma", x:19, y:16}]});
+      {tipo:"nodo", x:29, y:6, n:"Nodo"}, {tipo:"dron", x:27, y:19, n:"D-1"}, {tipo:"laser", x:21, y:15}, {tipo:"guardia", x:9, y:17}, {tipo:"alarma", x:19, y:16}],
+    // un despacho de cristal dentro de la sala grande de arriba a la derecha, y puertas entre las salas de abajo
+    muros:linea("v", 27, 0, 4).concat(linea("h", 27, 4, 2)),
+    puertas:[{o:"h", x:29, y:4}, {o:"v", x:12, y:20}, {o:"v", x:20, y:20}, {o:"h", x:13, y:16}]});
+}
+
+/* ---------- Selección ---------- */
+const esSel = (t, id) => PL.sel.some(s => s.t === t && s.id === id);
+const buscarEnPlano = (pl, s) => s ? (pl[PL_LISTA[s.t]] || []).find(o => o.id === s.id) || null : null;
+const unoSel = () => PL.sel.length === 1 ? PL.sel[0] : null;
+/* Qué hay en un punto del plano (en casillas, con decimales): fichas, objetos, bordes (paredes y puertas) y módulos */
+function piezaEn(pl, fx, fy){
+  const x = Math.floor(fx), y = Math.floor(fy);
+  let o = pl.segs.find(s => s.x === x && s.y === y); if(o) return {t:"seg", id:o.id};
+  o = pl.objs.find(s => s.x === x && s.y === y); if(o) return {t:"obj", id:o.id};
+  const b = bordeCerca(fx, fy, .22);
+  if(b){ for(const t of ["puerta", "muro"]){ o = pl[PL_LISTA[t]].find(z => z.o === b.o && z.x === b.x && z.y === b.y); if(o) return {t, id:o.id}; } }
+  const mx = Math.floor(x / PL_MOD), my = Math.floor(y / PL_MOD);
+  for(let i = pl.mods.length - 1; i >= 0; i--){ const m = pl.mods[i], [w, h] = tamModulo(m); if(mx >= m.mx && my >= m.my && mx < m.mx + w && my < m.my + h) return {t:"mod", id:m.id}; }
+  return null;
+}
+/* El borde de casilla más cercano a un punto (o null si está más lejos que «max») */
+function bordeCerca(fx, fy, max){
+  const x = Math.floor(fx), y = Math.floor(fy), dx = fx - x, dy = fy - y;
+  const l = [[dy, {o:"h", x, y}], [1 - dy, {o:"h", x, y:y + 1}], [dx, {o:"v", x, y}], [1 - dx, {o:"v", x:x + 1, y}]].sort((a, b) => a[0] - b[0]);
+  return max === undefined || l[0][0] <= max ? l[0][1] : null;
+}
+/* Caja que ocupa una pieza, en casillas: [x0, y0, x1, y1] */
+function cajaPieza(o, t){
+  if(t === "mod"){ const [w, h] = tamModulo(o); return [o.mx * PL_MOD, o.my * PL_MOD, (o.mx + w) * PL_MOD, (o.my + h) * PL_MOD]; }
+  if(t === "muro" || t === "puerta") return o.o === "h" ? [o.x, o.y, o.x + 1, o.y] : [o.x, o.y, o.x, o.y + 1];
+  return [o.x, o.y, o.x + 1, o.y + 1];
+}
+function seleccionarRecuadro(pl, x0, y0, x1, y1, sumar){
+  const [a, b, c, d] = [Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)];
+  const dentro = PL.sel.slice(0, sumar ? undefined : 0);
+  Object.keys(PL_LISTA).forEach(t => pl[PL_LISTA[t]].forEach(o => { const k = cajaPieza(o, t); if(k[0] >= a && k[1] >= b && k[2] <= c && k[3] <= d && !dentro.some(s => s.id === o.id)) dentro.push({t, id:o.id}); }));
+  PL.sel = dentro;
+}
+/* Mueve lo elegido (dx, dy en casillas). Si hay módulos, el paso es de módulo en módulo. Devuelve si se ha podido */
+function moverSel(pl, dx, dy){
+  const items = PL.sel.map(s => ({s, o:buscarEnPlano(pl, s)})).filter(x => x.o);
+  if(!items.length || (!dx && !dy)) return false;
+  const W = pl.ancho * PL_MOD, H = pl.alto * PL_MOD;
+  const cabe = items.every(({s, o}) => { const k = cajaPieza(o, s.t); return k[0] + dx >= 0 && k[1] + dy >= 0 && k[2] + dx <= W && k[3] + dy <= H; });
+  if(!cabe) return false;
+  items.forEach(({s, o}) => { if(s.t === "mod"){ o.mx += dx / PL_MOD; o.my += dy / PL_MOD; } else { o.x += dx; o.y += dy; } });
+  return true;
+}
+function quitarSel(pl){
+  PL.sel.forEach(s => { const k = PL_LISTA[s.t]; pl[k] = pl[k].filter(o => o.id !== s.id); });
+  PL.sel = [];
+}
+/* Copia lo elegido justo a la derecha (o debajo, si no cabe) */
+function duplicarSel(pl){
+  const items = PL.sel.map(s => ({s, o:buscarEnPlano(pl, s)})).filter(x => x.o); if(!items.length) return;
+  const cajas = items.map(({s, o}) => cajaPieza(o, s.t)), x0 = Math.min(...cajas.map(k => k[0])), x1 = Math.max(...cajas.map(k => k[2])), y0 = Math.min(...cajas.map(k => k[1])), y1 = Math.max(...cajas.map(k => k[3]));
+  const hayMod = items.some(x => x.s.t === "mod"), redondea = v => hayMod ? Math.ceil(v / PL_MOD) * PL_MOD : v;
+  const W = pl.ancho * PL_MOD, H = pl.alto * PL_MOD;
+  let dx = redondea(Math.max(1, x1 - x0)), dy = 0;
+  if(x1 + dx > W){ dx = 0; dy = redondea(Math.max(1, y1 - y0)); if(y1 + dy > H){ toast("No cabe la copia: agranda el plano.", 3000); return; } }
+  const nuevos = items.map(({s, o}) => { const c = Object.assign(clonar(o), {id:plId("c")}); if(s.t === "mod"){ c.mx += dx / PL_MOD; c.my += dy / PL_MOD; } else { c.x += dx; c.y += dy; } pl[PL_LISTA[s.t]].push(c); return {t:s.t, id:c.id}; });
+  PL.sel = nuevos;
 }
 
 /* ---------- Pintado del editor ---------- */
@@ -16064,7 +16160,7 @@ function pintarPlanos(){
   const pl = planoActual();
   if(!caja.querySelector(".pl-barra")){
     caja.innerHTML = `<div class="pl-barra"></div><div class="pl-cuerpo"><aside class="pl-herr" aria-label="Piezas"></aside>
-      <div class="pl-centro"><div class="pl-lienzo" id="plLienzo"></div><p class="pl-ayuda">Elige una pieza y pulsa en el plano (arrastra para poner varias). Con «Mover» eliges y arrastras; <kbd>R</kbd> gira y <kbd>Supr</kbd> borra.</p></div>
+      <div class="pl-centro"><div class="pl-lienzo" id="plLienzo"></div><p class="pl-ayuda">Elige una pieza y pulsa en el plano (arrastra para poner varias). Con «Mover y elegir»: pulsa una pieza y arrástrala; arrastra desde el vacío (o con <kbd>Mayús</kbd>) para elegir varias con un recuadro; <kbd>Mayús</kbd>+clic suma o quita. <kbd>R</kbd> gira, <kbd>Supr</kbd> borra, <kbd>Ctrl</kbd>+<kbd>D</kbd> duplica.</p></div>
       <aside class="pl-insp" aria-label="Propiedades"></aside></div>`;
     eventosPlanos(caja);
   }
@@ -16088,6 +16184,9 @@ function pintarHerramientas(){
   a.innerHTML = `${b("sel", "", "Mover y elegir", `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="ico" d="M5 3l14 8-6 2-3 6z"/></svg>`)}
     ${b("goma", "", "Borrar", `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="ico" d="M4 16l8-10 8 6-6 8H8zM9 20h11"/></svg>`)}
     <h4>Módulos <small>4×4 casillas</small></h4>${Object.keys(PL_MODS).map(k => b("mod", k, PL_MODS[k].n, miniMod(k))).join("")}
+    <h4>Paredes y puertas <small>en los bordes</small></h4>
+    ${b("muro", "", "Pared", `<svg viewBox="0 0 2 2" aria-hidden="true"><rect class="suelo" x="0" y="0" width="2" height="2"/><path class="muro" d="M1 0V2M0 1H1"/></svg>`)}
+    ${b("puerta", "", "Puerta", `<svg viewBox="0 0 2 2" aria-hidden="true"><rect class="suelo" x="0" y="0" width="2" height="2"/><path class="muro" d="M0 1H.5M1.5 1H2"/>${svgFormas(formasPuerta({o:"h", x:.55, y:1}))}</svg>`)}
     <h4>Objetos <small>1 casilla</small></h4>${Object.keys(PL_OBJS).map(k => b("obj", k, PL_OBJS[k], miniF(formasObjeto({tipo:k, x:0, y:0})))).join("")}
     <h4>Seguridad</h4>${Object.keys(PL_SEG).map(k => b("seg", k, PL_SEG[k], miniF(formasSeguridad({tipo:k, x:0, y:0}, false)))).join("")}`;
 }
@@ -16097,51 +16196,53 @@ function pintarLienzoPlano(){
   let rej = "";
   for(let x = 0; x <= pl.ancho; x++) rej += `M${x * PL_MOD} 0v${H}`;
   for(let y = 0; y <= pl.alto; y++) rej += `M0 ${y * PL_MOD}h${W}`;
-  const sel = PL.sel && buscarEnPlano(pl, PL.sel);
-  let marca = "";
-  if(sel && PL.sel.t === "mod"){ const [w, h] = tamModulo(sel); marca = `<rect class="selm" x="${sel.mx * PL_MOD}" y="${sel.my * PL_MOD}" width="${w * PL_MOD}" height="${h * PL_MOD}"/>`; }
-  else if(sel) marca = `<rect class="selm" x="${sel.x - .08}" y="${sel.y - .08}" width="1.16" height="1.16"/>`;
+  const marcas = PL.sel.map(s => { const o = buscarEnPlano(pl, s); if(!o) return ""; const k = cajaPieza(o, s.t), m = s.t === "muro" || s.t === "puerta" ? .18 : .08;
+    return `<rect class="selm" x="${k[0] - m}" y="${k[1] - m}" width="${k[2] - k[0] + 2 * m}" height="${k[3] - k[1] + 2 * m}"/>`; }).join("");
   l.innerHTML = `<svg id="plSvg" viewBox="-0.5 -0.5 ${W + 1} ${H + 1}" role="img" aria-label="Plano ${esc(pl.nombre)}">
-    <rect class="vacio" x="0" y="0" width="${W}" height="${H}"/><path class="rejm" d="${rej}"/>${svgFormas(formasPlano(pl))}${marca}<rect class="fantasma" id="plFantasma" x="0" y="0" width="0" height="0"/></svg>`;
+    <rect class="vacio" x="0" y="0" width="${W}" height="${H}"/><path class="rejm" d="${rej}"/>${svgFormas(formasPlano(pl))}${marcas}
+    <rect class="fantasma" id="plFantasma" x="0" y="0" width="0" height="0"/><rect class="recuadro" id="plRecuadro" x="0" y="0" width="0" height="0"/></svg>`;
 }
-function buscarEnPlano(pl, s){ return s ? (s.t === "mod" ? pl.mods : s.t === "obj" ? pl.objs : pl.segs).find(o => o.id === s.id) || null : null; }
 function pintarInspectorPlano(){
   const a = document.querySelector("#pag-planos .pl-insp"), pl = planoActual(); if(!a || !pl) return;
-  const o = buscarEnPlano(pl, PL.sel);
-  if(!o){
+  PL.sel = PL.sel.filter(s => buscarEnPlano(pl, s));
+  if(!PL.sel.length){
     a.innerHTML = `<h3>Plano</h3>
       <label class="pl-c">Ancho (módulos)<input type="number" min="2" max="16" data-pl-tam="ancho" value="${pl.ancho}"></label>
       <label class="pl-c">Alto (módulos)<input type="number" min="2" max="16" data-pl-tam="alto" value="${pl.alto}"></label>
-      <p class="pl-ay">${pl.ancho * PL_MOD} × ${pl.alto * PL_MOD} casillas · ${pl.mods.length} módulos · ${pl.objs.length} objetos · ${pl.segs.length} fichas de seguridad</p>
-      <p class="pl-ay">Las paredes salen solas donde el suelo se acaba y entre dos habitaciones que se tocan; para abrir paso entre ellas, pon una puerta en el borde. Las coberturas solo se dibujan: «A cubierto» se pone a mano.</p>
+      <p class="pl-ay">${pl.ancho * PL_MOD} × ${pl.alto * PL_MOD} casillas · ${pl.mods.length} módulos · ${pl.objs.length} objetos · ${pl.segs.length} fichas de seguridad · ${pl.muros.length} tramos de pared · ${pl.puertas.length} puertas</p>
+      <p class="pl-ay">Las paredes de fuera salen solas donde el suelo se acaba, y entre dos habitaciones que se tocan. Las paredes y puertas que pongas van en el borde entre casillas; las paredes seguidas se juntan solas. Las coberturas solo se dibujan: «A cubierto» se pone a mano.</p>
       <div class="pl-acc"><button type="button" class="btn peligro" data-pl="vaciar">Vaciar el plano</button></div>`;
     return;
   }
-  const t = PL.sel.t, nombre = t === "mod" ? PL_MODS[o.tipo].n : t === "obj" ? PL_OBJS[o.tipo] : PL_SEG[o.tipo];
+  if(PL.sel.length > 1){
+    const cuenta = {}; PL.sel.forEach(s => { cuenta[s.t] = (cuenta[s.t] || 0) + 1; });
+    a.innerHTML = `<h3>${PL.sel.length} piezas <button type="button" class="btn fina" data-pl-desel aria-label="Dejar de elegir">✕</button></h3>
+      <p class="pl-ay">${Object.entries(cuenta).map(([t, n]) => n + " " + (n === 1 ? PL_NOMBRE(t) : PL_PLURAL[t])).join(" · ")}</p>
+      <p class="pl-ay">Arrástralas juntas con «Mover y elegir». Si hay módulos, se mueven de módulo en módulo.</p>
+      <div class="pl-acc"><button type="button" class="btn" data-pl="dup">Duplicar</button><button type="button" class="btn peligro" data-pl="quitar">Borrar</button></div>`;
+    return;
+  }
+  const s = unoSel(), o = buscarEnPlano(pl, s), t = s.t;
+  const nombre = t === "mod" ? PL_MODS[o.tipo].n : t === "obj" ? PL_OBJS[o.tipo] : t === "seg" ? PL_SEG[o.tipo] : PL_BORDES[t];
   a.innerHTML = `<h3>${esc(nombre)} <button type="button" class="btn fina" data-pl-desel aria-label="Dejar de elegir">✕</button></h3>
     ${t === "mod" && o.tipo === "sala" ? `<label class="pl-c">Ancho (módulos)<input type="number" min="1" max="${pl.ancho - o.mx}" data-pl-sala="w" value="${o.w}"></label><label class="pl-c">Alto (módulos)<input type="number" min="1" max="${pl.alto - o.my}" data-pl-sala="h" value="${o.h}"></label>` : ""}
     ${t === "seg" ? `<label class="pl-c">Etiqueta<input data-pl-etq maxlength="24" value="${esc(o.n || "")}" placeholder="C-01, T-2…"></label>` : ""}
-    <div class="pl-acc">${(t === "mod" && o.tipo !== "sala") || (t === "obj" && ["barricada", "mesa", "puerta"].includes(o.tipo)) ? `<button type="button" class="btn" data-pl="girar">↻ Girar</button>` : ""}
+    <div class="pl-acc">${(t === "mod" && o.tipo !== "sala") || (t === "obj" && ["barricada", "mesa"].includes(o.tipo)) || t === "muro" || t === "puerta" ? `<button type="button" class="btn" data-pl="girar">↻ Girar</button>` : ""}
       <button type="button" class="btn" data-pl="dup">Duplicar</button><button type="button" class="btn peligro" data-pl="quitar">Borrar</button></div>`;
 }
 
 /* ---------- Edición ---------- */
 function cambioPlano(){ guardarPlanos(); pintarLienzoPlano(); }
-function casillaDe(ev){
+/* Punto del plano bajo el puntero, en casillas con decimales (o null fuera) */
+function puntoDe(ev, libre){
   const svg = $("#plSvg"), pl = planoActual(); if(!svg || !pl) return null;
   const r = svg.getBoundingClientRect(), W = pl.ancho * PL_MOD + 1, H = pl.alto * PL_MOD + 1;
   const s = Math.min(r.width / W, r.height / H), ox = r.left + (r.width - W * s) / 2, oy = r.top + (r.height - H * s) / 2;
-  const x = Math.floor((ev.clientX - ox) / s - .5), y = Math.floor((ev.clientY - oy) / s - .5);
-  return x >= 0 && y >= 0 && x < pl.ancho * PL_MOD && y < pl.alto * PL_MOD ? {x, y} : null;
+  const fx = (ev.clientX - ox) / s - .5, fy = (ev.clientY - oy) / s - .5;
+  if(libre) return {fx:Math.max(0, Math.min(pl.ancho * PL_MOD, fx)), fy:Math.max(0, Math.min(pl.alto * PL_MOD, fy))};
+  return fx >= 0 && fy >= 0 && fx < pl.ancho * PL_MOD && fy < pl.alto * PL_MOD ? {fx, fy, x:Math.floor(fx), y:Math.floor(fy)} : null;
 }
-function enCasilla(pl, x, y){
-  let o = pl.segs.find(s => s.x === x && s.y === y); if(o) return {t:"seg", id:o.id};
-  o = pl.objs.find(s => s.x === x && s.y === y); if(o) return {t:"obj", id:o.id};
-  const mx = Math.floor(x / PL_MOD), my = Math.floor(y / PL_MOD);
-  for(let i = pl.mods.length - 1; i >= 0; i--){ const m = pl.mods[i], [w, h] = tamModulo(m); if(mx >= m.mx && my >= m.my && mx < m.mx + w && my < m.my + h) return {t:"mod", id:m.id}; }
-  return null;
-}
-/* Pone la pieza de la herramienta en la casilla c. Devuelve true si ha cambiado algo */
+/* Pone la pieza de la herramienta en el punto c. Devuelve true si ha cambiado algo */
 function ponerPieza(pl, c){
   const h = PL.herr;
   if(h.t === "mod"){
@@ -16149,31 +16250,40 @@ function ponerPieza(pl, c){
     const m = {id:plId("m"), tipo:h.k, mx, my, rot:PL.rot || 0};
     if(h.k === "sala"){ m.w = Math.min(2, pl.ancho - mx); m.h = Math.min(2, pl.alto - my); m.rot = 0; }
     const [w, hh] = tamModulo(m);
-    const igual = pl.mods.find(o => o.mx === mx && o.my === my && o.tipo === m.tipo && (o.rot || 0) === m.rot && o.tipo !== "sala");
-    if(igual) return false;
+    if(pl.mods.find(o => o.mx === mx && o.my === my && o.tipo === m.tipo && (o.rot || 0) === m.rot && o.tipo !== "sala")) return false;
     pl.mods = pl.mods.filter(o => { const [ow, oh] = tamModulo(o); return o.mx + ow <= mx || o.mx >= mx + w || o.my + oh <= my || o.my >= my + hh; });   // lo que pisa, fuera
-    pl.mods.push(m); PL.sel = {t:"mod", id:m.id}; return true;
+    pl.mods.push(m); PL.sel = [{t:"mod", id:m.id}]; return true;
   }
   if(h.t === "obj" || h.t === "seg"){
     const l = h.t === "obj" ? pl.objs : pl.segs;
     if(l.some(o => o.x === c.x && o.y === c.y)) return false;
     const o = {id:plId("o"), tipo:h.k, x:c.x, y:c.y};
     if(h.t === "obj" && PL.rot) o.rot = PL.rot % 2;
-    l.push(o); PL.sel = {t:h.t, id:o.id}; return true;
+    l.push(o); PL.sel = [{t:h.t, id:o.id}]; return true;
   }
-  if(h.t === "goma"){ const e = enCasilla(pl, c.x, c.y); if(!e) return false; quitarDePlano(pl, e); return true; }
+  if(h.t === "muro" || h.t === "puerta"){
+    const b = PL.arr && PL.arr.orient ? bordeEnDireccion(c, PL.arr.orient) : bordeCerca(c.fx, c.fy);
+    if(!b) return false;
+    const lista = pl[PL_LISTA[h.t]], otra = pl[PL_LISTA[h.t === "muro" ? "puerta" : "muro"]];
+    if(lista.some(z => z.o === b.o && z.x === b.x && z.y === b.y)) return false;
+    // una puerta en una pared que has puesto tú la sustituye (y al revés)
+    pl[PL_LISTA[h.t === "muro" ? "puerta" : "muro"]] = otra.filter(z => !(z.o === b.o && z.x === b.x && z.y === b.y));
+    const n = Object.assign({id:plId("b")}, b); lista.push(n); PL.sel = [{t:h.t, id:n.id}]; return true;
+  }
+  if(h.t === "goma"){ const e = piezaEn(pl, c.fx, c.fy); if(!e) return false; const k = PL_LISTA[e.t]; pl[k] = pl[k].filter(o => o.id !== e.id); PL.sel = PL.sel.filter(s => s.id !== e.id); return true; }
   return false;
 }
-function quitarDePlano(pl, s){
-  if(s.t === "mod") pl.mods = pl.mods.filter(o => o.id !== s.id);
-  else if(s.t === "obj") pl.objs = pl.objs.filter(o => o.id !== s.id);
-  else pl.segs = pl.segs.filter(o => o.id !== s.id);
-  if(PL.sel && PL.sel.id === s.id) PL.sel = null;
+/* Arrastrando una pared, se queda en la misma dirección (horizontal o vertical) que el primer tramo */
+function bordeEnDireccion(c, o){
+  if(o === "h") return {o, x:c.x, y:Math.round(c.fy)};
+  return {o, x:Math.round(c.fx), y:c.y};
 }
 function girarSel(pl){
-  const o = buscarEnPlano(pl, PL.sel); if(!o) return;
-  if(PL.sel.t === "mod" && o.tipo !== "sala") o.rot = ((o.rot || 0) + 1) % 4;
-  else if(PL.sel.t === "obj") o.rot = ((o.rot || 0) + 1) % 2;
+  if(PL.sel.length !== 1) return;
+  const s = PL.sel[0], o = buscarEnPlano(pl, s); if(!o) return;
+  if(s.t === "mod" && o.tipo !== "sala") o.rot = ((o.rot || 0) + 1) % 4;
+  else if(s.t === "obj") o.rot = ((o.rot || 0) + 1) % 2;
+  else if(s.t === "muro" || s.t === "puerta"){ const W = pl.ancho * PL_MOD, H = pl.alto * PL_MOD; o.o = o.o === "h" ? "v" : "h"; o.x = Math.min(o.x, o.o === "h" ? W - 1 : W); o.y = Math.min(o.y, o.o === "h" ? H : H - 1); }
   cambioPlano(); pintarInspectorPlano();
 }
 async function planoAMapa(pl){
@@ -16196,74 +16306,106 @@ function eventosPlanos(caja){
     const b = ev.target.closest("button"); if(!b) return;
     const pl = planoActual();
     if(b.dataset.plHerr){ PL.herr = {t:b.dataset.plHerr, k:b.dataset.k || ""}; PL.rot = 0; pintarHerramientas(); return; }
-    if(b.dataset.plDesel !== undefined){ PL.sel = null; pintarLienzoPlano(); pintarInspectorPlano(); return; }
+    if(b.dataset.plDesel !== undefined){ PL.sel = []; pintarLienzoPlano(); pintarInspectorPlano(); return; }
     switch(b.dataset.pl){
-      case "nuevo": { const p = sanearPlano({nombre:"Plano nuevo", ancho:8, alto:6, mods:[]}); PL.lista.push(p); PL.actual = p.id; PL.sel = null; PL.herr = {t:"mod", k:"recto"}; guardarPlanos(); pintarPlanos(); return; }
-      case "ejemplo": { const p = planoEjemplo(); PL.lista.push(p); PL.actual = p.id; PL.sel = null; guardarPlanos(); pintarPlanos(); return; }
-      case "duplicar": if(pl){ const p = sanearPlano(Object.assign(clonar(pl), {id:"", nombre:pl.nombre + " (copia)"})); PL.lista.push(p); PL.actual = p.id; PL.sel = null; guardarPlanos(); pintarPlanos(); } return;
-      case "borrar": if(pl && await confirmar("Se borra el plano «" + pl.nombre + "». Si lo usas como mapa de combate, el mapa se queda.", "Borrar")){ PL.lista = PL.lista.filter(p => p !== pl); PL.actual = PL.lista[0] ? PL.lista[0].id : ""; PL.sel = null; guardarPlanos(); pintarPlanos(); } return;
-      case "vaciar": if(pl && await confirmar("Se quitan todos los módulos, objetos y fichas de este plano.", "Vaciar")){ pl.mods = []; pl.objs = []; pl.segs = []; PL.sel = null; cambioPlano(); pintarInspectorPlano(); } return;
+      case "nuevo": { const p = sanearPlano({nombre:"Plano nuevo", ancho:8, alto:6, mods:[]}); PL.lista.push(p); PL.actual = p.id; PL.sel = []; PL.herr = {t:"mod", k:"recto"}; guardarPlanos(); pintarPlanos(); return; }
+      case "ejemplo": { const p = planoEjemplo(); PL.lista.push(p); PL.actual = p.id; PL.sel = []; guardarPlanos(); pintarPlanos(); return; }
+      case "duplicar": if(pl){ const p = sanearPlano(Object.assign(clonar(pl), {id:"", nombre:pl.nombre + " (copia)"})); PL.lista.push(p); PL.actual = p.id; PL.sel = []; guardarPlanos(); pintarPlanos(); } return;
+      case "borrar": if(pl && await confirmar("Se borra el plano «" + pl.nombre + "». Si lo usas como mapa de combate, el mapa se queda.", "Borrar")){ PL.lista = PL.lista.filter(p => p !== pl); PL.actual = PL.lista[0] ? PL.lista[0].id : ""; PL.sel = []; guardarPlanos(); pintarPlanos(); } return;
+      case "vaciar": if(pl && await confirmar("Se quitan todos los módulos, paredes, puertas, objetos y fichas de este plano.", "Vaciar")){ pl.mods = []; pl.objs = []; pl.segs = []; pl.muros = []; pl.puertas = []; PL.sel = []; cambioPlano(); pintarInspectorPlano(); } return;
       case "a-mapa": if(pl){ try{ const m = await planoAMapa(pl); toast("«" + m.nombre + "» está en la pestaña Mapa, calibrado (" + pl.ancho * PL_MOD + " × " + pl.alto * PL_MOD + " casillas).", 4500); }catch(e){ avisar("No se ha podido pasar el plano al mapa.", "Planos"); } } return;
       case "girar": if(pl) girarSel(pl); return;
-      case "quitar": if(pl && PL.sel){ quitarDePlano(pl, PL.sel); cambioPlano(); pintarInspectorPlano(); } return;
-      case "dup": if(pl && PL.sel){ const o = buscarEnPlano(pl, PL.sel); if(!o) return; const c = Object.assign(clonar(o), {id:plId("o")});
-        if(PL.sel.t === "mod"){ const [w] = tamModulo(o); c.mx = Math.min(pl.ancho - w, o.mx + w); pl.mods.push(c); } else { c.x = Math.min(pl.ancho * PL_MOD - 1, o.x + 1); (PL.sel.t === "obj" ? pl.objs : pl.segs).push(c); }
-        PL.sel = {t:PL.sel.t, id:c.id}; cambioPlano(); pintarInspectorPlano(); } return;
+      case "quitar": if(pl){ quitarSel(pl); cambioPlano(); pintarInspectorPlano(); } return;
+      case "dup": if(pl){ duplicarSel(pl); cambioPlano(); pintarInspectorPlano(); } return;
     }
   });
   caja.addEventListener("input", ev => {
     const t = ev.target, pl = planoActual(); if(!pl) return;
     if(t.id === "plNombre"){ pl.nombre = t.value.slice(0, 80) || "Plano"; const o = caja.querySelector(`#plLista option[value="${CSS.escape(pl.id)}"]`); if(o) o.textContent = pl.nombre; guardarPlanos(); return; }
-    if(t.dataset.plEtq !== undefined){ const o = buscarEnPlano(pl, PL.sel); if(o){ if(t.value.trim()) o.n = t.value.slice(0, 24); else delete o.n; cambioPlano(); } return; }
+    if(t.dataset.plEtq !== undefined){ const o = buscarEnPlano(pl, unoSel()); if(o){ if(t.value.trim()) o.n = t.value.slice(0, 24); else delete o.n; cambioPlano(); } return; }
   });
   caja.addEventListener("change", ev => {
     const t = ev.target, pl = planoActual();
-    if(t.id === "plLista"){ PL.actual = t.value; PL.sel = null; guardarPlanos(); pintarPlanos(); return; }
+    if(t.id === "plLista"){ PL.actual = t.value; PL.sel = []; guardarPlanos(); pintarPlanos(); return; }
     if(!pl) return;
     if(t.dataset.plTam){ const v = Math.max(2, Math.min(16, Math.round(num(t.value)) || 2)); pl[t.dataset.plTam] = v; const s = sanearPlano(pl); Object.assign(pl, s); cambioPlano(); pintarInspectorPlano(); return; }
-    if(t.dataset.plSala){ const o = buscarEnPlano(pl, PL.sel); if(!o) return; const k = t.dataset.plSala, max = k === "w" ? pl.ancho - o.mx : pl.alto - o.my;
+    if(t.dataset.plSala){ const o = buscarEnPlano(pl, unoSel()); if(!o) return; const k = t.dataset.plSala, max = k === "w" ? pl.ancho - o.mx : pl.alto - o.my;
       o[k] = Math.max(1, Math.min(max, Math.round(num(t.value)) || 1)); t.value = o[k];
       pl.mods = pl.mods.filter(m => { if(m === o) return true; const [w, h] = tamModulo(m); return m.mx + w <= o.mx || m.mx >= o.mx + o.w || m.my + h <= o.my || m.my >= o.my + o.h; });   // la habitación crece y se come lo que pisa
       cambioPlano(); return; }
   });
   caja.addEventListener("pointerdown", ev => {
     const svg = ev.target.closest && ev.target.closest("#plSvg"), pl = planoActual(); if(!svg || !pl) return;
-    const c = casillaDe(ev); if(!c) return;
+    const c = puntoDe(ev); if(!c) return;
     ev.preventDefault();
     try{ svg.setPointerCapture(ev.pointerId); }catch(e){}
     if(PL.herr.t === "sel"){
-      PL.sel = enCasilla(pl, c.x, c.y);
-      const o = buscarEnPlano(pl, PL.sel);
-      PL.arr = o ? {o, t:PL.sel.t, c0:c, x0:PL.sel.t === "mod" ? o.mx : o.x, y0:PL.sel.t === "mod" ? o.my : o.y} : null;
+      const p = ev.shiftKey ? null : piezaEn(pl, c.fx, c.fy);
+      if(ev.shiftKey){
+        const q = piezaEn(pl, c.fx, c.fy);
+        PL.arr = {recuadro:true, x0:c.fx, y0:c.fy, sumar:true, toque:q};        // Mayús: recuadro, o (si no se mueve) suma/quita la pieza tocada
+      } else if(p){
+        if(!esSel(p.t, p.id)) PL.sel = [p];
+        PL.arr = {mover:true, c0:c, dx:0, dy:0, hayMod:PL.sel.some(s => s.t === "mod")};
+      } else { PL.sel = []; PL.arr = {recuadro:true, x0:c.fx, y0:c.fy}; }
       pintarLienzoPlano(); pintarInspectorPlano(); return;
     }
-    PL.arr = {pintar:true, ultima:c.x + "," + c.y};
+    PL.arr = {pintar:true, ultima:"", orient:""};
+    const b = (PL.herr.t === "muro" || PL.herr.t === "puerta") ? bordeCerca(c.fx, c.fy) : null;
+    PL.arr.ultima = b ? claveBorde(b.x, b.y, b.o) : c.x + "," + c.y;
     if(ponerPieza(pl, c)){ cambioPlano(); pintarInspectorPlano(); }
+    if(b) PL.arr.orient = b.o;
   });
   caja.addEventListener("pointermove", ev => {
     const pl = planoActual(); if(!pl) return;
-    const c = casillaDe(ev);
-    const f = $("#plFantasma");
-    if(f && c && PL.herr.t !== "sel"){       // dónde caería la pieza
+    const c = puntoDe(ev), f = $("#plFantasma");
+    if(f && c && PL.herr.t !== "sel" && PL.herr.t !== "goma"){       // dónde caería la pieza
       if(PL.herr.t === "mod"){ const w = PL.herr.k === "sala" ? 2 : 1; f.setAttribute("x", Math.floor(c.x / PL_MOD) * PL_MOD); f.setAttribute("y", Math.floor(c.y / PL_MOD) * PL_MOD); f.setAttribute("width", w * PL_MOD); f.setAttribute("height", w * PL_MOD); }
+      else if(PL.herr.t === "muro" || PL.herr.t === "puerta"){ const b = PL.arr && PL.arr.orient ? bordeEnDireccion(c, PL.arr.orient) : bordeCerca(c.fx, c.fy);
+        f.setAttribute("x", b.x - .12); f.setAttribute("y", b.y - .12); f.setAttribute("width", b.o === "h" ? 1.24 : .24); f.setAttribute("height", b.o === "h" ? .24 : 1.24); }
       else { f.setAttribute("x", c.x); f.setAttribute("y", c.y); f.setAttribute("width", 1); f.setAttribute("height", 1); }
     }
-    if(!PL.arr || !c) return;
-    if(PL.arr.pintar){ const k = c.x + "," + c.y; if(k === PL.arr.ultima) return; PL.arr.ultima = k; if(ponerPieza(pl, c)) cambioPlano(); return; }
-    const a = PL.arr;
-    if(a.t === "mod"){ const [w, h] = tamModulo(a.o); const nx = Math.max(0, Math.min(pl.ancho - w, a.x0 + Math.floor(c.x / PL_MOD) - Math.floor(a.c0.x / PL_MOD))), ny = Math.max(0, Math.min(pl.alto - h, a.y0 + Math.floor(c.y / PL_MOD) - Math.floor(a.c0.y / PL_MOD)));
-      if(nx !== a.o.mx || ny !== a.o.my){ a.o.mx = nx; a.o.my = ny; a.movido = true; pintarLienzoPlano(); } }
-    else { const nx = Math.max(0, Math.min(pl.ancho * PL_MOD - 1, a.x0 + c.x - a.c0.x)), ny = Math.max(0, Math.min(pl.alto * PL_MOD - 1, a.y0 + c.y - a.c0.y));
-      if(nx !== a.o.x || ny !== a.o.y){ a.o.x = nx; a.o.y = ny; a.movido = true; pintarLienzoPlano(); } }
+    const a = PL.arr; if(!a) return;
+    if(a.recuadro){
+      const p = puntoDe(ev, true); if(!p) return;
+      a.x1 = p.fx; a.y1 = p.fy; a.movido = a.movido || Math.abs(a.x1 - a.x0) + Math.abs(a.y1 - a.y0) > .3;
+      const r = $("#plRecuadro"); if(r){ r.setAttribute("x", Math.min(a.x0, a.x1)); r.setAttribute("y", Math.min(a.y0, a.y1)); r.setAttribute("width", Math.abs(a.x1 - a.x0)); r.setAttribute("height", Math.abs(a.y1 - a.y0)); }
+      return;
+    }
+    if(!c) return;
+    if(a.pintar){
+      const b = (PL.herr.t === "muro" || PL.herr.t === "puerta") ? (a.orient ? bordeEnDireccion(c, a.orient) : bordeCerca(c.fx, c.fy)) : null;
+      const k = b ? claveBorde(b.x, b.y, b.o) : c.x + "," + c.y; if(k === a.ultima) return; a.ultima = k;
+      if(ponerPieza(pl, c)) cambioPlano(); return;
+    }
+    if(a.mover){
+      const paso = a.hayMod ? PL_MOD : 1;
+      const dx = Math.round((c.fx - a.c0.fx) / paso) * paso, dy = Math.round((c.fy - a.c0.fy) / paso) * paso;
+      if(dx === a.dx && dy === a.dy) return;
+      if(moverSel(pl, dx - a.dx, dy - a.dy)){ a.dx = dx; a.dy = dy; a.movido = true; pintarLienzoPlano(); }
+    }
   });
-  const soltar = () => { if(PL.arr && PL.arr.movido) guardarPlanos(); PL.arr = null; };
+  const soltar = () => {
+    const a = PL.arr, pl = planoActual(); PL.arr = null; if(!a || !pl) return;
+    if(a.recuadro){
+      if(a.movido) seleccionarRecuadro(pl, a.x0, a.y0, a.x1, a.y1, a.sumar);
+      else if(a.toque){ PL.sel = esSel(a.toque.t, a.toque.id) ? PL.sel.filter(s => s.id !== a.toque.id) : PL.sel.concat([a.toque]); }
+      pintarLienzoPlano(); pintarInspectorPlano(); return;
+    }
+    if(a.movido) guardarPlanos();
+  };
   caja.addEventListener("pointerup", soltar); caja.addEventListener("pointercancel", soltar);
   document.addEventListener("keydown", ev => {
-    if(TAB !== "planos" || !PL.sel || ev.target.closest("input,textarea,select")) return;
+    if(TAB !== "planos" || ev.target.closest("input,textarea,select")) return;
     const pl = planoActual(); if(!pl) return;
-    if(ev.key === "r" || ev.key === "R"){ ev.preventDefault(); girarSel(pl); }
-    else if(ev.key === "Delete" || ev.key === "Backspace"){ ev.preventDefault(); quitarDePlano(pl, PL.sel); cambioPlano(); pintarInspectorPlano(); }
-    else if(ev.key === "Escape"){ PL.sel = null; pintarLienzoPlano(); pintarInspectorPlano(); }
+    if((ev.ctrlKey || ev.metaKey) && (ev.key === "a" || ev.key === "A")){ ev.preventDefault(); PL.sel = []; seleccionarRecuadro(pl, 0, 0, pl.ancho * PL_MOD, pl.alto * PL_MOD); pintarLienzoPlano(); pintarInspectorPlano(); return; }
+    if(!PL.sel.length) return;
+    if((ev.ctrlKey || ev.metaKey) && (ev.key === "d" || ev.key === "D")){ ev.preventDefault(); duplicarSel(pl); cambioPlano(); pintarInspectorPlano(); }
+    else if(ev.key === "r" || ev.key === "R"){ ev.preventDefault(); girarSel(pl); }
+    else if(ev.key === "Delete" || ev.key === "Backspace"){ ev.preventDefault(); quitarSel(pl); cambioPlano(); pintarInspectorPlano(); }
+    else if(ev.key === "Escape"){ PL.sel = []; pintarLienzoPlano(); pintarInspectorPlano(); }
+    else if(ev.key.startsWith("Arrow")){ ev.preventDefault(); const paso = PL.sel.some(s => s.t === "mod") ? PL_MOD : 1, d = {ArrowLeft:[-paso, 0], ArrowRight:[paso, 0], ArrowUp:[0, -paso], ArrowDown:[0, paso]}[ev.key];
+      if(moverSel(pl, d[0], d[1])) cambioPlano(); }
   });
 }
 
