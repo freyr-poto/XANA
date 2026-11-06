@@ -11905,7 +11905,7 @@ function guardarTracker(){
   // las heridas de cada combatiente van también en su ficha (así las lleva la ficha del jugador y el siguiente combate)
   if(T.combate) T.combate.participantes.forEach(p => { if(p.ficha && p.ficha.combate) p.ficha.combate.heridas = (p.heridas || []).map(h => Object.assign({}, h)); });
   if(typeof nubeCombateCambio === "function") nubeCombateCambio();
-  try{ localStorage.setItem(CLAVE_TRACKER, empaquetar(trackerAGuardar(T))); avisarEspacio(); return true; }
+  try{ localStorage.setItem(CLAVE_TRACKER, empaquetar(trackerAGuardar(T))); avisarEspacio(); if(typeof nubeMCambio === "function") nubeMCambio("tracker"); return true; }
   catch(e){ const E = avisarEspacio(true); toast("No se ha podido guardar: el almacenamiento está " + (E && E.pct >= 90 ? "lleno (" + E.pct + " %)" : "lleno o bloqueado") + ". Exporta una copia desde el menú y borra lo que no uses.", 8000); return false; }
 }
 const nuevoIdT = pre => pre + (T.sig++);
@@ -13825,15 +13825,15 @@ async function accion(b){
     case "ir-personajes": TAB = "personajes"; pintar(); return;
     case "cargar": $("#tkFichas").click(); return;
     case "cargar-vip": $("#tkVips").click(); return;
-    case "nube-crear": { const n = datosNubeT(); n.codigo = nubeNuevoCodigo(); n.vistos = {}; NUBE_T.usando = false; guardarTracker(); pintarNubeT(); nubeVigilar(); return; }
+    case "nube-crear": { const n = datosNubeT(); n.codigo = nubeNuevoCodigo(); n.vistos = {}; NUBE_T.usando = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeMSync(); return; }
     case "nube-usar": NUBE_T.usando = true; pintarNubeT(); { const i = $("#tkNubeCodigo"); if(i) i.focus(); } return;
     case "nube-conectar": { const c = nubeNormalizar(($("#tkNubeCodigo") || {}).value);
       if(!nubeCodigoValido(c)){ toast("Ese código no tiene la forma XANA-XXXX-XXXX-XXXX"); return; }
-      const n = datosNubeT(); n.codigo = c; n.vistos = {}; NUBE_T.usando = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeActualizarT(false); return; }
+      const n = datosNubeT(); n.codigo = c; n.vistos = {}; NUBE_T.usando = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeActualizarT(false); nubeMSync(); return; }
     case "nube-cancelar": NUBE_T.usando = false; pintarNubeT(); return;
     case "nube-copiar": { const ok = await copiar(datosNubeT().codigo); toast(ok ? "Código copiado: pégaselo a tus jugadores" : "No se ha podido copiar: díctalo"); return; }
     case "nube-actualizar": nubeActualizarT(false); return;
-    case "nube-cambiar": if(await confirmar("Dejas de recibir las fichas de esta partida. Las fichas que ya tienes se quedan en el tracker.", "Cambiar código")){
+    case "nube-cambiar": if(await confirmar("Dejas de recibir las fichas de esta partida y tus datos de máster dejan de sincronizarse en este ordenador. Lo que ya tienes se queda en el tracker.", "Cambiar código")){
       const n = datosNubeT(); n.codigo = ""; n.vistos = {}; guardarTracker(); pintarNubeT(); } return;
     case "nuevo-pnj": EDITANDO = PNJ_VACIO(); pintar(); window.scrollTo(0, 0); return;
     case "pnj-azar": EDITANDO = generarPnj(GEN.nivel, GEN.tipo, null); pintar(); window.scrollTo(0, 0); return;
@@ -14088,7 +14088,8 @@ function htmlNubeT(){
       <button type="button" class="btn principal" data-t="nube-actualizar"${NUBE_T.cargando ? " disabled" : ""}>Actualizar fichas</button></div>
     <div class="tk-nube-fila"><label class="tk-nube-auto"><input type="checkbox" id="tkNubeAuto"${n.auto ? " checked" : ""}> Comprobar sola cada 30 s</label>
       <span class="tk-nube-estado${NUBE_T.error ? " mal" : ""}">${esc(est)}</span>
-      <button type="button" class="btn fina" data-t="nube-cambiar">Cambiar código</button></div>`;
+      <button type="button" class="btn fina" data-t="nube-cambiar">Cambiar código</button></div>
+    ${typeof nubeMTexto === "function" && nubeMTexto() ? `<p class="tk-nube-estado${NUBE_M.error ? " mal" : ""}">${esc(nubeMTexto())}</p>` : ""}`;
 }
 const nubeHoraT = t => { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
 function pintarNubeT(){ const c = document.getElementById("tkNube"); if(c) c.innerHTML = htmlNubeT(); }
@@ -15595,6 +15596,7 @@ async function cargarGolpes(){
   GP.cargado = true;
 }
 function guardarGolpes(){
+  if(typeof nubeMCambio === "function") nubeMCambio("g_");
   clearTimeout(GP.tGuardar);
   GP.tGuardar = setTimeout(() => { Almacen.escribir(CLAVE_GOLPES, {lista:GP.lista, actual:GP.actual}).catch(() => toast("No se ha podido guardar el golpe en este navegador.", 5000)); }, 300);
 }
@@ -16075,6 +16077,7 @@ async function cargarPlanos(){
   PL.cargado = true;
 }
 function guardarPlanos(){
+  if(typeof nubeMCambio === "function") nubeMCambio("p_");
   clearTimeout(PL.tGuardar);
   PL.tGuardar = setTimeout(() => { Almacen.escribir(CLAVE_PLANOS, {lista:PL.lista, actual:PL.actual}).catch(() => toast("No se ha podido guardar el plano en este navegador.", 5000)); }, 300);
 }
@@ -16408,6 +16411,211 @@ function eventosPlanos(caja){
       if(moverSel(pl, d[0], d[1])) cambioPlano(); }
   });
 }
+/* ===== tracker/tk-nube-master.js · Lo del máster en la nube: el mismo tracker en varios ordenadores ===== */
+/* Con el código de partida puesto, el tracker sube solo lo suyo y lo baja en los demás ordenadores donde se ponga ese
+   código («Ya tengo un código»):
+     partidas/<código>/master/indice/<clave> = {t}            (t = hora de la subida; b:1 si se ha borrado)
+     partidas/<código>/master/datos/<clave>  = {t, z, datos}  (z:1 = datos comprimidos con LZString)
+   Claves: «tracker» (PJ, PNJ, PNJ creados, encuentros, combate, crónica, tiempo: un solo bloque), «g_<id>» cada golpe,
+   «p_<id>» cada plano, «m_<id>» cada mapa (calibración y posiciones) e «i_<id>» su imagen.
+   Gana el último cambio. Cada ordenador recuerda (xana-nube-master) con qué versión de cada clave está al día, la huella
+   de lo que tenía entonces y qué ha cambiado aquí sin subir: así solo se sube y se baja lo que cambia.
+   La primera vez en un ordenador: lo de la nube se baja; lo que solo está aquí (golpes, planos, mapas) se sube. Si el
+   tracker de aquí y el de la nube son distintos, se pregunta con cuál quedarse (el otro se guarda aparte). */
+const CLAVE_NUBE_M = "xana-nube-master";
+const NUBE_M = {corriendo:false, otra:false, reloj:0, temporizador:0, error:"", hora:0, aplicando:false, firmas:{}};
+function nubeMEstado(codigo){
+  let S = null;
+  try{ S = JSON.parse(localStorage.getItem(CLAVE_NUBE_M) || "null"); }catch(e){ S = null; }
+  if(!S || typeof S !== "object" || S.codigo !== codigo) S = {codigo, iniciado:false, vistos:{}, h:{}, sucios:{}};
+  ["vistos", "h", "sucios"].forEach(k => { if(!S[k] || typeof S[k] !== "object") S[k] = {}; });
+  return S;
+}
+function nubeMGuardar(S){ try{ localStorage.setItem(CLAVE_NUBE_M, JSON.stringify(S)); }catch(e){} }
+const nubeMCodigo = () => nubeLista() && T && T.nube && nubeCodigoValido(T.nube.codigo) ? T.nube.codigo : "";
+const nubeMClave = (p, id) => p + String(id).replace(/[.#$\[\]\/]/g, "_");
+function nubeMHuella(t){
+  t = String(t);
+  let h = 5381; for(let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+  return t.length + ":" + (h >>> 0).toString(36);
+}
+/* Huella de una imagen grande sin recorrerla entera (unas 4000 muestras) */
+function nubeMFirma(src){
+  src = String(src || "");
+  let h = 5381; const paso = Math.max(1, Math.floor(src.length / 4000));
+  for(let i = 0; i < src.length; i += paso) h = ((h << 5) + h + src.charCodeAt(i)) | 0;
+  return src.length + ":" + (h >>> 0).toString(36);
+}
+const trackerParaNube = () => JSON.stringify(Object.assign({}, trackerAGuardar(T), {nube:undefined}));
+/* Todo lo del máster en este ordenador: clave → {texto} o {h, leer} (las imágenes se leen solo si hay que subirlas) */
+async function nubeMLocal(){
+  if(typeof cargarGolpes === "function") await cargarGolpes();
+  if(typeof cargarPlanos === "function") await cargarPlanos();
+  const L = {tracker:{texto:trackerParaNube()}};
+  if(typeof GP !== "undefined") GP.lista.forEach(g => { L[nubeMClave("g_", g.id)] = {texto:JSON.stringify(g), id:g.id}; });
+  if(typeof PL !== "undefined") PL.lista.forEach(p => { L[nubeMClave("p_", p.id)] = {texto:JSON.stringify(p), id:p.id}; });
+  if(typeof M !== "undefined") for(const m of M.lista){
+    L[nubeMClave("m_", m.id)] = {texto:JSON.stringify(m), id:m.id};
+    if(!(m.id in NUBE_M.firmas)){ let url = ""; try{ url = await mapaImgLeer(m.id) || ""; }catch(e){} NUBE_M.firmas[m.id] = url ? nubeMFirma(url) : ""; }
+    if(NUBE_M.firmas[m.id]) L[nubeMClave("i_", m.id)] = {h:NUBE_M.firmas[m.id], id:m.id, leer:() => mapaImgLeer(m.id)};
+  }
+  Object.keys(L).forEach(k => { if(!L[k].h) L[k].h = nubeMHuella(L[k].texto); });
+  return L;
+}
+/* Algo ha cambiado aquí: se sube a los 4 s del último cambio */
+/* Hora del último cambio hecho aquí en cada tipo de cosa (tracker, g_, p_, m_, i_): para que gane el último cambio de verdad,
+   no el último en subirse */
+const CLAVE_NUBE_M_MARCAS = "xana-nube-master-marcas";
+function nubeMMarcas(){ try{ const m = JSON.parse(localStorage.getItem(CLAVE_NUBE_M_MARCAS) || "{}"); return m && typeof m === "object" ? m : {}; }catch(e){ return {}; } }
+const nubeMTipo = k => k === "tracker" ? "tracker" : k.slice(0, 2);
+function nubeMCambio(tipo){
+  if(NUBE_M.aplicando || !nubeMCodigo()) return;
+  if(tipo){ const m = nubeMMarcas(); m[tipo] = Date.now(); try{ localStorage.setItem(CLAVE_NUBE_M_MARCAS, JSON.stringify(m)); }catch(e){} }
+  clearTimeout(NUBE_M.temporizador);
+  NUBE_M.temporizador = setTimeout(() => nubeMSync(), 4000);
+}
+function nubeMImgCambio(id){ delete NUBE_M.firmas[id]; nubeMCambio("i_"); }
+
+/* ---------- Aplicar aquí lo que llega de la nube ---------- */
+async function nubeMAplicar(k, datos){
+  const borrar = datos === null;
+  if(k === "tracker"){
+    if(borrar) return;
+    const nube = T.nube, t = sanearTracker(datos);
+    t.nube = nube; T = t; EDITANDO = null;
+    guardarTracker();
+    return;
+  }
+  const tipo = k.slice(0, 2), id = k.slice(2);
+  if(tipo === "g_" && typeof GP !== "undefined"){
+    const i = GP.lista.findIndex(g => nubeMClave("", g.id) === id), g = borrar ? null : sanearGolpe(datos);
+    if(borrar){ if(i >= 0) GP.lista.splice(i, 1); } else if(g){ if(i >= 0) GP.lista[i] = g; else GP.lista.push(g); }
+    if(!GP.lista.some(x => x.id === GP.actual)) GP.actual = GP.lista[0] ? GP.lista[0].id : "";
+    await Almacen.escribir(CLAVE_GOLPES, {lista:GP.lista, actual:GP.actual});
+  } else if(tipo === "p_" && typeof PL !== "undefined"){
+    const i = PL.lista.findIndex(p => nubeMClave("", p.id) === id), p = borrar ? null : sanearPlano(datos);
+    if(borrar){ if(i >= 0) PL.lista.splice(i, 1); } else if(p){ if(i >= 0) PL.lista[i] = p; else PL.lista.push(p); }
+    if(!PL.lista.some(x => x.id === PL.actual)){ PL.actual = PL.lista[0] ? PL.lista[0].id : ""; PL.sel = []; }
+    else PL.sel = PL.sel.filter(s => buscarEnPlano(planoActual(), s));
+    await Almacen.escribir(CLAVE_PLANOS, {lista:PL.lista, actual:PL.actual});
+  } else if(tipo === "m_" && typeof M !== "undefined"){
+    const i = M.lista.findIndex(m => nubeMClave("", m.id) === id);
+    if(borrar){ if(i >= 0) M.lista.splice(i, 1); }
+    else if(datos && typeof datos === "object" && typeof datos.id === "string"){ if(i >= 0) M.lista[i] = datos; else M.lista.push(datos); }
+    if(!M.lista.some(m => m.id === M.actual)) M.actual = M.lista[0] ? M.lista[0].id : "";
+    MV.imgId = "";
+    try{ localStorage.setItem(CLAVE_MAPA, JSON.stringify(M)); }catch(e){}
+  } else if(tipo === "i_" && typeof M !== "undefined"){
+    const m = M.lista.find(x => nubeMClave("", x.id) === id), mid = m ? m.id : id;
+    if(borrar) await mapaImgBorrar(mid).catch(() => {});
+    else if(typeof datos === "string") await mapaImgGuardar(mid, datos);
+    delete NUBE_M.firmas[mid]; MV.imgId = "";
+  }
+}
+/* El tracker de aquí y el de la nube no coinciden la primera vez: se pregunta; el que no se usa se guarda aparte */
+async function nubeMElegirTracker(remoto){
+  const local = JSON.parse(trackerParaNube()), vacio = t => !t || !((t.pjs || []).length || (t.pnjs || []).length || (t.vips || []).length || (t.encuentros || []).length || t.combate || (t.cronica || []).length);
+  if(vacio(local)) return true;
+  if(vacio(remoto)) return false;
+  const cuenta = t => (t.pnjs || []).length + (t.vips || []).length + " PNJ, " + (t.pjs || []).length + " PJ" + (t.combate ? ", combate en curso" : "");
+  const usarNube = await dialogo({titulo:"El tracker de este ordenador y el de la nube son distintos",
+    texto:"En la nube: " + cuenta(remoto) + ".\nEn este ordenador: " + cuenta(local) + ".\n¿Con cuál te quedas? El otro se guarda aparte en este navegador («xana-tracker-descartado»), por si acaso. Los golpes, planos y mapas se juntan solos.",
+    aceptar:"Usar el de la nube", cancelar:"Quedarme con el de aquí"});
+  try{ await Almacen.escribir("xana-tracker-descartado", {t:Date.now(), datos:usarNube ? local : remoto}); }catch(e){}
+  return usarNube;
+}
+
+/* ---------- Sincronizar: bajar lo nuevo de la nube y subir lo cambiado aquí ---------- */
+async function nubeMSync(){
+  const codigo = nubeMCodigo(); if(!codigo) return;
+  if(NUBE_M.corriendo){ NUBE_M.otra = true; return; }
+  if(typeof nubeOcupado === "function" && nubeOcupado() || typeof PL !== "undefined" && PL.arr){ nubeMCambio(); return; }   // se está escribiendo o arrastrando: luego
+  NUBE_M.corriendo = true;
+  const base = "partidas/" + codigo + "/master/";
+  let bajadas = 0;
+  try{
+    const S = nubeMEstado(codigo), L = await nubeMLocal(), ahora = Date.now(), marcas = nubeMMarcas(), cuando = k => Math.min(ahora, num(marcas[nubeMTipo(k)]) || ahora);
+    // 1. lo que ha cambiado aquí desde la última vez
+    if(S.iniciado){
+      Object.keys(L).forEach(k => { if(L[k].h !== S.h[k]) S.sucios[k] = Math.max(num(S.sucios[k]), cuando(k)); else delete S.sucios[k]; });
+      Object.keys(S.h).forEach(k => { if(!L[k]) S.sucios[k] = Math.max(num(S.sucios[k]), cuando(k)); });
+    }
+    // 2. lo nuevo en la nube
+    const idx = await nubePedir(base + "indice").then(x => x && typeof x === "object" ? x : {});
+    const traer = [];
+    Object.keys(idx).forEach(k => {
+      const e = idx[k]; if(!e || !e.t || e.t === S.vistos[k]) return;
+      if(S.iniciado && S.sucios[k] && S.sucios[k] > e.t) return;        // lo de aquí es más reciente: se sube
+      if(!S.iniciado && e.b && k === "tracker") return;
+      traer.push(k);
+    });
+    if(traer.length) NUBE_M.aplicando = true;
+    try{
+      for(const k of traer){
+        const e = idx[k];
+        let datos = null;
+        if(!e.b){
+          const d = await nubePedir(base + "datos/" + k);
+          if(!d || typeof d.datos !== "string") continue;
+          const texto = d.z ? LZString.decompressFromBase64(d.datos) : d.datos;
+          if(texto === null || texto === undefined) continue;
+          datos = k.indexOf("i_") === 0 ? texto : JSON.parse(texto);
+          if(k === "tracker" && !S.iniciado && L.tracker.texto !== JSON.stringify(Object.assign({}, datos, {nube:undefined})) && !await nubeMElegirTracker(datos)){
+            S.vistos[k] = e.t; S.sucios[k] = Date.now(); continue;      // se queda el de aquí y se sube encima
+          }
+        }
+        await nubeMAplicar(k, datos);
+        S.vistos[k] = e.t; delete S.sucios[k]; bajadas++;
+      }
+    } finally { NUBE_M.aplicando = false; }
+    // 3. huellas de lo que hay ahora aquí (lo bajado ya cuenta como visto)
+    const L2 = bajadas ? await nubeMLocal() : L;
+    if(!S.iniciado){
+      // primera vez: lo que solo está aquí se sube; lo borrado en la nube se quita también aquí
+      for(const k of Object.keys(L2)){
+        const e = idx[k];
+        if(e && e.b && k !== "tracker"){ NUBE_M.aplicando = true; try{ await nubeMAplicar(k, null); }finally{ NUBE_M.aplicando = false; } S.vistos[k] = e.t; bajadas++; continue; }
+        if(!e || e.b) S.sucios[k] = S.sucios[k] || Date.now();
+      }
+    }
+    const L3 = bajadas && !S.iniciado ? await nubeMLocal() : L2;
+    Object.keys(S.h).forEach(k => { if(!L3[k] && !S.sucios[k]) delete S.h[k]; });
+    Object.keys(L3).forEach(k => { if(!S.sucios[k]) S.h[k] = L3[k].h; });
+    S.iniciado = true; nubeMGuardar(S);
+    // 4. subir lo cambiado aquí (una petición por clave: un golpe o una imagen pueden pesar varios MB)
+    for(const k of Object.keys(S.sucios)){
+      const it = L3[k], t = Date.now();
+      if(!it){ await nubeEscribir(codigo, {["master/datos/" + k]:null, ["master/indice/" + k]:{t, b:1}}); }
+      else {
+        let texto = it.texto !== undefined ? it.texto : await it.leer();
+        if(!texto){ delete S.sucios[k]; continue; }
+        let z = 0;
+        if(k.indexOf("i_") !== 0 && texto.length > 20000){ texto = LZString.compressToBase64(texto); z = 1; }
+        if(texto.length > 9000000){ NUBE_M.error = "«" + k + "» pesa demasiado para la nube"; delete S.sucios[k]; continue; }
+        await nubeEscribir(codigo, {["master/datos/" + k]:Object.assign({t, datos:texto}, z ? {z} : {}), ["master/indice/" + k]:{t}});
+        S.h[k] = it.h;
+      }
+      if(!it) delete S.h[k];
+      S.vistos[k] = t; delete S.sucios[k]; nubeMGuardar(S);
+    }
+    NUBE_M.error = ""; NUBE_M.hora = Date.now();
+  }catch(e){ NUBE_M.error = e.message || String(e); }
+  NUBE_M.corriendo = false;
+  if(bajadas){ pintar(); toast("☁ Traídos los cambios hechos en otro ordenador", 4000); }
+  else pintarNubeT();
+  if(NUBE_M.otra){ NUBE_M.otra = false; nubeMCambio(); }
+}
+/* Cada 30 s (con la pestaña a la vista), al volver a ella y al arrancar */
+function nubeMArrancar(){
+  clearInterval(NUBE_M.reloj);
+  NUBE_M.reloj = setInterval(() => { if(document.visibilityState === "visible") nubeMSync(); }, 30000);
+  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") nubeMSync(); });
+  nubeMSync();
+}
+const nubeMTexto = () => !nubeMCodigo() ? "" : NUBE_M.corriendo ? "Sincronizando tus datos de máster…" :
+  NUBE_M.error ? "Tus datos de máster no se han podido sincronizar (" + NUBE_M.error + ")." :
+  NUBE_M.hora ? "Tus PNJ, combate, golpes, planos y mapas están en la nube (" + nubeHoraT(NUBE_M.hora) + "). En otro ordenador: «Ya tengo un código» con este código." : "";
+setTimeout(() => { if(typeof T !== "undefined") nubeMArrancar(); }, 800);
 
 /* ---------- MAPA: imagen con su cuadrícula ya dibujada, calibrada a mano; fichas de los combatientes encima ----------
    Solo lo ve quien tiene el tracker (el máster pasa la tablet). Las imágenes van en IndexedDB (no caben en localStorage);
@@ -16416,7 +16624,7 @@ const CLAVE_MAPA = "xana-tracker-mapa";
 const M = (() => { try{ const m = JSON.parse(localStorage.getItem(CLAVE_MAPA) || "null"); if(m && typeof m === "object") return Object.assign({lista:[], actual:"", rejilla:false}, m); }catch(e){} return {lista:[], actual:"", rejilla:false}; })();
 // M.lista: [{id, nombre, w, h, celda, ox, oy, pos:{idParticipante:{x,y}}}]  (x, y en casillas)
 const MV = {img:null, imgId:"", esc:1, tx:0, ty:0, modo:"", cal:[], punteros:{}, arr:null, regla:null, centrado:""};
-function guardarMapa(){ try{ localStorage.setItem(CLAVE_MAPA, JSON.stringify(M)); }catch(e){ toast("No se ha podido guardar el mapa.", 4000); } if(typeof publicarMapa === "function") publicarMapa(); }
+function guardarMapa(){ if(typeof nubeMCambio === "function") nubeMCambio("m_"); try{ localStorage.setItem(CLAVE_MAPA, JSON.stringify(M)); }catch(e){ toast("No se ha podido guardar el mapa.", 4000); } if(typeof publicarMapa === "function") publicarMapa(); }
 const mapaActual = () => M.lista.find(m => m.id === M.actual) || null;
 
 /* IndexedDB: id → dataURL de la imagen */
@@ -16428,8 +16636,8 @@ async function mapaBDHacer(modo, f){
   return new Promise((res, rej) => { const tx = bd.transaction("img", modo); const q = f(tx.objectStore("img")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); });
 }
 const mapaImgLeer = id => mapaBDHacer("readonly", s => s.get(id));
-const mapaImgGuardar = (id, url) => mapaBDHacer("readwrite", s => s.put(url, id));
-const mapaImgBorrar = id => mapaBDHacer("readwrite", s => s.delete(id));
+const mapaImgGuardar = (id, url) => mapaBDHacer("readwrite", s => s.put(url, id)).then(r => { if(typeof nubeMImgCambio === "function") nubeMImgCambio(id); return r; });
+const mapaImgBorrar = id => mapaBDHacer("readwrite", s => s.delete(id)).then(r => { if(typeof nubeMImgCambio === "function") nubeMImgCambio(id); return r; });
 
 /* Cargar una imagen: se reduce a 4096 px como mucho (JPEG) para que quepa y vaya fluida en la tablet */
 function mapaReducir(file){
