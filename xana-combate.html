@@ -1482,6 +1482,107 @@
   /* VIS-42: detalles cyberpunk, con mesura: esquina cortada en el botón principal y rejilla de puntos tenue tras el cuerpo y el mapa */
   .btn.principal{clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
   .cw-cuerpo,.mp-vista{background-image:radial-gradient(color-mix(in srgb,var(--uva-t) 14%,transparent) 1px,transparent 1.2px);background-size:22px 22px}
+  /* ================= VIS-50 · VISTA HOLOGRÁFICA =================
+     La ficha «vestida» de interfaz holográfica (como los golpes del tracker): los mismos campos y botones, con los colores del
+     sistema visual cambiados por la paleta del jugador (rojo por defecto), esquinas de visor, líneas de barrido y paneles que se
+     despliegan al cambiar de pestaña. Va en html.holo; el menú «⋯» deja volver a la vista clásica (src/holo.js). */
+  :root{
+    --holo-rojo:#FF3B3B; --holo-ambar:#FFAA2B; --holo-cian:#35DCFF; --holo-verde:#3DFF88; --holo-violeta:#B36BFF; --holo-blanco:#E8EEF5;
+    --holo-acento:#3FE6FF; --holo-acento-2:#FF4FD8; --holo-peligro:#B83A0A; --holo-base:#0B0506; --holo-gris:#B9AEB0; --holo-tinta:#FFF4F2;
+  }
+  html.holo{--hp:var(--holo-rojo);--ha:var(--holo-acento)}
+  html.holo[data-paleta="ambar"]{--hp:var(--holo-ambar)}
+  html.holo[data-paleta="cian"]{--hp:var(--holo-cian);--ha:var(--holo-acento-2)}
+  html.holo[data-paleta="verde"]{--hp:var(--holo-verde)}
+  html.holo[data-paleta="violeta"]{--hp:var(--holo-violeta)}
+  html.holo[data-paleta="blanco"]{--hp:var(--holo-blanco);--ha:var(--holo-rojo)}
+  html.holo{
+    --violeta:color-mix(in srgb,var(--hp) 30%,var(--holo-base)); --violeta-sup:color-mix(in srgb,var(--hp) 12%,var(--holo-base));
+    --uva:var(--hp); --uva-t:color-mix(in srgb,var(--hp) 72%,var(--holo-tinta));
+    --rosa:var(--ha); --rosa-claro:color-mix(in srgb,var(--ha) 70%,var(--holo-tinta));
+    --cereza:var(--hp); --cereza-t:color-mix(in srgb,var(--hp) 78%,var(--holo-tinta)); --cereza-hover:color-mix(in srgb,var(--hp) 80%,var(--holo-tinta));
+    --rojo:var(--holo-peligro); --rojo-t:color-mix(in srgb,var(--holo-peligro) 75%,var(--holo-tinta)); --rojo-hover:color-mix(in srgb,var(--holo-peligro) 85%,var(--holo-tinta));
+    --fondo:color-mix(in srgb,var(--hp) 3%,var(--holo-base)); --fondo-cab:color-mix(in srgb,var(--hp) 6%,var(--holo-base));
+    --panel:color-mix(in srgb,var(--hp) 7%,var(--holo-base)); --panel-alto:color-mix(in srgb,var(--hp) 12%,var(--holo-base)); --panel-hover:color-mix(in srgb,var(--hp) 18%,var(--holo-base));
+    --campo:color-mix(in srgb,var(--hp) 4%,var(--holo-base)); --carril:var(--holo-base); --fondo-mapa:var(--holo-base);
+    --linea:color-mix(in srgb,var(--hp) 42%,var(--holo-base)); --linea-suave:color-mix(in srgb,var(--hp) 22%,var(--holo-base));
+    --texto:color-mix(in srgb,var(--hp) 18%,var(--holo-tinta)); --texto-2:color-mix(in srgb,var(--hp) 28%,var(--holo-tinta));
+    --apagado:color-mix(in srgb,var(--hp) 30%,var(--holo-gris)); --tenue:color-mix(in srgb,var(--hp) 40%,var(--holo-gris));
+    --sobre-claro:var(--holo-base); --sombra:var(--holo-base);
+    --texto-f:var(--display); --mono:"Share Tech Mono",ui-monospace,Menlo,Consolas,monospace;
+    --r-s:0px; --r-m:0px; --r-l:0px;
+    --brillo-sel:0 0 0 1px var(--ha),0 0 16px color-mix(in srgb,var(--ha) 35%,transparent);
+    --brillo-turno:0 0 18px color-mix(in srgb,var(--hp) 40%,transparent);
+    --anillo-foco:0 0 0 2px var(--fondo),0 0 0 4px var(--ha);
+    --esquina:linear-gradient(var(--hp),var(--hp));
+  }
+  html.holo body{background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--hp) 11%,var(--fondo)) 0%,var(--fondo) 60%) fixed}
+  /* capas: rejilla de fondo, líneas de barrido y franja que baja (las pone holo.js) */
+  .holo-capa{display:none}
+  html.holo .holo-capa{display:block;position:fixed;inset:0;pointer-events:none}
+  html.holo .holo-rejilla{z-index:0;opacity:.1;background-image:linear-gradient(var(--hp) 1px,transparent 1px),linear-gradient(90deg,var(--hp) 1px,transparent 1px);background-size:64px 64px;
+    -webkit-mask:radial-gradient(ellipse at 50% 20%,var(--negro) 10%,transparent 70%);mask:radial-gradient(ellipse at 50% 20%,var(--negro) 10%,transparent 70%)}
+  html.holo .holo-barrido{z-index:9000;background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--negro) 18%,transparent) 0 1px,transparent 1px 3px);animation:holo-parpadeo 7s infinite}
+  html.holo .holo-barrido::after{content:"";position:absolute;left:0;right:0;height:140px;top:-140px;background:linear-gradient(transparent,color-mix(in srgb,var(--hp) 6%,transparent),transparent);animation:holo-pasada 10s linear infinite}
+  @keyframes holo-pasada{to{top:100%}}
+  @keyframes holo-parpadeo{0%,47%,100%{opacity:.9}48%{opacity:.6}49%{opacity:.95}}
+  html.holo .hoja,html.holo .barra{position:relative;z-index:1}
+  html.holo .barra{position:sticky;z-index:50;background:linear-gradient(color-mix(in srgb,var(--fondo-cab) 97%,transparent),color-mix(in srgb,var(--fondo-cab) 88%,transparent));backdrop-filter:blur(6px)}
+  html.holo .marca{text-shadow:0 0 12px color-mix(in srgb,var(--hp) 55%,transparent)}
+  html.holo .marca-sep{color:var(--hp)}
+  /* pestañas: mayúsculas espaciadas y subrayado que brilla */
+  html.holo .pestanya{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em}
+  @media (max-width:600px){ html.holo .pestanya{letter-spacing:.03em;padding-left:9px;padding-right:9px} }
+  html.holo .pestanya[aria-selected=true]{color:var(--cereza-t);text-shadow:0 0 10px color-mix(in srgb,var(--hp) 50%,transparent)}
+  /* paneles: esquinas de visor (cuatro escuadras) y brillo interior */
+  html.holo :is(.caja,.cm-vida,.cm-he,.cm-tile,.cm-bloque,.cw-region,.fr-dato,.modal){
+    background-image:var(--esquina),var(--esquina),var(--esquina),var(--esquina),var(--esquina),var(--esquina),var(--esquina),var(--esquina);
+    background-repeat:no-repeat;
+    background-size:14px 2px,2px 14px,14px 2px,2px 14px,14px 2px,2px 14px,14px 2px,2px 14px;
+    background-position:left -1px top -1px,left -1px top -1px,right -1px top -1px,right -1px top -1px,left -1px bottom -1px,left -1px bottom -1px,right -1px bottom -1px,right -1px bottom -1px;
+    box-shadow:inset 0 0 34px color-mix(in srgb,var(--hp) 9%,transparent)}
+  html.holo :is(.cm-tile,.fr-dato){background-size:8px 2px,2px 8px,8px 2px,2px 8px,8px 2px,2px 8px,8px 2px,2px 8px}
+  html.holo .caja h3{font-size:var(--t-s);letter-spacing:.18em;border-left:0;padding-left:0;display:flex;align-items:center;gap:10px;
+    text-shadow:0 0 10px color-mix(in srgb,var(--hp) 45%,transparent);border-bottom:1px solid var(--linea-suave);padding-bottom:8px}
+  html.holo .caja h3::before{content:"";width:10px;height:10px;flex:none;border:2px solid var(--hp);transform:rotate(45deg);box-shadow:0 0 8px var(--hp)}
+  html.holo .cw-titulo h2{text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 12px color-mix(in srgb,var(--hp) 50%,transparent)}
+  html.holo label,html.holo .fr-dato small,html.holo .cm-tile small{font-family:var(--mono);letter-spacing:.08em}
+  html.holo label{text-transform:uppercase;font-size:var(--t-xs)}
+  html.holo :is(input,textarea,select){background:color-mix(in srgb,var(--hp) 4%,transparent);border-color:var(--linea-suave)}
+  html.holo :is(input,textarea,select):focus{border-color:var(--ha);box-shadow:0 0 0 1px var(--ha),0 0 14px color-mix(in srgb,var(--ha) 30%,transparent)}
+  html.holo .btn{letter-spacing:.04em;font-family:var(--display)}
+  html.holo .btn:hover:not(:disabled){box-shadow:0 0 12px color-mix(in srgb,var(--hp) 30%,transparent)}
+  html.holo .btn.principal{box-shadow:0 0 14px color-mix(in srgb,var(--hp) 40%,transparent)}
+  html.holo .fr-barra i{box-shadow:0 0 6px currentColor}
+  html.holo :is(.fr-dato b,.cm-tile b,.cm-vida b){text-shadow:0 0 10px color-mix(in srgb,currentColor 45%,transparent)}
+  /* retrato en holograma: la foto en el color del jugador, con líneas */
+  html.holo .retrato{border-style:solid;border-color:var(--linea);background:color-mix(in srgb,var(--hp) 6%,var(--holo-base));overflow:hidden}
+  html.holo .retrato img{filter:grayscale(1) contrast(1.25) brightness(1.05)}
+  html.holo .retrato:has(img:not([hidden]))::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--holo-base) 55%,transparent) 0 1px,transparent 1px 3px),linear-gradient(var(--hp),var(--hp));background-blend-mode:normal;mix-blend-mode:multiply;animation:holo-retrato 4s ease-in-out infinite}
+  @keyframes holo-retrato{50%{opacity:.85}52%{opacity:.6}54%{opacity:.9}}
+  /* al cambiar de pestaña, los paneles se despliegan (holo.js pone .holo-entra con su retraso) */
+  html.holo .holo-entra{animation:holo-desplegar .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--hd,0s)}
+  @keyframes holo-desplegar{0%{clip-path:inset(50% 50% 50% 50%);opacity:0}10%{opacity:1}40%{clip-path:inset(calc(50% - 1px) 0 calc(50% - 1px) 0)}48%{opacity:.45}52%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:1}}
+  html.holo .holo-glitch{transform:translateX(4px) skewX(-2deg);filter:brightness(1.4)}
+  /* arranque (una vez por sesión) */
+  .holo-arranque{position:fixed;inset:0;z-index:9500;background:var(--fondo);display:grid;place-items:center;font-family:var(--mono);color:var(--texto);transition:opacity .45s;cursor:pointer}
+  .holo-arranque.fuera{opacity:0;pointer-events:none}
+  .holo-arranque > div{width:min(480px,84vw)}
+  .holo-arranque p{margin:0;font-size:var(--t-s);letter-spacing:.14em;min-height:1.6em}
+  .holo-arranque i{display:block;height:5px;margin-top:14px;border:1px solid var(--linea);background:linear-gradient(var(--hp),var(--hp)) left/0% 100% no-repeat;transition:background-size 1.3s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px color-mix(in srgb,var(--hp) 40%,transparent)}
+  .holo-arranque i.lleno{background-size:100% 100%}
+  /* menú: vista y paleta */
+  .holo-menu{display:grid;gap:6px;padding:6px 4px 2px;border-top:1px solid var(--linea-suave);margin-top:4px}
+  .holo-menu small{color:var(--apagado);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.08em;padding:0 6px}
+  .holo-paletas{display:flex;gap:6px;padding:0 6px}
+  .holo-paletas button{width:26px;height:26px;border:2px solid var(--linea);background:var(--c);cursor:pointer}
+  .holo-paletas button[aria-pressed=true]{border-color:var(--texto);box-shadow:0 0 10px var(--c)}
+  .holo-paletas [data-paleta=rojo]{--c:var(--holo-rojo)} .holo-paletas [data-paleta=ambar]{--c:var(--holo-ambar)} .holo-paletas [data-paleta=cian]{--c:var(--holo-cian)}
+  .holo-paletas [data-paleta=verde]{--c:var(--holo-verde)} .holo-paletas [data-paleta=violeta]{--c:var(--holo-violeta)} .holo-paletas [data-paleta=blanco]{--c:var(--holo-blanco)}
+  html:not(.holo) .holo-paletas,html:not(.holo) .holo-paleta-t{display:none}
+  @media (prefers-reduced-motion:reduce){ html.holo .holo-barrido,html.holo .holo-barrido::after,html.holo .retrato::after{animation:none} }
+  @media print{ .holo-capa,.holo-arranque{display:none!important} }
 /* ================= TRACKER DEL MÁSTER ================= */
   body.tracker{font-size:var(--t-m)}
   body.tracker [hidden]{display:none !important}
@@ -9199,6 +9300,7 @@ const nubeLeerCombate = codigo => nubePedir("partidas/" + codigo + "/combate").t
 
 
 
+
 function paso(fn){ try{ fn(); }catch(e){ mostrarFallo(e && e.message ? e.message : e); } }
 function arrancar(){
   paso(pintarComps);
@@ -9260,6 +9362,7 @@ function pestanya(cual){
   window.scrollTo(0,0);
   if(cual === "ciber") pintarCiber();
   if(cual === "combate"){ iniciarCombate(); pintarCombate(); }
+  if(typeof holoEntrar === "function") holoEntrar(cual);
 }
 
 
