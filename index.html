@@ -10412,31 +10412,101 @@ function holoReloj(cambia){
   if(cambia && holoActiva() && !holoQuieto()){ r.classList.remove("cambia"); void r.offsetWidth; r.classList.add("cambia"); }
 }
 
-/* ---------- Noticias de Wyrm al azar ---------- */
+/* ---------- Noticias de Mondrako al azar ---------- */
 function holoNoticias(){
+  /* Noticias de Mondrako, Tatosk y la galaxia, como las da la prensa que pagan las corporaciones: cada vuelta del ticker
+     elige 10 al azar. Las cifras y los nombres cambian cada vez. Si la ficha tiene el reloj de la partida, a partir de
+     las 18:00 sale además la cuenta atrás de la Hora de gracia y de la Hora Gélida. */
   const az = l => l[Math.floor(Math.random() * l.length)], n = (a, b) => a + Math.floor(Math.random() * (b - a + 1)), dos = v => String(v).padStart(2, "0");
-  const corps = ["Ferratech", "Oniwaka", "Veil", "Biogénica Nautil", "MiMr", "Star-Eats", "ControlUX", "Galactic Family", "Electrónica Coste"];
-  const sitios = ["el Casino Verdant", "el Hotel Grand", "el Mercado Negro", "el Centro Comercial de Tatosk", "la Capilla de Nyx", "el Motel Hermanos", "el Hotel Placidia", "El Archiduque", "Inmobiliarias Washo"];
-  const zonas = ["Tatosk", "el S-01", "el Distrito Industrial", "el Distrito Rojo", "la muralla sur", "el puerto fluvial"];
+  const dec = (a, b) => n(a, b) + "," + n(0, 9);
+  const zonas = ["el S-01", "el Distrito Industrial", "el Distrito Rojo", "el centro de Tatosk", "la ribera del río", "los bloques del norte", "la zona de Totosk"];
+  const sitios = ["el Casino Verdant", "el Hotel Grand", "el Mercado Negro", "el Centro Comercial de Tatosk", "la Capilla de Nyx", "el Motel Hermanos", "el Hotel Placidia", "El Archiduque", "Inmobiliarias Washo", "Empeños Sin Compromiso", "el Concesionario Al & Yi", "un Mags"];
+  const corps = ["Grupo Veil", "Oniwaka", "Star-Eats", "Factorías Wyrm", "HELINOR", "Biogénica Nautil", "Ferratech", "Industrias Myr", "Grupo Gabryell", "Shidur", "Ópticas MiMiR"];
+  const naciones = ["la Unión Planetaria del Norte", "las Naciones Humanas Unidas", "la República Indra", "el Shogunato Oni", "la Colmena Myr", "el Jardín Elíseo", "Biogénica Nautil"];
+  const otra = (l, x) => { let y = az(l); while(y === x) y = az(l); return y; };
   const P = [
-    () => ["MERCADO", `${az(corps)} ${Math.random() < .5 ? "sube" : "cae"} un ${n(1, 9)},${n(0, 9)} % ${az(["tras su último lanzamiento", "por los rumores de despidos", "tras el informe trimestral", "por un fallo en sus servidores"])}`],
-    () => ["SUCESOS", `Tiroteo cerca de ${az(sitios)}: ${n(2, 9)} heridos y ningún detenido`],
-    () => ["AVISO", `Toque de queda en ${az(zonas)} a partir de las ${dos(n(0, 3))}:00`],
-    () => ["CLIMA", az(["Lluvia ácida débil sobre Wyrm C.C.", "Niebla tóxica en las zonas bajas: usa filtro", "Tormenta eléctrica: posibles cortes en la RED", "Cielo despejado y calidad del aire aceptable"])],
-    () => ["RED", `Nodo ${n(1, 40)}/${az(["T", "S", "K", "M"])}: tráfico anómalo en ${az(zonas)}`],
+    /* --- Mondrako y la Hora Gélida --- */
+    () => ["HORA GÉLIDA", `Previsión para esta noche: ${n(-62, -48)} °C y ráfagas de ${n(90, 160)} km/h a partir de la 01:00`],
+    () => ["HORA GÉLIDA", `Faltan ${n(2, 27)} días para la Mayor. Ayuntamiento: «Prepare su hogar con antelación»`],
+    () => ["HORA GÉLIDA", `${n(2, 7)} personas encontradas sin vida en ${az(zonas)} tras la Hora Gélida. Ninguna tenía contrato de rescate`],
+    () => ["HORA GÉLIDA", `Galería ${az(["4-Norte", "del Río", "de Totosk", "Central", "7-Este"])} cerrada de 01:00 a 06:00 para clientes sin Abono Nocturno`],
+    () => ["CONSUMO", `Las mantas térmicas suben un ${n(18, 140)} % ante la Mayor. «Es oferta y demanda», explica un portavoz`],
+    () => ["CONSUMO", `Galactic Family lanza su Pack Mayor: calefactor, raciones y 6 h de batería por ${n(3, 9)}${az(["49", "99"])} C`],
+    () => ["CIUDAD", `Brigadas de Wyrm despejan los accesos tras la Mayor: zonas residenciales Premium operativas en ${n(2, 6)} h; resto, «en los próximos días»`],
+    () => ["CIUDAD", `Nuevo Abono Nocturno de galerías: cruce Tatosk de madrugada desde ${n(3, 9)}9 C al mes`],
+    () => ["CLIMA", az(["Cielo despejado y −12 °C a mediodía: buen día para salir", "Viento del norte: sensación térmica de −30 °C en las pasarelas", "Nevada débil por la tarde sobre Tatosk", "La estrella brilla con fuerza: máxima de −9 °C"])],
+    /* --- La Munòr y el trabajo --- */
+    () => ["MUNÒR", `El Complejo de Extracción 1 bate su récord de producción por ${az(["tercer", "cuarto", "quinto"])} trimestre seguido`],
+    () => ["MUNÒR", `Wyrm abre la galería ${n(19, 24)}: «${n(200, 900)} nuevas oportunidades de empleo para la comunidad dracónida»`],
+    () => ["MUNÒR", `Derrumbe en la explotación ${n(2, 18)}: la producción se recupera en ${n(4, 30)} horas. Wyrm no facilita cifras de víctimas`],
+    () => ["MUNÒR", `Recordatorio de Seguridad Laboral: cambie su filtro cada ${n(5, 9)} turnos. Filtros homologados desde ${n(40, 90)} C`],
+    () => ["MUNÒR", `Turnos de ${az(["14", "16"])} h en los niveles profundos: Wyrm destaca la «resiliencia» de sus colaboradores`],
+    () => ["LUNA", `Llega a Tatosk el convoy de titanio n.º ${n(1200, 4800)} desde la luna de Mondrako`],
+    () => ["CHIPOMIUM", `El precio del galio de Mondrako sube un ${dec(1, 9)} %: la Federación necesita más Chipomium`],
+    /* --- Wyrm, Tatosk y la ley --- */
+    () => ["AYUNTAMIENTO", `El Ayuntamiento de Wyrm C.C. aprueba ${az(["nuevas cámaras en", "un recorte del alumbrado de", "la privatización de las pasarelas de", "una subida de tasas en", "el desalojo de un bloque de"])} ${az(zonas)}`],
+    () => ["AYUNTAMIENTO", `Wyrm recuerda que los dracónidos son «colonos anteriores», no población indígena: el tribunal arbitral desestima la demanda n.º ${n(100, 999)}`],
+    () => ["INMOBILIARIA", `Inmobiliarias Washo: últimas parcelas en ${az(["la ribera del río", "el centro de Tatosk", "los bloques del norte"])}. Escritura a ${n(30, 60)} años`],
     () => ["POLICÍA", `La Policía Corporativa refuerza las patrullas en ${az(zonas)}`],
-    () => ["SINDICATO", `El Sindicato Dracónido niega su relación con ${az(["el sabotaje del tren de carga", "el incendio de anoche", "los cortes de luz", "la desaparición de un directivo"])}`],
-    () => ["AYUNTAMIENTO", `El Ayuntamiento de Wyrm C.C. aprueba ${az(["nuevas cámaras en", "un recorte de presupuesto para", "la privatización del alumbrado de", "un plan de vivienda en"])} ${az(zonas)}`],
-    () => ["SALUD", `${az(["Matasanos García", "Matasanos Aikawa", "Matasanos Eirer"])} ${az(["amplía su horario", "denuncia un robo de implantes", "ofrece revisiones de ciberware a mitad de precio"])}`],
-    () => ["CORPORACIONES", (() => { const a = az(corps); let b = az(corps); while(b === a) b = az(corps); return `${a} y ${b} ${az(["negocian una fusión", "se acusan de espionaje industrial", "firman un acuerdo de suministro"])}`; })()],
+    () => ["POLICÍA", `${n(3, 19)} detenidos en ${az(zonas)} por pertenencia a organización sindical`],
+    () => ["SEGURIDAD", `ControLUX: protección para su hogar desde ${n(29, 79)} C al mes. «Barata no quiere decir peor»`],
+    /* --- El Sindicato --- */
+    () => ["SINDICATO", `El Sindicato Dracónido niega su relación con ${az(["el sabotaje del convoy de carga", "el incendio de anoche en Totosk", "los cortes de luz", "la desaparición de un directivo", "las pintadas en la Munòr"])}`],
+    () => ["SINDICATO", `La recompensa por Drako Hogg sube a ${n(100, 180)}.000 C`],
+    () => ["SINDICATO", `Tensión en el muro sur del S-01: ${az(["disparos de advertencia", "un dron derribado", "un control cerrado", "enfrentamientos"])} durante la noche`],
+    () => ["CULTURA", `«La Tortura de Munòr» sigue prohibido en la Federación. Las copias pirata circulan por ${az(["el Mercado Negro", "la RED", "el S-01"])}`],
+    /* --- Tatosk de noche --- */
+    () => ["SUCESOS", `Tiroteo cerca de ${az(sitios)}: ${n(2, 9)} heridos y ningún detenido`],
+    () => ["OCIO", `El Casino Verdant amplía su licencia: abierto hasta las 06:00 durante la Hora Gélida`],
+    () => ["SALUD", `${az(["Matasanos García", "Matasanos Aikawa", "Matasanos Eirer"])} ${az(["amplía su horario", "denuncia un robo de implantes", "ofrece revisiones de ciberware a mitad de precio", "se queda sin filtros de recambio"])}`],
     () => ["CIBERWARE", `Alerta de ${az(["ciberpsicosis", "implantes falsificados", "chips piratas"])} en ${az(zonas)}: ${n(3, 14)} casos esta semana`],
-    () => ["TRÁFICO", `Retenciones en la avenida del río por ${az(["un control policial", "un accidente de AV", "una manifestación"])}`]
+    /* --- Corporaciones --- */
+    () => ["MERCADO", `${az(corps)} ${Math.random() < .55 ? "sube" : "cae"} un ${dec(1, 9)} % ${az(["tras su último lanzamiento", "por los rumores de despidos", "tras el informe trimestral", "por un fallo en sus servidores", "tras un ajuste de plantilla"])}`],
+    () => ["CORPORACIONES", (() => { const a = az(corps), b = otra(corps, a); return `${a} y ${b} ${az(["negocian una fusión", "se acusan de espionaje industrial", "firman un acuerdo de suministro", "anuncian una alianza estratégica"])}`; })()],
+    () => ["GABRYELL", `¿Rechazado por su aseguradora? El Fideicomiso de Humanidad le adelanta su operación hoy. Sin aval, sin esperas`],
+    () => ["GABRYELL", `Grupo Gabryell cede ${n(200, 1500)} contratos de Servidumbre a ${az(["Factorías Wyrm", "Industrias Myr", "Star-Eats", "HELINOR"])}: «Una segunda oportunidad»`],
+    () => ["VEIL", `Saya Kred, de nuevo la persona más rica de la galaxia, ${az(["presenta la colección de Jigunji", "inaugura un banco en Tatosk", "dona a un orfanato de la UPN", "posa para Jigunji en Thalassa"])}`],
+    () => ["MIDAS", `Midas, de Grupo Veil: «Tu crédito ha cambiado. Pregúntame cómo mejorarlo». Nuevo plan Midas Plus`],
+    () => ["NAUTIL", `CrispR recomienda revisar sus implantes cada ${n(3, 6)} meses. Cita en el Hospital Biogénica Nautil`],
+    () => ["NAUTIL", `Nautil lanza una vacuna de Microcirujanos para mundos fríos: ${az(["ya disponible", "solo para clientes asegurados", "en lista de espera"])} en Mondrako`],
+    () => ["ONIWAKA", `Oniwaka entrega ${n(4, 30)} Plataformas de Combate FDG-WF a la Federación. Lavos Oniwaka no asiste a la ceremonia`],
+    () => ["HELINOR", `HELINOR sube un ${n(3, 12)} % la tarifa eléctrica de Tatosk «para garantizar el suministro durante la Mayor»`],
+    () => ["STAR-EATS", `HALA Delivery reparte ya durante la Hora de gracia. Los repartidores son autónomos: Star-Eats no responde de su seguridad`],
+    () => ["SHIDUR", `Hiper Iku anuncia ${az(["gira galáctica", "nuevo álbum", "concierto en la RED", "colaboración con Jigunji"])}. ${az(["Tatosk no está en las fechas", "Entradas agotadas en 3 minutos", "Patrocina Star-Buck's"])}`],
+    () => ["SHIDUR", `El streamer ${az(["KrrrZ", "Lumi.exe", "DracoPlays", "Nonna Neón"])} desaparece de las recomendaciones tras hablar de la Munòr. Shidur: «Decisión del algoritmo»`],
+    () => ["FERRATECH", `La Federación vuelve a criticar a Ferratech: «Su cooperativa no genera valor de inversión»`],
+    () => ["FERRATECH", `${n(2, 9)}.000 trabajadores de Ferratech emigran a mundos federados este mes. Sindri lo niega`],
+    () => ["MYR", `Industrias Myr termina ${az(["la nueva pasarela sellada del río", "el bloque residencial 88", "el refugio del Distrito Industrial"])} en ${n(3, 11)} días`],
+    /* --- Federación y naciones --- */
+    () => ["FEDERACIÓN", `El Parlamento de la FGC no alcanza los dos tercios: ${az(["la ley de protección de colonos", "la reforma de la Servidumbre por Contrato", "la regulación de las superinteligencias", "la tasa al Chipomium"])} queda en el cajón`],
+    () => ["FEDERACIÓN", `${az(naciones)} gana ${n(2, 9)} escaños en el Parlamento federal tras ${az(["exportar su cosecha entera", "un récord de exportaciones", "un acuerdo con Star-Eats"])}`],
+    () => ["GALPOL", `Detenido un archiduque de la FGC por desviar ${n(1, 4)}.000 millones de créditos públicos a su corporación`],
+    () => ["FDG", `La Fuerza de Defensa Galáctica despliega ${n(2, 6)} flotas en el núcleo. Mondrako, en el borde, «sigue bajo supervisión»`],
+    () => ["AIN", `La Agencia Interestelar de Navegación avisa: ${az(["tormenta solar en la ruta de Mondrako", "piratas en el corredor de borde", "retrasos en el portal de distorsión"])}`],
+    () => ["NHU", `Las Naciones Humanas Unidas votan en VotaM-Net ${az(["una reforma sanitaria", "el presupuesto de las colonias", "regular a Wale", "una ley de privacidad"])}: participación del ${n(41, 88)} %`],
+    () => ["UPN", `La Unión Planetaria del Norte celebra en Arika ${az(["su récord de consumo", "la Semana del Éxito Compartido", "una nueva bolsa intergaláctica"])}`],
+    () => ["INDRA", `${n(2, 40)} millones de peregrinos visitan Ganges este mes`],
+    () => ["ONI", `El Shogunato Oni cierra el año con criminalidad cero «gracias a la vigilancia»`],
+    () => ["ELÍSEO", `El Jardín Elíseo planta una Semilla Idílica en ${az(["un mundo árido del núcleo", "una colonia de la UPN", "un planeta de Nautil"])}. «Mondrako no está en la lista»`],
+    () => ["AESIR", `Un almirante del Consejo Aesir firma como asesor de ${az(["Oniwaka", "la FDG", "Grupo Veil"])}`],
+    () => ["ETÉREO", `Avistada niebla violácea en un sistema fronterizo. El Imperio Etéreo no lo confirma`],
+    () => ["RED", `Nodo ${n(1, 40)}/${az(["T", "S", "K", "M"])}: tráfico anómalo en ${az(zonas)}. Los netrunners de la FGC descartan un Daemon`],
+    () => ["REDos", `Actualización de REDos ${n(4, 5)}.${n(0, 9)}.${n(0, 20)}: nuevas condiciones de uso. Seguir usando su IETS implica aceptarlas`]
   ];
-  return P.slice().sort(() => Math.random() - .5).slice(0, 8).map(f => f()).map(([a, b]) => `<span><b>${a} //</b> ${esc(b)}</span>`).join("");
+  const lista = P.slice().sort(() => Math.random() - .5).slice(0, 10).map(f => f());
+  // la cuenta atrás de la noche, con el reloj de la partida
+  const t = typeof ahoraJuego === "function" ? ahoraJuego() : null;
+  if(t !== null){
+    const s = ((t % 86400) + 86400) % 86400, h = s / 3600, falta = x => { const m = Math.round((x - h) * 60); return Math.floor(m / 60) + " h " + dos(m % 60) + " min"; };
+    if(h >= 18 && h < 24) lista.unshift(["AVISO", `Hora de gracia en ${falta(24)}. Hora Gélida en ${falta(25)}`]);
+    else if(h >= 1 && h < 6) lista.unshift(["HORA GÉLIDA", `En curso hasta las 06:00. No salga al exterior`]);
+    else if(h < 1) lista.unshift(["HORA DE GRACIA", `La Hora Gélida empieza en ${Math.round((1 - h) * 60)} min. Vuelva a casa`]);
+  }
+  return lista.map(([a, b]) => `<span><b>${a} //</b> ${esc(b)}</span>`).join("");
 }
 function holoTira(){
   let t = document.querySelector(".holo-noticias");
-  if(!t){ t = document.createElement("div"); t.className = "holo-noticias"; t.setAttribute("aria-label", "Noticias de Wyrm"); t.innerHTML = "<div></div>"; document.body.appendChild(t);
+  if(!t){ t = document.createElement("div"); t.className = "holo-noticias"; t.setAttribute("aria-label", "Noticias de Mondrako"); t.innerHTML = "<div></div>"; document.body.appendChild(t);
     t.firstChild.addEventListener("animationiteration", () => { t.firstChild.innerHTML = holoNoticias(); }); }
   t.firstChild.innerHTML = holoNoticias();
   t.firstChild.style.setProperty("--dur", Math.max(60, Math.round(t.firstChild.textContent.length / 9)) + "s");
