@@ -1530,7 +1530,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   html.holo .holo-capa{display:block;position:fixed;inset:0;pointer-events:none;contain:strict;transform:translateZ(0);backface-visibility:hidden}
   html.holo .holo-rejilla{z-index:0;opacity:.1;background-image:linear-gradient(var(--hp) 1px,transparent 1px),linear-gradient(90deg,var(--hp) 1px,transparent 1px);background-size:64px 64px;
     -webkit-mask:radial-gradient(ellipse at 50% 20%,var(--negro) 10%,transparent 70%);mask:radial-gradient(ellipse at 50% 20%,var(--negro) 10%,transparent 70%)}
-  html.holo .holo-barrido{z-index:9000;background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--negro) 16%,transparent) 0 1px,transparent 1px 3px);opacity:.9}
+  html.holo .holo-barrido{z-index:9000;bottom:30px;background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--negro) 16%,transparent) 0 1px,transparent 1px 3px);opacity:.9}
   html.holo .holo-pasada{z-index:9001;inset:0 0 auto 0;height:140px;background:linear-gradient(transparent,color-mix(in srgb,var(--hp) 6%,transparent),transparent);
     transform:translateY(-140px);will-change:transform;animation:holo-pasada 10s linear infinite}
   @keyframes holo-pasada{to{transform:translateY(100vh)}}
@@ -10533,22 +10533,37 @@ function holoNoticias(){
   }
   return lista.map(([a, b]) => `<span><b>${a} //</b> ${esc(b)}</span>`).join("");
 }
-/* La tira corre a velocidad fija (px/s) con la Web Animations API, en el compositor: entra por la derecha, sale por la
-   izquierda y en cada vuelta trae titulares nuevos (pocos a la vez, para que la capa no sea enorme y no dé tirones) */
-const TIRA_VEL = 75;
+/* La tira corre con la Web Animations API, en el compositor: entra por la derecha, sale por la izquierda y en cada vuelta
+   trae titulares nuevos (pocos a la vez, para que la capa no sea enorme).
+   Para que no dé tirones, la velocidad se ajusta a la pantalla: un número entero de píxeles reales por fotograma (o un
+   píxel cada N fotogramas), unos 60 px/s. A 75 px/s en una pantalla de 60 Hz avanzaba 1,25 px por fotograma, y el
+   navegador lo redondea a 1-1-1-2: eso es el tironcito. */
+const TIRA_OBJETIVO = 60;
+function tiraVelocidad(hz){
+  const dpr = window.devicePixelRatio || 1, f = TIRA_OBJETIVO * dpr / hz;   // píxeles reales por fotograma
+  return f >= 1 ? Math.round(f) * hz / dpr : hz / Math.round(1 / f) / dpr;
+}
+/* Frecuencia de la pantalla (60, 90, 120, 144 Hz…), midiendo unos fotogramas */
+function medirHz(){
+  return new Promise(r => { const l = []; let ant = 0, n = 0;
+    const f = t => { if(ant) l.push(t - ant); ant = t; if(++n < 24) requestAnimationFrame(f); else { l.sort((a, b) => a - b); const m = l[l.length >> 1] || 16.7; r([60, 75, 90, 100, 120, 144, 165, 240].reduce((a, b) => Math.abs(1000 / m - b) < Math.abs(1000 / m - a) ? b : a)); } };
+    requestAnimationFrame(f); setTimeout(() => r(60), 1500); });
+}
 function holoTira(){
   let t = document.querySelector(".holo-noticias");
   if(!t){ t = document.createElement("div"); t.className = "holo-noticias"; t.setAttribute("aria-label", "Noticias de Mondrako"); t.innerHTML = "<div></div>"; document.body.appendChild(t); }
   if(HOLO.tira) return;                                  // ya está corriendo
+  HOLO.tira = 1;
   const d = t.firstChild, quieto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const vuelta = () => {
+  const vuelta = vel => {
     d.innerHTML = holoNoticias();
-    if(quieto || !d.animate){ HOLO.tira = 1; return; }
-    const ancho = t.clientWidth || innerWidth, largo = d.scrollWidth;
-    HOLO.tira = d.animate([{transform:`translate3d(${ancho}px,0,0)`}, {transform:`translate3d(${-largo}px,0,0)`}], {duration:(ancho + largo) / TIRA_VEL * 1000, easing:"linear"});
-    HOLO.tira.onfinish = () => { HOLO.tira = null; if(document.body.contains(t)) vuelta(); };
+    if(quieto || !d.animate) return;
+    const ancho = Math.round(t.clientWidth || innerWidth), largo = Math.ceil(d.scrollWidth);
+    HOLO.tira = d.animate([{transform:`translate3d(${ancho}px,0,0)`}, {transform:`translate3d(${-largo}px,0,0)`}], {duration:(ancho + largo) / vel * 1000, easing:"linear"});
+    HOLO.tira.onfinish = () => { if(document.body.contains(t)) vuelta(vel); };
   };
-  vuelta();
+  if(quieto || !d.animate){ vuelta(0); return; }
+  medirHz().then(hz => { HOLO.tiraHz = hz; vuelta(tiraVelocidad(hz)); });
 }
 
 /* ---------- Glitch de vez en cuando, en un panel a la vista que no se está usando ---------- */
