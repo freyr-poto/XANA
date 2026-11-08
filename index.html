@@ -1535,7 +1535,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
     transform:translateY(-140px);will-change:transform;animation:holo-pasada 10s linear infinite}
   @keyframes holo-pasada{to{transform:translateY(100vh)}}
   /* con un diálogo abierto, lo que se mueve de fondo se para (no hay que repintar nada mientras se usa el diálogo) */
-  html.holo body:has(.velo) :is(.holo-pasada,.holo-noticias div),html.holo body:has(.velo) .retrato.con-holo::after,html.holo body:has(.velo) .cw-cuerpo::after{animation-play-state:paused}
+  html.holo body:has(.velo) .holo-pasada,html.holo body:has(.velo) .retrato.con-holo::after,html.holo body:has(.velo) .cw-cuerpo::after{animation-play-state:paused}
   html.holo .hoja{position:relative;z-index:1}
   html.holo .barra{background:var(--fondo-cab)}
   html.holo .marca{text-shadow:0 0 12px color-mix(in srgb,var(--hp) 55%,transparent);letter-spacing:.04em}
@@ -1641,10 +1641,10 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .holo-noticias{display:none}
   html.holo .holo-noticias{display:flex;align-items:center;position:fixed;left:0;right:0;bottom:0;z-index:60;height:30px;overflow:hidden;
     border-top:1px solid var(--linea-suave);background:var(--fondo-cab);font:var(--t-xs) var(--mono);letter-spacing:.1em;color:var(--apagado);contain:strict}
-  .holo-noticias div{white-space:nowrap;padding-left:100%;will-change:transform;animation:holo-correr var(--dur,90s) linear infinite}
+  .holo-noticias div{flex:none;white-space:nowrap;will-change:transform;backface-visibility:hidden;transform:translate3d(100vw,0,0)}
+  @media (prefers-reduced-motion:reduce){ .holo-noticias div{transform:none;padding-left:16px} }
   .holo-noticias span{margin-right:60px}
   .holo-noticias b{color:var(--cereza-t);font-weight:400}
-  @keyframes holo-correr{to{transform:translateX(-100%)}}
   /* arranque (una vez por sesión): líneas, barra de carga y la pantalla de redOS */
   .holo-arranque{position:fixed;inset:0;z-index:9500;background:var(--fondo);display:grid;place-items:center;font-family:var(--mono);color:var(--texto);transition:opacity .45s}
   .holo-arranque.fuera{opacity:0;pointer-events:none}
@@ -1682,7 +1682,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .holo-paletas [data-paleta=rojo]{--c:var(--holo-rojo)} .holo-paletas [data-paleta=ambar]{--c:var(--holo-ambar)} .holo-paletas [data-paleta=cian]{--c:var(--holo-cian)}
   .holo-paletas [data-paleta=verde]{--c:var(--holo-verde)} .holo-paletas [data-paleta=violeta]{--c:var(--holo-violeta)} .holo-paletas [data-paleta=rosa]{--c:var(--holo-rosa)} .holo-paletas [data-paleta=blanco]{--c:var(--holo-blanco)}
   html:not(.holo) .holo-paletas,html:not(.holo) .holo-paleta-t{display:none}
-  @media (prefers-reduced-motion:reduce){ html.holo :is(.holo-pasada,.holo-noticias div,.retrato::after,.cw-cuerpo::after){animation:none!important} }
+  @media (prefers-reduced-motion:reduce){ html.holo :is(.holo-pasada,.retrato::after,.cw-cuerpo::after){animation:none!important} }
   @media print{ .holo-capa,.holo-arranque,.holo-noticias{display:none!important} }
 </style>
 </head>
@@ -10415,7 +10415,7 @@ function holoReloj(cambia){
 /* ---------- Noticias de Mondrako al azar ---------- */
 function holoNoticias(){
   /* Noticias de Mondrako, Tatosk y la galaxia, como las da la prensa que pagan las corporaciones: cada vuelta del ticker
-     elige 10 al azar. Las cifras y los nombres cambian cada vez. Si la ficha tiene el reloj de la partida, a partir de
+     elige 6 al azar. Las cifras y los nombres cambian cada vez. Si la ficha tiene el reloj de la partida, a partir de
      las 18:00 sale además la cuenta atrás de la Hora de gracia y de la Hora Gélida. */
   const az = l => l[Math.floor(Math.random() * l.length)], n = (a, b) => a + Math.floor(Math.random() * (b - a + 1)), dos = v => String(v).padStart(2, "0");
   const dec = (a, b) => n(a, b) + "," + n(0, 9);
@@ -10427,12 +10427,8 @@ function holoNoticias(){
   const P = [
     /* --- Mondrako y la Hora Gélida --- */
     () => ["HORA GÉLIDA", `Previsión para esta noche: ${n(-62, -48)} °C y ráfagas de ${n(90, 160)} km/h a partir de la 01:00`],
-    () => ["HORA GÉLIDA", `Faltan ${n(2, 27)} días para la Mayor. Ayuntamiento: «Prepare su hogar con antelación»`],
     () => ["HORA GÉLIDA", `${n(2, 7)} personas encontradas sin vida en ${az(zonas)} tras la Hora Gélida. Ninguna tenía contrato de rescate`],
     () => ["HORA GÉLIDA", `Galería ${az(["4-Norte", "del Río", "de Totosk", "Central", "7-Este"])} cerrada de 01:00 a 06:00 para clientes sin Abono Nocturno`],
-    () => ["CONSUMO", `Las mantas térmicas suben un ${n(18, 140)} % ante la Mayor. «Es oferta y demanda», explica un portavoz`],
-    () => ["CONSUMO", `Galactic Family lanza su Pack Mayor: calefactor, raciones y 6 h de batería por ${n(3, 9)}${az(["49", "99"])} C`],
-    () => ["CIUDAD", `Brigadas de Wyrm despejan los accesos tras la Mayor: zonas residenciales Premium operativas en ${n(2, 6)} h; resto, «en los próximos días»`],
     () => ["CIUDAD", `Nuevo Abono Nocturno de galerías: cruce Tatosk de madrugada desde ${n(3, 9)}9 C al mes`],
     () => ["CLIMA", az(["Cielo despejado y −12 °C a mediodía: buen día para salir", "Viento del norte: sensación térmica de −30 °C en las pasarelas", "Nevada débil por la tarde sobre Tatosk", "La estrella brilla con fuerza: máxima de −9 °C"])],
     /* --- La Munòr y el trabajo --- */
@@ -10470,7 +10466,6 @@ function holoNoticias(){
     () => ["NAUTIL", `CrispR recomienda revisar sus implantes cada ${n(3, 6)} meses. Cita en el Hospital Biogénica Nautil`],
     () => ["NAUTIL", `Nautil lanza una vacuna de Microcirujanos para mundos fríos: ${az(["ya disponible", "solo para clientes asegurados", "en lista de espera"])} en Mondrako`],
     () => ["ONIWAKA", `Oniwaka entrega ${n(4, 30)} Plataformas de Combate FDG-WF a la Federación. Lavos Oniwaka no asiste a la ceremonia`],
-    () => ["HELINOR", `HELINOR sube un ${n(3, 12)} % la tarifa eléctrica de Tatosk «para garantizar el suministro durante la Mayor»`],
     () => ["STAR-EATS", `HALA Delivery reparte ya durante la Hora de gracia. Los repartidores son autónomos: Star-Eats no responde de su seguridad`],
     () => ["SHIDUR", `Hiper Iku anuncia ${az(["gira galáctica", "nuevo álbum", "concierto en la RED", "colaboración con Jigunji"])}. ${az(["Tatosk no está en las fechas", "Entradas agotadas en 3 minutos", "Patrocina Star-Buck's"])}`],
     () => ["SHIDUR", `El streamer ${az(["KrrrZ", "Lumi.exe", "DracoPlays", "Nonna Neón"])} desaparece de las recomendaciones tras hablar de la Munòr. Shidur: «Decisión del algoritmo»`],
@@ -10493,23 +10488,67 @@ function holoNoticias(){
     () => ["RED", `Nodo ${n(1, 40)}/${az(["T", "S", "K", "M"])}: tráfico anómalo en ${az(zonas)}. Los netrunners de la FGC descartan un Daemon`],
     () => ["REDos", `Actualización de REDos ${n(4, 5)}.${n(0, 9)}.${n(0, 20)}: nuevas condiciones de uso. Seguir usando su IETS implica aceptarlas`]
   ];
-  const lista = P.slice().sort(() => Math.random() - .5).slice(0, 10).map(f => f());
+  /* La Mayor es la Hora Gélida del día 28 de cada mes (de 01:00 a 06:00). Sus noticias dependen de la fecha de la
+     partida: avisos y precios en las dos semanas de antes, el aviso fijo esa noche y los destrozos los 4 días de después.
+     Sin reloj de partida no salen. */
+  const t = typeof ahoraJuego === "function" ? ahoraJuego() : null, fijas = [];
+  if(t !== null){
+    const s0 = Math.floor(t / 86400) * 86400, h0 = (t - s0) / 3600;
+    let antes = -1, despues = -1;                          // días hasta el próximo 28 y desde el último
+    for(let k = 0; k <= 31; k++){ if(fechaDe(s0 + k * 86400).d === 28){ antes = k; break; } }
+    for(let k = 0; k <= 31; k++){ if(fechaDe(s0 - k * 86400).d === 28){ despues = k; break; } }
+    const hoy = antes === 0, durante = hoy && h0 >= 1 && h0 < 6, pasada = despues >= 1 && despues <= 4 || hoy && h0 >= 6;
+    // cuántas noches faltan (una noche va de las 06:00 de un día a las 06:00 del siguiente; 0 = esta noche)
+    const noche = x => Math.floor((x - 6 * 3600) / 86400), inicio = s0 + antes * 86400 + 3600;
+    const proxima = antes < 0 || hoy && h0 >= 1 ? -1 : noche(inicio) - noche(t);
+    if(proxima >= 0 && proxima <= 14){
+      P.push(() => ["LA MAYOR", proxima === 0 ? "La Mayor llega esta noche, a la 01:00. Ayuntamiento: «No salga bajo ningún concepto»"
+        : proxima === 1 ? "La Mayor llega mañana por la noche. Ayuntamiento: «Prepare su hogar con antelación»" : `Faltan ${proxima} días para la Mayor. Ayuntamiento: «Prepare su hogar con antelación»`]);
+      P.push(() => ["CONSUMO", `Las mantas térmicas suben un ${n(18, 140)} % ante la Mayor. «Es oferta y demanda», explica un portavoz`]);
+      P.push(() => ["CONSUMO", `Galactic Family lanza su Pack Mayor: calefactor, raciones y 6 h de batería por ${n(3, 9)}${az(["49", "99"])} C`]);
+      P.push(() => ["HELINOR", `HELINOR sube un ${n(3, 12)} % la tarifa eléctrica de Tatosk «para garantizar el suministro durante la Mayor»`]);
+      P.push(() => ["CIUDAD", `Refugios municipales para la Mayor: plazas limitadas, inscripción previa de ${n(15, 40)} C`]);
+      if(proxima <= 3) P.push(() => ["MUNÒR", `Wyrm mantiene los turnos profundos la noche de la Mayor: «Abajo no hace frío»`]);
+      if(proxima <= 1) fijas.push(["LA MAYOR", proxima === 0 ? "Esta noche. Refuerce puertas y ventanas y tenga baterías cargadas" : "Mañana por la noche. Revise su equipo térmico"]);
+    }
+    if(durante){
+      fijas.push(["LA MAYOR", "En curso hasta las 06:00. Rescate disponible solo para clientes con contrato"]);
+      P.push(() => ["LA MAYOR", `Ráfagas de ${n(190, 280)} km/h sobre Tatosk. Cortes de luz en ${az(zonas)}`]);
+    }
+    if(pasada){
+      P.push(() => ["CIUDAD", `Brigadas de Wyrm despejan los accesos tras la Mayor: zonas residenciales Premium operativas en ${n(2, 6)} h; resto, «en los próximos días»`]);
+      P.push(() => ["LA MAYOR", `${n(4, 23)} víctimas mortales tras la Mayor. Wyrm: «Cifras dentro de lo habitual»`]);
+      P.push(() => ["LA MAYOR", `La tormenta arrancó planchas de fachada en ${az(zonas)}: la reparación se cargará a los inquilinos`]);
+      P.push(() => ["LA MAYOR", `Un convoy de mineral volcó durante la Mayor cerca de la explotación ${n(2, 18)}. Wyrm calcula pérdidas de ${n(2, 40)} millones`]);
+      P.push(() => ["LA MAYOR", `Accesos sepultados en ${az(zonas)}: los vecinos cavan por su cuenta`]);
+    }
+  }
+  const lista = fijas.concat(P.slice().sort(() => Math.random() - .5).slice(0, 6).map(f => f()));
   // la cuenta atrás de la noche, con el reloj de la partida
-  const t = typeof ahoraJuego === "function" ? ahoraJuego() : null;
   if(t !== null){
     const s = ((t % 86400) + 86400) % 86400, h = s / 3600, falta = x => { const m = Math.round((x - h) * 60); return Math.floor(m / 60) + " h " + dos(m % 60) + " min"; };
     if(h >= 18 && h < 24) lista.unshift(["AVISO", `Hora de gracia en ${falta(24)}. Hora Gélida en ${falta(25)}`]);
-    else if(h >= 1 && h < 6) lista.unshift(["HORA GÉLIDA", `En curso hasta las 06:00. No salga al exterior`]);
+    else if(h >= 1 && h < 6){ if(!fijas.some(f => /En curso/.test(f[1]))) lista.unshift(["HORA GÉLIDA", `En curso hasta las 06:00. No salga al exterior`]); }
     else if(h < 1) lista.unshift(["HORA DE GRACIA", `La Hora Gélida empieza en ${Math.round((1 - h) * 60)} min. Vuelva a casa`]);
   }
   return lista.map(([a, b]) => `<span><b>${a} //</b> ${esc(b)}</span>`).join("");
 }
+/* La tira corre a velocidad fija (px/s) con la Web Animations API, en el compositor: entra por la derecha, sale por la
+   izquierda y en cada vuelta trae titulares nuevos (pocos a la vez, para que la capa no sea enorme y no dé tirones) */
+const TIRA_VEL = 75;
 function holoTira(){
   let t = document.querySelector(".holo-noticias");
-  if(!t){ t = document.createElement("div"); t.className = "holo-noticias"; t.setAttribute("aria-label", "Noticias de Mondrako"); t.innerHTML = "<div></div>"; document.body.appendChild(t);
-    t.firstChild.addEventListener("animationiteration", () => { t.firstChild.innerHTML = holoNoticias(); }); }
-  t.firstChild.innerHTML = holoNoticias();
-  t.firstChild.style.setProperty("--dur", Math.max(60, Math.round(t.firstChild.textContent.length / 9)) + "s");
+  if(!t){ t = document.createElement("div"); t.className = "holo-noticias"; t.setAttribute("aria-label", "Noticias de Mondrako"); t.innerHTML = "<div></div>"; document.body.appendChild(t); }
+  if(HOLO.tira) return;                                  // ya está corriendo
+  const d = t.firstChild, quieto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const vuelta = () => {
+    d.innerHTML = holoNoticias();
+    if(quieto || !d.animate){ HOLO.tira = 1; return; }
+    const ancho = t.clientWidth || innerWidth, largo = d.scrollWidth;
+    HOLO.tira = d.animate([{transform:`translate3d(${ancho}px,0,0)`}, {transform:`translate3d(${-largo}px,0,0)`}], {duration:(ancho + largo) / TIRA_VEL * 1000, easing:"linear"});
+    HOLO.tira.onfinish = () => { HOLO.tira = null; if(document.body.contains(t)) vuelta(); };
+  };
+  vuelta();
 }
 
 /* ---------- Glitch de vez en cuando, en un panel a la vista que no se está usando ---------- */
