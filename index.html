@@ -298,39 +298,67 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .iets-estado.est-mal{color:var(--rojo-t)}
   .iets-prog-acc{display:flex;gap:6px;align-items:center}
   /* Tienda */
-  .velo.tienda .tienda-modal{width:min(980px,96vw);max-width:none;height:min(860px,92vh);max-height:92vh;display:flex;flex-direction:column;padding:16px 18px}
-  .td-cab{display:flex;align-items:center;gap:12px}
-  .td-cab h3{margin:0;flex:1}
+  /* Pestaña Tienda: lista a la izquierda, ficha del objeto a la derecha */
+  body.sin-compra .solo-compra{display:none}
+  .ar-pista{font-size:var(--t-s);color:var(--apagado);align-self:center}
+  .td-pag .td-cab{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;padding:12px 16px;margin-bottom:10px}
+  .td-cab h2{margin:0;flex:1;font-size:var(--t-l)}
   .td-dinero{font-size:var(--t-s)}
   .td-dinero .mal{color:var(--rojo-t)}
-  .td-pestanyas{display:flex;flex-wrap:wrap;gap:4px;margin:12px 0 8px}
-  .td-pestanyas button{background:transparent;border:1px solid var(--linea);color:var(--texto);border-radius:var(--r-s);padding:5px 10px;font:inherit;font-size:var(--t-s);cursor:pointer}
-  .td-pestanyas button.activa{border-color:var(--rosa);color:var(--rosa);background:color-mix(in srgb,var(--rosa) 12%,transparent)}
-  .td-filtros{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-  .td-buscar{flex:1;min-width:180px}
   .td-gratis{font-size:var(--t-s);color:var(--apagado);display:flex;gap:6px;align-items:center;white-space:nowrap}
   .td-gratis input{width:16px;height:16px}
-  .td-gratis[hidden]{display:none}
-  .td-lista{overflow:auto;flex:1;padding-right:4px}
-  .td-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:6px;align-items:start}
-  .td-grupo h4{grid-column:1/-1;margin:14px 0 0;font-size:var(--t-s);color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
+  .td-gratis[hidden],.td-pestanyas [hidden]{display:none}
+  .td-pestanyas{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px}
+  .td-pestanyas button{background:transparent;border:1px solid var(--linea);color:var(--texto);border-radius:var(--r-s);padding:6px 12px;font:inherit;font-size:var(--t-s);cursor:pointer;min-height:36px}
+  .td-pestanyas button.activa{border-color:var(--rosa);color:var(--rosa);background:color-mix(in srgb,var(--rosa) 12%,transparent)}
+  .td-cuerpo{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:12px;align-items:start}
+  .td-col{padding:10px;margin:0;position:sticky;top:calc(var(--alto-barra) + 8px);max-height:calc(100vh - var(--alto-barra) - 24px);display:flex;flex-direction:column}
+  .td-buscar{width:100%;margin-bottom:6px}
+  .td-lista{overflow:auto;flex:1;min-height:0;padding-right:2px;position:relative}
+  .td-nota{margin:0 0 6px}
+  .td-grupo h4{margin:12px 4px 4px;font-size:var(--t-xs);color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
+  .td-grupo:first-child h4{margin-top:4px}
   .td-grupo h4 span{opacity:.6}
-  .td-art{border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;display:flex;flex-direction:column;gap:2px;height:100%}
-  .td-art .td-compra{margin-top:auto}
-  .td-art.foco{border-color:var(--rosa);box-shadow:0 0 0 1px var(--rosa)}
-  .td-art-cab{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-  .td-tengo{font-size:var(--t-xs);color:var(--rosa)}
-  .td-hum{font-size:var(--t-xs);color:var(--uva-t)}
-  .td-desc{margin:2px 0 6px;font-size:var(--t-xs);line-height:1.35;color:var(--apagado);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  .td-art.foco .td-desc,.td-art:hover .td-desc{-webkit-line-clamp:unset;display:block}
-  .td-compra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--t-s)}
-  .td-compra label{display:flex;gap:6px;align-items:center}
-  .td-compra input[data-td-n]{width:56px}
-  .td-compra input[data-td-precio]{width:80px}
+  .td-fila{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:var(--r-s);padding:7px 8px;
+    font:inherit;font-size:var(--t-s);color:var(--texto);cursor:pointer;min-height:36px}
+  .td-fila:hover{background:color-mix(in srgb,var(--uva) 12%,transparent)}
+  .td-fila.sel{border-color:var(--rosa);background:color-mix(in srgb,var(--rosa) 10%,transparent)}
+  .td-fila-n{flex:1;min-width:0}
+  .td-fila-pr{color:var(--aviso);white-space:nowrap;font-size:var(--t-xs)}
+  .td-tengo{font-size:var(--t-xs);color:var(--rosa);white-space:nowrap}
+  .td-detalle{margin:0;padding:16px 18px;min-height:200px}
+  .td-detalle h3{margin:0;font-size:var(--t-l)}
+  .td-detalle h4{margin:14px 0 4px;font-size:var(--t-xs);color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
+  .td-sub{margin:2px 0 8px;color:var(--apagado);font-size:var(--t-s)}
+  .td-precio-grande{margin:0 0 4px;font-size:var(--t-m)}
   .td-precio{font-weight:600;color:var(--aviso)}
+  .td-efecto,.td-aspecto{margin:0;line-height:1.5}
+  .td-aspecto{color:var(--apagado);font-style:italic}
+  .td-chips{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 0}
+  .td-datos{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:12px 0 0;font-size:var(--t-s)}
+  .td-datos dt{color:var(--apagado)}
+  .td-datos dd{margin:0}
+  .td-tabla{width:100%;border-collapse:collapse;margin:12px 0 0;font-size:var(--t-s)}
+  .td-tabla caption{text-align:left;color:var(--apagado);font-size:var(--t-xs);padding-bottom:4px}
+  .td-tabla th,.td-tabla td{border-bottom:1px solid var(--linea-suave);padding:5px 6px;text-align:left;vertical-align:top}
+  .td-tabla th{color:var(--apagado);font-weight:500}
+  .td-dist th,.td-dist td{text-align:center}
+  .td-compra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:var(--t-s);margin-top:16px;padding-top:12px;border-top:1px solid var(--linea)}
+  .td-compra label{display:flex;gap:6px;align-items:center}
+  .td-compra input[data-td-n],.td-compra input[data-td-vn]{width:60px}
+  .td-compra input[data-td-precio]{width:90px}
   .td-falta{color:var(--rojo-t);font-size:var(--t-xs)}
-  .td-deshacer{margin-top:6px;font-size:var(--t-xs);color:var(--apagado);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .td-deshacer{margin-top:8px;font-size:var(--t-xs);color:var(--apagado);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   .td-venta .td-falta{color:var(--apagado)}
+  .td-volver{display:none;margin-bottom:10px}
+  @media (max-width:820px){
+    .td-cuerpo{grid-template-columns:1fr}
+    .td-col{position:static;max-height:none}
+    .td-lista{overflow:visible}
+    .td-pag:not(.con-detalle) .td-detalle{display:none}
+    .td-pag.con-detalle .td-col{display:none}
+    .td-volver{display:inline-flex}
+  }
 
   .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
   .stat{background:var(--panel-alto);border:1px solid var(--linea);border-radius:var(--r-m);padding:6px 6px 4px;text-align:center;transition:border-color var(--rapido)}
@@ -1301,7 +1329,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
     /* FIC-04 en móvil: una fila de pestañas + «⋯» (Exportar y Partida van dentro) y debajo la franja */
     .barra > #btnExportar, .barra > #btnNube{display:none}
     .marca{display:none}
-    .pestanya{flex:1 1 0;min-width:0;padding:7px 6px}
+    .pestanya{flex:1 1 auto;min-width:0;padding:7px 4px}
     .franja{gap:6px}
     .fr-dato{flex:1 1 0;justify-content:center;padding:4px 6px 6px;min-width:0}
     .fr-dato small{font-size:var(--t-xs);letter-spacing:.02em}
@@ -1546,10 +1574,10 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .holo-reloj.vivo{color:var(--texto-2)}
   .holo-reloj.cambia{animation:holo-reloj 1.2s ease-out}
   @keyframes holo-reloj{0%,30%{color:var(--ha);text-shadow:0 0 10px var(--ha)}}
-  @media (max-width:760px){ .holo-reloj{display:none!important} }
+  @media (max-width:760px){ html.holo .holo-reloj{display:none!important} }
   /* pestañas: mayúsculas espaciadas y subrayado que brilla */
   html.holo .pestanya{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em}
-  @media (max-width:600px){ html.holo .pestanya{letter-spacing:.03em;padding-left:9px;padding-right:9px} }
+  @media (max-width:600px){ html.holo .pestanya{letter-spacing:0;padding-left:4px;padding-right:4px;font-size:var(--t-xs)} }
   html.holo .pestanya[aria-selected=true]{color:var(--cereza-t);text-shadow:0 0 10px color-mix(in srgb,var(--hp) 50%,transparent)}
   /* paneles: esquinas de visor (cuatro escuadras) */
   html.holo :is(.caja,.cm-vida,.cm-he,.cm-tile,.cm-bloque,.cw-region,.fr-dato,.modal,.cw-cuerpo){
@@ -1693,6 +1721,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   <button class="pestanya" id="tab-ficha" aria-selected="true">Ficha</button>
   <button class="pestanya" id="tab-ciber" aria-selected="false">Ciberware</button>
   <button class="pestanya" id="tab-combate" aria-selected="false">Combate</button>
+  <button class="pestanya" id="tab-tienda" aria-selected="false">Tienda</button>
   <div class="crece"></div>
   <div class="holo-reloj solo-holo" id="holoReloj" aria-label="Hora de la partida"></div>
   <button class="aviso-guardado" id="avisoGuardado" hidden type="button">⚠ No se está guardando</button>
@@ -1777,7 +1806,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
         <div class="campo"><label for="f-nivelTrabajo">Nivel de trabajo</label><select id="f-nivelTrabajo" data-g></select></div>
         <div class="campo" id="campo-subraza" hidden><label for="f-subraza">Subraza</label><select id="f-subraza" data-g></select></div>
         <div class="campo"><label for="f-edad">Edad</label><input id="f-edad" data-g></div>
-        <div class="campo"><label for="f-dinero">Dinero (créditos)</label><div class="dinero-fila"><input id="f-dinero" data-g inputmode="numeric" placeholder="0"><button type="button" class="btn fina" id="btnTienda" data-tienda="ciber" title="Comprar ciberware, armas, munición, consumibles, ropa, terminales y hardware">Tienda</button></div></div>
+        <div class="campo"><label for="f-dinero">Dinero (créditos)</label><div class="dinero-fila"><input id="f-dinero" data-g inputmode="numeric" placeholder="0"></div></div>
       </div>
     </div>
   </div>
@@ -1866,7 +1895,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
 
   <div class="caja" id="caja-equipo">
     <h3>Ropa y equipo</h3>
-    <p class="aviso" style="margin:0 0 8px">Un hueco para cada parte del cuerpo y 2 de accesorio (más los que añada la ropa). La ropa da los espacios de inventario. <button type="button" class="btn fina" data-tienda="ropa">Tienda</button></p>
+    <p class="aviso" style="margin:0 0 8px">Un hueco para cada parte del cuerpo y 2 de accesorio (más los que añada la ropa). La ropa da los espacios de inventario.<span class="solo-compra"> Se compra en la pestaña Tienda.</span></p>
     <div id="equipo"></div>
     <details class="ayuda eq-mano"><summary>Blindaje escrito a mano (lo que no esté en el catálogo)</summary>
     <table><tbody>
@@ -1904,6 +1933,7 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   <div class="cm" id="cm"></div>
 </section>
 
+<section class="pag" id="pag-tienda" aria-label="Tienda"></section>
 <section class="pag" id="pag-ciber">
 
   <div class="cw">
@@ -6613,6 +6643,7 @@ function pintarReparto(){
 function activarCreacion(activo){
   D.modoCreacion = !!activo;
   document.body.classList.toggle("creando", D.modoCreacion);
+  document.body.classList.toggle("sin-compra", typeof compraActiva === "function" && !compraActiva());
   $("#reparto").hidden = !D.modoCreacion;
   const b = $("#btnCreacion");
   b.textContent = D.modoCreacion ? "Salir de creación" : "Modo creación";
@@ -7252,7 +7283,7 @@ function pintarArmamento(){
       ${libre ? `<label>Añadir arma <select id="arNueva">${CATALOGO_ARMAS.length ? `<optgroup label="Catálogo">${CATALOGO_ARMAS.map(a => `<option value="${esc(a.id)}">${esc(a.n)}${TIPOS_ARMA[a.tipo] ? " · " + esc(TIPOS_ARMA[a.tipo].n) : ""}</option>`).join("")}</optgroup>` : `<option disabled>El catálogo de armas está vacío</option>`}
         <option value="__propia"${CATALOGO_ARMAS.length ? "" : " selected"}>Arma propia (escribir sus datos)</option></select></label>
       <button type="button" class="btn fina" data-ar="nueva-arma">Añadir</button>`
-      : `<button type="button" class="btn fina principal" data-tienda="armas">Comprar en la tienda</button>
+      : `<span class="ar-pista">Las armas se compran en la pestaña Tienda.</span>
       <button type="button" class="btn fina" data-ar="nueva-propia" title="Un arma que no está en el catálogo: escribes sus datos">Arma propia</button>`}
       <button type="button" class="btn fina" data-ar="mejoras" title="Apunta la mejora que un técnico le ha hecho a un arma o a un ciberware">Mejoras de técnico</button>
     </div>
@@ -7271,7 +7302,7 @@ function pintarArmamento(){
         <option value="__propia"${CATALOGO_MUNICION.length ? "" : " selected"}>Munición propia (escribir su nombre)</option></select></label>
       <input id="arNuevaMunN" inputmode="numeric" placeholder="cantidad" aria-label="Cantidad de munición">
       <button type="button" class="btn fina" data-ar="nueva-mun">Añadir</button>`
-      : `<button type="button" class="btn fina principal" data-tienda="municion">Comprar en la tienda</button>
+      : `<span class="ar-pista">La munición se compra en la pestaña Tienda.</span>
       <button type="button" class="btn fina" data-ar="nueva-mun-propia" title="Munición que no está en el catálogo">Munición propia</button>`}</div>
     <section class="ar-grupo"><h4>Munición en el inventario <span>${mun.length}</span></h4>
       ${mun.length ? mun.map(htmlMunicionFicha).join("") : `<p class="vacio-hab">Sin munición. La que cargas en un arma sale en esa arma y no se cuenta aquí.</p>`}</section>`;
@@ -7850,7 +7881,7 @@ function pintarConsumibles(){
   const libre = !(typeof compraActiva === "function" && compraActiva());
   caja.innerHTML = `<div class="ar-anyadir">${libre ? `<label>Añadir consumible <select id="conNuevo">${grupos.map(([g, l]) => l.length ? `<optgroup label="${esc(g)}">${l.map(x => `<option value="${esc(x.id)}">${esc(x.n)}</option>`).join("")}</optgroup>` : "").join("")}</select></label>
       <input id="conNuevoN" inputmode="numeric" value="1" aria-label="Cuántos" style="width:60px">
-      <button type="button" class="btn fina" data-con="nuevo">Añadir</button>` : `<button type="button" class="btn fina principal" data-tienda="consumibles">Comprar en la tienda</button>`}
+      <button type="button" class="btn fina" data-con="nuevo">Añadir</button>` : `<span class="ar-pista">Se compran en la pestaña Tienda.</span>`}
       <button type="button" class="btn fina" data-con="dia" title="Vuelven los usos «una vez al día» (MaxDoc, Velosan, Stim…)">Nuevo día</button></div>
     ${granadas.length || L.length ? `<ul class="con-lista">${granadas.map(va => `<li><b>${esc(va.nombre)}</b> <span class="con-n">×${va.cantidad}</span><span class="con-d">Se lanza desde Combate (ataque).</span></li>`).join("")}
       ${L.map(v => `<li><b>${esc(v.nombre)}</b> <span class="con-n">×${v.n}</span>
@@ -8669,134 +8700,279 @@ function pintarPosesiones(){
     grupo(["terminal", "hardware"], "Terminales y hardware sin usar", "Se ponen desde «Ciberterminal y hackeos».");
 }
 /*<UI>*/
-/* ---------- Ventana de la tienda ---------- */
+/* ---------- Pestaña Tienda ----------
+   A la izquierda el catálogo en filas cortas (nombre, «tienes N» y precio); a la derecha la ficha del objeto elegido con
+   todo lo que hace y el botón de comprar. En pantallas estrechas la ficha sustituye a la lista y tiene «← Volver».
+   En el modo creación (y en las fichas de PNJ) no se compra: lo inicial se añade gratis desde cada sección, y la tienda
+   sirve para mirar. */
 let TIENDA = null;
+const TIPO_PIEZA_TXT = {base:"Pieza base", opcion:"Opción", acabado:"Acabado", mano:"Mano", dedo:"Dedo", recubrimiento:"Recubrimiento", libre:"Pieza",
+  montura:"Montura", fbc:"Cuerpo completo (FBC)", sistema:"Sistema", zocalo:"Zócalo"};
+const REQ_PIEZA_TXT = {neural:"un Procesador Neural", ips:"el IPS", zocalo:"un Zócalo para chips", ojo1:"un ciberojo", ojo2:"dos ciberojos", audio:"Ciberaudio",
+  brazo1:"un ciberbrazo", pierna1:"una ciberpierna", pierna2:"dos ciberpiernas", termint:"un ciberterminal integrado"};
+const lista_y = l => l.length < 2 ? l.join("") : l.slice(0, -1).join(", ") + " y " + l[l.length - 1];
+/* Todo lo que se sabe de un artículo, para su ficha: {sub, efecto, datos:[[etiqueta, valor]], chips, tabla (html), aspecto, nota} */
+function detalleArticulo(a){
+  const o = {sub:a.grupo, efecto:"", datos:[], chips:[], tabla:"", aspecto:"", nota:""};
+  if(a.cat === "ciber"){
+    const p = a.p;
+    o.sub = (ZONAS_TIENDA[p.z] || "Ciberware") + (TIPO_PIEZA_TXT[p.tipo] ? " · " + TIPO_PIEZA_TXT[p.tipo] : "");
+    if(a.cfg){
+      const vals = valoresConfig(p);
+      o.efecto = p.m || "";
+      o.tabla = `<table class="td-tabla"><thead><tr><th>${esVersiones(p) ? "Versión" : esc(p.config.unidad)}</th><th>Qué hace</th><th>Humanidad</th><th>Precio</th></tr></thead><tbody>${vals.map(v => { const c = costeConfig(p, v);
+        return `<tr><td>${esc(etiquetaValor(p, v))}</td><td>${esc(textoPieza(p, {cfg:{valor:v}}))}</td><td>${c.hum === null ? "—" : "−" + c.hum}</td><td>${c.precio === null ? "—" : esc(textoCreditos(c.precio))}</td></tr>`; }).join("")}</tbody></table>`;
+    } else {
+      o.efecto = textoPieza(p) || "";
+      o.datos.push(["Humanidad", num(p.h) ? "−" + num(p.h) : "No cuesta humanidad"]);
+    }
+    if(p.s) o.datos.push(["Instalación", p.s]);
+    if((p.q || []).length) o.datos.push(["Necesita", lista_y(p.q.map(q => REQ_PIEZA_TXT[q] || q))]);
+    if(p.ranTxt) o.datos.push(["Ranuras", p.ranTxt]);
+    if(p.cuerpo) o.datos.push(["Cuerpo base", String(p.cuerpo)]);
+    if(p.max) o.datos.push(["Máximo", p.max === 1 ? "Solo una" : "Hasta " + p.max]);
+    else if(p.repetible) o.datos.push(["Máximo", "Se puede instalar varias veces"]);
+    o.aspecto = p.a || "";
+  } else if(a.cat === "armas"){
+    const w = ARMAS_DEF[a.id], t = TIPOS_ARMA[w.tipo] || {};
+    o.sub = t.n || "Arma";
+    o.efecto = w.desc || "";
+    if(w.danyo) o.datos.push(["Daño", w.danyo + (w.tipoDanyo ? " " + w.tipoDanyo : "") + (w.danyo2 ? " · " + w.danyo2 : "")]);
+    o.datos.push(["Cadencia", (w.cadencia || t.cad || "1") + (t.unAtaque ? " (un solo ataque)" : "")]);
+    if(w.cargador || t.cargador) o.datos.push(["Cargador", (w.cargador || t.cargador) + " balas"]);
+    if(w.alcance) o.datos.push(["Alcance", w.alcance]);
+    if(!t.escudo) o.datos.push(["Manos", manosDeArma(w, w.tipo) === 2 ? "A dos manos" : "A una mano"]);
+    if(t.comp) o.datos.push(["Tirada", (t.est ? t.est.charAt(0).toUpperCase() + t.est.slice(1) + " + " : "") + t.comp + " + D12"]);
+    if(w.bloqueo || w.bloqueoCC || w.bloqueoDisparos) o.datos.push(["Bloqueo", [w.bloqueo && "bloquea " + w.bloqueo + "%", w.bloqueoCC && "cuerpo a cuerpo " + w.bloqueoCC + "%", w.bloqueoDisparos && "disparos " + w.bloqueoDisparos + "%", w.reduce && "reduce " + w.reduce].filter(Boolean).join(" · ")]);
+    const mun = CATALOGO_MUNICION.filter(m => (m.para || []).includes(w.tipo)).map(m => m.n);
+    if(mun.length) o.datos.push(["Munición", mun.join(", ")]);
+    o.chips = w.props || [];
+    const fila = t.fila && DIFICULTAD_DISTANCIA[t.fila];
+    if(fila) o.tabla = `<table class="td-tabla td-dist"><caption>Dificultad para acertar según la distancia (casillas)</caption><thead><tr>${TRAMOS.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody><tr>${fila.map(d => `<td>${d === null ? "—" : d}</td>`).join("")}</tr></tbody></table>`;
+  } else if(a.cat === "municion"){
+    const m = MUN_DEF[a.id];
+    o.efecto = m.desc || "";
+    if((m.para || []).length) o.datos.push(["Para", lista_y(m.para.map(t => (TIPOS_ARMA[t] || {n:t}).n.toLowerCase()))]);
+    o.datos.push(["Se vende", a.lote > 1 ? "En cajas de " + a.lote : "Por unidad"]);
+    o.chips = (m.props || []).filter(x => !/^Caja de/i.test(x));
+  } else if(a.cat === "consumibles"){
+    const c = CONSUMIBLE_DEF[a.id];
+    o.sub = c.tipo || "Consumible";
+    o.efecto = c.desc || "";
+    if(c.inyectable) o.datos.push(["Uso", "Inyectable (se puede usar en otra persona)"]);
+    if((c.cura || []).length) o.datos.push(["Quita", lista_y(c.cura)]);
+    if(c.vida) o.datos.push(["Vida", "+" + c.vida]);
+    if(c.estabiliza) o.datos.push(["Estabiliza", "A alguien mortalmente herido"]);
+    if(c.ram) o.datos.push(["RAM", "+" + c.ram]);
+    if(c.estado) o.datos.push(["Efecto", c.estado + (ESTADOS_DEF[c.estado] && ESTADOS_DEF[c.estado].d ? ": " + ESTADOS_DEF[c.estado].d : "")]);
+    if(c.requiere) o.datos.push(["Solo en", c.requiere === "mortal" ? "Alguien mortalmente herido" : "Alguien que no está mortalmente herido"]);
+    if(c.alDia) o.datos.push(["Límite", c.alDia === 1 ? "Una vez al día" : c.alDia + " veces al día"]);
+    if(c.alSemana) o.datos.push(["Límite", c.alSemana === 1 ? "Una vez a la semana" : c.alSemana + " veces a la semana"]);
+    if(c.sobredosis) o.datos.push(["Sobredosis", c.sobredosis + "d6 de daño si repites el mismo día"]);
+  } else if(a.cat === "ropa"){
+    const e = EQUIPO_DEF[a.id];
+    o.sub = (NOMBRE_HUECO[e.hueco] || "Accesorio") + (e.tipo && e.tipo !== "ropa" ? " · " + e.tipo : "");
+    o.efecto = e.desc || "";
+    if(e.cb) o.datos.push(["Blindaje (CB)", String(e.cb) + (e.tipo === "placas" ? " (no protege la cabeza)" : "")]);
+    if(e.destreza) o.datos.push(["Destreza", String(e.destreza)]);
+    if(e.inventario) o.datos.push(["Inventario", "+" + e.inventario + " espacios"]);
+    if(e.accesorios) o.datos.push(["Accesorios", "+" + e.accesorios + " huecos"]);
+    if(e.estilo) o.datos.push(["Estilo", "+" + e.estilo]);
+    if(e.hipotermia) o.datos.push(["Frío", "Reduce " + e.hipotermia + " la hipotermia y el daño congelante"]);
+    if((e.comps || []).length) o.datos.push(["Competencias", e.comps.map(c => (c.v > 0 ? "+" : "−") + Math.abs(c.v) + " " + c.c).join(", ")]);
+    if(e.bloqueo) o.datos.push(["Bloqueo", e.bloqueo + "%" + (e.bloqueoDesarmado ? " · desarmado " + e.bloqueoDesarmado + "%" : "")]);
+    if(e.golpes) o.datos.push(["Aguanta", e.golpes + " golpes"]);
+    if(e.funda) o.datos.push(["Guarda", ({municion:e.funda.n + " balas", granada:"1 granada", pesada:"1 arma pesada", larga:"1 arma larga", corta:"1 arma corta", cuchillo:"1 cuchillo", cc:"1 arma cuerpo a cuerpo"})[e.funda.t] || ""]);
+    if(e.oculta) o.chips.push("Oculta la cara");
+    if(e.mochila) o.chips.push("Mochila");
+    if(e.texto) o.chips.push("Diseño a tu gusto");
+  } else if(a.cat === "terminales"){
+    const t = TERMINALES_EXT.find(x => x.id === a.id);
+    o.sub = "Ciberterminal externo";
+    o.efecto = t.desc || "";
+    o.datos.push(["Ranuras", t.ranuras + " (para hackeos o hardware)"]);
+    o.datos.push(["Uso", "Cualquiera puede usarlo; ocupa una mano"]);
+    o.chips = t.props || [];
+  } else if(a.cat === "hardware"){
+    const h = HW_DEF[a.id] || HARDWARE_TERMINAL.find(x => x.id === a.id);
+    o.sub = "Hardware de ciberterminal";
+    o.efecto = h.d || "";
+    o.datos.push(["Ocupa", "1 ranura del ciberterminal"]);
+    if(h.unico) o.datos.push(["Máximo", "Uno por ciberterminal"]);
+  }
+  return o;
+}
 function abrirTienda(o){
   o = o || {};
-  if(document.querySelector(".velo.tienda")) cerrarTienda();
-  const S = TIENDA = {cat:o.cat || "ciber", foco:o.id || "", q:"", gratis:false, trigger:document.activeElement};
-  const velo = document.createElement("div");
-  velo.className = "velo tienda";
-  velo.innerHTML = `<div class="modal tienda-modal" role="dialog" aria-modal="true" aria-labelledby="tdTitulo">
-    <div class="td-cab"><h3 id="tdTitulo">Tienda</h3><span class="td-dinero" aria-live="polite"></span>
-      <button type="button" class="btn fina" data-td="cerrar" aria-label="Cerrar la tienda">Cerrar</button></div>
-    <div class="td-pestanyas" role="tablist">${CATS_TIENDA.map(([k, n]) => `<button type="button" role="tab" data-td-cat="${k}">${esc(n)}</button>`).join("")}</div>
-    <div class="td-filtros"><input type="search" class="td-buscar" placeholder="Buscar" aria-label="Buscar en la tienda" autocomplete="off">
-      <label class="td-gratis" title="Para lo que te dan o encuentras: se añade a la ficha sin gastar dinero"><input type="checkbox" data-td="gratis"> Sin pagar (botín o regalo)</label></div>
-    <div class="td-lista"></div></div>`;
-  document.body.appendChild(velo);
-  const lista = velo.querySelector(".td-lista"), buscar = velo.querySelector(".td-buscar");
-  function pintarDinero(){
-    const v = leerDinero(), el = velo.querySelector(".td-dinero");
-    el.innerHTML = v === null ? `<span class="mal">Dinero: «${esc(D["f-dinero"])}» no es un número</span>` : `Dinero: <b>${esc(textoCreditos(v))}</b>`;
+  const S = TIENDA || (TIENDA = {cat:"ciber", sel:"", q:"", gratis:false});
+  if(o.cat) S.cat = o.cat;
+  S.sel = o.id || (o.cat ? "" : S.sel);
+  S.q = ""; S.centrar = !!S.sel;
+  if(typeof pestanya === "function" && PESTANYA !== "tienda") pestanya("tienda");
+  else pintarTienda();
+}
+function cerrarTienda(){ /* la tienda ya no es una ventana: se cierra cambiando de pestaña */ }
+function pintarTienda(){
+  const raiz = document.getElementById("pag-tienda");
+  if(!raiz) return;
+  const S = TIENDA || (TIENDA = {cat:"ciber", sel:"", q:"", gratis:false});
+  const puede = compraActiva();
+  if(!raiz.querySelector(".td-pag")){
+    raiz.innerHTML = `<div class="td-pag"><div class="caja td-cab"><h2>Tienda</h2><span class="td-dinero" aria-live="polite"></span>
+        <label class="td-gratis" title="Para lo que te dan o encuentras: se añade a la ficha sin gastar dinero"><input type="checkbox" data-td="gratis"> Sin pagar (botín o regalo)</label></div>
+      <p class="aviso td-solo-mirar" hidden>Estás creando el personaje: lo inicial se añade gratis desde cada sección de la ficha. Aquí puedes mirar qué hace cada cosa.</p>
+      <div class="td-pestanyas" role="tablist">${CATS_TIENDA.map(([k, n]) => `<button type="button" role="tab" data-td-cat="${k}">${esc(n)}</button>`).join("")}</div>
+      <div class="td-cuerpo"><div class="caja td-col"><input type="search" class="td-buscar" placeholder="Buscar" aria-label="Buscar en la tienda" autocomplete="off"><div class="td-lista"></div></div>
+        <aside class="caja td-detalle" aria-live="polite"></aside></div></div>`;
+    eventosTienda(raiz);
   }
-  function tarjeta(a){
-    const sel = a.cfg ? valoresConfig(a.p).map(v => ({v, m:validarConfig(a.p, {valor:v}), pr:precioPieza(a.p, v)})) : null;
-    const vIni = sel ? (sel.find(x => !x.m) || sel[0]).v : undefined;
-    const pr = a.cfg ? precioPieza(a.p, vIni) : a.precio;
-    return `<article class="td-art${a.id === S.foco ? " foco" : ""}" data-art="${esc(a.id)}">
-      <div class="td-art-cab"><b>${esc(a.n)}</b>${a.cat === "ciber" && !a.cfg && num(a.p.h) ? `<span class="td-hum">−${num(a.p.h)} humanidad</span>` : ""}${a.tengo ? `<span class="td-tengo">tienes ${a.tengo}${a.cat === "ciber" ? " por instalar" : ""}</span>` : ""}</div>
-      ${a.desc ? `<p class="td-desc">${esc(a.desc)}</p>` : ""}
-      <div class="td-compra">
-        ${sel ? `<label>${esVersiones(a.p) ? "Versión" : esc(a.p.config.unidad)} <select data-td-valor>${sel.map(x => `<option value="${x.v}"${x.v === vIni ? " selected" : ""}${x.m ? " disabled" : ""}>${esc(etiquetaValor(a.p, x.v))}${x.pr === null ? "" : " · " + esc(textoCreditos(x.pr))}</option>`).join("")}</select></label>` : ""}
-        ${a.cantidad ? `<label>${a.lote > 1 ? "Cajas de " + a.lote : "Cantidad"} <input data-td-n inputmode="numeric" value="1" size="3"></label>` : ""}
-        ${pr === null ? `<label class="td-sinprecio" title="Este objeto aún no tiene precio en el catálogo: pregúntale al máster cuánto cuesta">Sin precio: pregunta al máster <input data-td-precio inputmode="numeric" placeholder="precio" size="6"></label>` : `<span class="td-precio" data-td-pr>${esc(textoCreditos(pr))}${a.lote > 1 ? " la caja" : a.cantidad ? " cada una" : ""}</span>`}
-        <button type="button" class="btn fina principal" data-td="comprar">Comprar</button>
-        <span class="td-falta" aria-live="polite"></span></div>${botonVenderUno(a)}</article>`;
+  raiz.querySelector(".td-solo-mirar").hidden = puede;
+  raiz.querySelectorAll('[data-td-cat="vender"]').forEach(b => { b.hidden = !puede; });
+  if(!puede && S.cat === "vender") S.cat = "ciber";
+  raiz.querySelector('[data-td="gratis"]').checked = S.gratis;
+  raiz.querySelector(".td-gratis").hidden = !puede || S.cat === "vender";
+  raiz.querySelectorAll("[data-td-cat]").forEach(b => { b.setAttribute("aria-selected", b.dataset.tdCat === S.cat ? "true" : "false"); b.classList.toggle("activa", b.dataset.tdCat === S.cat); });
+  const buscar = raiz.querySelector(".td-buscar");
+  if(buscar.value !== S.q) buscar.value = S.q;
+  pintarListaTienda(raiz);
+  pintarDetalleTienda(raiz);
+  pintarDineroTienda(raiz);
+  // al llegar desde un botón de la ficha, la fila elegida se ve en la lista
+  if(S.centrar){ S.centrar = false; const l = raiz.querySelector(".td-lista"), f = l.querySelector(".td-fila.sel"); if(f) l.scrollTop = Math.max(0, f.offsetTop - l.clientHeight / 2); }
+}
+function pintarDineroTienda(raiz){
+  const el = raiz.querySelector(".td-dinero"); if(!el) return;
+  const v = leerDinero();
+  el.innerHTML = v === null ? `<span class="mal">Dinero: «${esc(D["f-dinero"])}» no es un número</span>` : `Dinero: <b>${esc(textoCreditos(v))}</b>`;
+}
+/* La lista de la categoría (y qué artículo está elegido) */
+function pintarListaTienda(raiz){
+  const S = TIENDA, lista = raiz.querySelector(".td-lista"), q = normalizar(S.q.trim()), ancha = !window.matchMedia || matchMedia("(min-width: 821px)").matches;
+  const fila = (clave, attr, nombre, tengo, precio) => `<button type="button" class="td-fila${clave === S.sel ? " sel" : ""}" ${attr}="${esc(clave)}" aria-pressed="${clave === S.sel}">
+      <span class="td-fila-n">${esc(nombre)}</span>${tengo ? `<span class="td-tengo">${esc(tengo)}</span>` : ""}<span class="td-fila-pr">${esc(precio)}</span></button>`;
+  const agrupar = l => { const g = []; l.forEach(x => { let y = g.find(z => z[0] === x.grupo); if(!y) g.push(y = [x.grupo, []]); y[1].push(x); }); return g; };
+  if(S.cat === "vender"){
+    const vs = vendibles().filter(x => !q || normalizar(x.nombre).includes(q));
+    S.vend = vendibles();
+    if(!vs.some(x => claveVendible(x) === S.sel)) S.sel = ancha && vs.length ? claveVendible(vs[0]) : "";
+    lista.innerHTML = `<p class="aviso td-nota">Para deshacer una compra: se devuelve lo que pagaste. Solo se vende lo que no estás usando.</p>` + (vs.length
+      ? agrupar(vs).map(([g, l]) => `<section class="td-grupo"><h4>${esc(g)} <span>${l.length}</span></h4>${l.map(x => fila(claveVendible(x), "data-venta", x.nombre, "tienes " + x.n, "")).join("")}</section>`).join("")
+      : `<p class="vacio-hab">${q ? "Nada coincide con la búsqueda." : "No tienes nada sin usar que vender."}</p>`);
+    return;
   }
-  /* En la tarjeta de compra: deshacer (vender una) si tienes alguna sin usar */
-  function botonVenderUno(a){
-    const x = (S.vend || vendibles()).find(y => y.cat === a.cat && y.id === a.id);
-    if(!x) return "";
-    const dev = reembolso(x.cat, x.id, x.v, 1, false);
-    return `<div class="td-deshacer"><button type="button" class="btn fina" data-td="vender-uno" data-clave="${esc(claveVendible(x))}">Vender ${x.lote > 1 ? "una caja" : "una"}</button> <small>devuelve ${esc(textoCreditos(dev))}${dev ? "" : " (no consta que la pagaras)"}</small></div>`;
-  }
-  function tarjetaVenta(x){
-    return `<article class="td-art td-venta" data-venta="${esc(claveVendible(x))}">
-      <div class="td-art-cab"><b>${esc(x.nombre)}</b><span class="td-tengo">tienes ${x.n}${x.lote > 1 ? (x.n === 1 ? " caja" : " cajas") : ""}</span></div>
+  const todos = articulosTienda(S.cat);
+  S.mapa = new Map(todos.map(a => [a.id, a])); S.vend = vendibles();
+  const arts = todos.filter(a => !q || normalizar(a.n + " " + a.desc).includes(q));
+  if(!arts.some(a => a.id === S.sel) && !(S.sel && S.mapa.has(S.sel) && !q)) S.sel = ancha && arts.length ? arts[0].id : "";
+  const precioFila = a => {
+    if(a.cfg){ const l = valoresConfig(a.p).map(v => precioPieza(a.p, v)).filter(x => x !== null); return l.length ? "desde " + textoCreditos(Math.min.apply(null, l)) : "sin precio"; }
+    return a.precio === null ? "sin precio" : textoCreditos(a.precio) + (a.lote > 1 ? "/caja" : "");
+  };
+  lista.innerHTML = arts.length ? agrupar(arts).map(([g, l]) => `<section class="td-grupo"><h4>${esc(g)} <span>${l.length}</span></h4>${l.map(a => fila(a.id, "data-art", a.n, a.tengo ? "tienes " + a.tengo : "", precioFila(a))).join("")}</section>`).join("")
+    : `<p class="vacio-hab">Nada coincide con la búsqueda.</p>`;
+}
+/* La ficha del artículo elegido */
+function pintarDetalleTienda(raiz){
+  const S = TIENDA, caja = raiz.querySelector(".td-detalle"), pag = raiz.querySelector(".td-pag");
+  pag.classList.toggle("con-detalle", !!S.sel);
+  const volver = `<button type="button" class="btn fina td-volver" data-td="volver">← Volver a la lista</button>`;
+  if(S.cat === "vender"){
+    const x = vendibles().find(y => claveVendible(y) === S.sel);
+    if(!x){ caja.innerHTML = `<p class="vacio-hab">Elige en la lista lo que quieres vender.</p>`; return; }
+    caja.innerHTML = volver + `<article class="td-art td-venta" data-venta="${esc(claveVendible(x))}">
+      <h3>${esc(x.nombre)}</h3><p class="td-sub">${esc(x.grupo)} · tienes ${x.n}${x.lote > 1 ? (x.n === 1 ? " caja" : " cajas") : ""}</p>
       <div class="td-compra">${x.n > 1 ? `<label>${x.lote > 1 ? "Cajas" : "Cantidad"} <input data-td-vn inputmode="numeric" value="1" size="3"></label>` : ""}
         <span class="td-precio">Devuelve <b data-td-dev></b></span>
-        <button type="button" class="btn fina principal" data-td="vender">Vender</button>
+        <button type="button" class="btn principal" data-td="vender">Vender</button>
         <small class="td-falta" data-td-nota></small></div></article>`;
+    revisarVentaTienda(caja.querySelector(".td-venta"));
+    return;
   }
-  function revisarVenta(el){
-    const x = vendibles().find(y => claveVendible(y) === el.dataset.venta);
-    if(!x) return;
-    const inp = el.querySelector("[data-td-vn]"), n = inp ? Math.max(1, Math.min(x.n, Math.floor(num(inp.value) || 1))) : 1;
-    const dev = reembolso(x.cat, x.id, x.v, n, false);
-    el.querySelector("[data-td-dev]").textContent = textoCreditos(dev);
-    el.querySelector("[data-td-nota]").textContent = dev ? "" : "No consta lo que pagaste (de antes de la tienda o sin pagar).";
-  }
-  function pintar(){
-    velo.querySelectorAll("[data-td-cat]").forEach(b => { b.setAttribute("aria-selected", b.dataset.tdCat === S.cat ? "true" : "false"); b.classList.toggle("activa", b.dataset.tdCat === S.cat); });
-    const q = normalizar(S.q.trim());
-    velo.querySelector(".td-gratis").hidden = S.cat === "vender";
-    if(S.cat === "vender"){
-      const vs = vendibles().filter(x => !q || normalizar(x.nombre).includes(q)), gv = [];
-      vs.forEach(x => { let g = gv.find(y => y[0] === x.grupo); if(!g) gv.push(g = [x.grupo, []]); g[1].push(x); });
-      lista.innerHTML = `<p class="aviso" style="margin:0 0 6px">Para deshacer una compra: se devuelve lo que pagaste. Solo se vende lo que no estás usando (quítatelo o desinstálalo antes).</p>` +
-        (gv.length ? gv.map(([g, l]) => `<section class="td-grupo"><h4>${esc(g)} <span>${l.length}</span></h4>${l.map(tarjetaVenta).join("")}</section>`).join("")
-          : `<p class="vacio-hab">${q ? "Nada coincide con la búsqueda." : "No tienes nada sin usar que vender."}</p>`);
-      lista.querySelectorAll(".td-venta").forEach(revisarVenta);
-      pintarDinero();
-      return;
-    }
-    // RND-01: el catálogo de la pestaña se calcula una vez por pintado (antes, cada tarjeta lo recalculaba entero: n²)
-    const todos = articulosTienda(S.cat);
-    S.mapa = new Map(todos.map(a => [a.id, a])); S.vend = vendibles();
-    const arts = todos.filter(a => !q || normalizar(a.n + " " + a.desc).includes(q));
-    const grupos = [];
-    arts.forEach(a => { let g = grupos.find(x => x[0] === a.grupo); if(!g) grupos.push(g = [a.grupo, []]); g[1].push(a); });
-    lista.innerHTML = grupos.length ? grupos.map(([g, l]) => `<section class="td-grupo"><h4>${esc(g)} <span>${l.length}</span></h4>${l.map(tarjeta).join("")}</section>`).join("")
-      : `<p class="vacio-hab">Nada coincide con la búsqueda.</p>`;
-    lista.querySelectorAll(".td-art").forEach(revisar);
-    pintarDinero();
-    const f = S.foco && lista.querySelector(`.td-art[data-art="${CSS.escape(S.foco)}"]`);
-    if(f) try{ f.scrollIntoView({block:"center"}); }catch(e){}
-  }
-  /* Precio de lo que se va a comprar y si llega el dinero */
-  function datosCompra(el){
-    const a = (S.mapa && S.mapa.get(el.dataset.art)) || articulosTienda(S.cat).find(x => x.id === el.dataset.art);
-    const v = el.querySelector("[data-td-valor]"), n = el.querySelector("[data-td-n]"), pr = el.querySelector("[data-td-precio]");
-    return {a, o:{valor:v ? Number(v.value) : undefined, n:n ? n.value : 1, precio:pr ? pr.value : undefined, gratis:S.gratis}};
-  }
-  function revisar(el){
-    const {a, o} = datosCompra(el);
-    if(!a) return;
-    const unidad = a.cfg ? precioPieza(a.p, o.valor) : a.precio;
-    const prEl = el.querySelector("[data-td-pr]");
-    if(prEl && unidad !== null) prEl.textContent = textoCreditos(unidad) + (a.lote > 1 ? " la caja" : a.cantidad ? " cada una" : "");
-    const n = a.cantidad ? Math.max(1, Math.floor(num(o.n) || 1)) : 1;
-    const u = unidad === null ? (o.precio === undefined || o.precio === "" ? null : num(o.precio)) : unidad;
-    const total = S.gratis ? 0 : u === null ? null : u * n, dinero = leerDinero();
-    const b = el.querySelector('[data-td="comprar"]'), falta = el.querySelector(".td-falta");
-    let motivo = "";
-    if(!S.gratis && total === null) motivo = "Escribe el precio";
-    else if(total > 0 && dinero === null) motivo = "Tu dinero no es un número";
-    else if(total > 0 && dinero < total) motivo = "Te faltan " + textoCreditos(total - dinero);
-    b.disabled = !!motivo;
-    b.textContent = S.gratis ? "Añadir" : total > 0 && n > 1 ? "Comprar (" + textoCreditos(total) + ")" : "Comprar";
-    falta.textContent = motivo;
-  }
-  function cerrar(){ cerrarTienda(); }
-  function tecla(ev){ if(ev.key === "Escape" && !document.querySelector(".velo.dialogo, .velo.cfg")){ ev.preventDefault(); ev.stopPropagation(); cerrar(); } }
-  S.tecla = tecla; S.velo = velo;
-  document.addEventListener("keydown", tecla, true);
-  velo.addEventListener("click", ev => {
-    if(ev.target === velo) return cerrar();
+  const a = S.mapa && S.mapa.get(S.sel);
+  if(!a){ caja.innerHTML = `<p class="vacio-hab">Elige algo de la lista para ver qué hace.</p>`; return; }
+  const d = detalleArticulo(a), puede = compraActiva();
+  const sel = a.cfg ? valoresConfig(a.p).map(v => ({v, m:validarConfig(a.p, {valor:v}), pr:precioPieza(a.p, v)})) : null;
+  const vIni = sel ? (sel.find(x => !x.m) || sel[0]).v : undefined;
+  const pr = a.cfg ? precioPieza(a.p, vIni) : a.precio;
+  const compra = !puede ? "" : `<div class="td-compra">
+      ${sel ? `<label>${esVersiones(a.p) ? "Versión" : esc(a.p.config.unidad)} <select data-td-valor>${sel.map(x => `<option value="${x.v}"${x.v === vIni ? " selected" : ""}${x.m ? " disabled" : ""}>${esc(etiquetaValor(a.p, x.v))}${x.pr === null ? "" : " · " + esc(textoCreditos(x.pr))}</option>`).join("")}</select></label>` : ""}
+      ${a.cantidad ? `<label>${a.lote > 1 ? "Cajas de " + a.lote : "Cantidad"} <input data-td-n inputmode="numeric" value="1" size="3"></label>` : ""}
+      ${pr === null && !a.cfg ? `<label class="td-sinprecio" title="Este objeto aún no tiene precio en el catálogo: pregúntale al máster cuánto cuesta">Sin precio: pregunta al máster <input data-td-precio inputmode="numeric" placeholder="precio" size="6"></label>` : ""}
+      <button type="button" class="btn principal" data-td="comprar">Comprar</button>
+      <span class="td-falta" aria-live="polite"></span></div>${botonVenderUnoTienda(a)}`;
+  caja.innerHTML = volver + `<article class="td-art" data-art="${esc(a.id)}">
+    <h3>${esc(a.n)}</h3><p class="td-sub">${esc(d.sub)}${a.tengo ? ` · <span class="td-tengo">tienes ${a.tengo}${a.cat === "ciber" ? " por instalar" : ""}</span>` : ""}</p>
+    <p class="td-precio-grande"><span class="td-precio" data-td-pr>${pr === null ? "Sin precio en el catálogo" : esc(textoCreditos(pr)) + (a.lote > 1 ? " la caja" : a.cantidad ? " cada una" : "")}</span></p>
+    ${d.efecto ? `<h4>Qué hace</h4><p class="td-efecto">${esc(d.efecto)}</p>` : ""}
+    ${d.chips.length ? `<p class="td-chips">${d.chips.map(c => `<span class="tag">${esc(c)}</span>`).join("")}</p>` : ""}
+    ${d.datos.length ? `<dl class="td-datos">${d.datos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : ""}
+    ${d.tabla}
+    ${d.aspecto ? `<h4>Aspecto</h4><p class="td-aspecto">${esc(d.aspecto)}</p>` : ""}
+    ${compra}</article>`;
+  if(puede) revisarCompraTienda(caja.querySelector(".td-art"));
+}
+/* En la ficha de compra: deshacer (vender una) si tienes alguna sin usar */
+function botonVenderUnoTienda(a){
+  const x = (TIENDA.vend || vendibles()).find(y => y.cat === a.cat && y.id === a.id);
+  if(!x) return "";
+  const dev = reembolso(x.cat, x.id, x.v, 1, false);
+  return `<div class="td-deshacer"><button type="button" class="btn fina" data-td="vender-uno" data-clave="${esc(claveVendible(x))}">Vender ${x.lote > 1 ? "una caja" : "una"}</button> <small>devuelve ${esc(textoCreditos(dev))}${dev ? "" : " (no consta que la pagaras)"}</small></div>`;
+}
+function datosCompraTienda(el){
+  const a = (TIENDA.mapa && TIENDA.mapa.get(el.dataset.art)) || articulosTienda(TIENDA.cat).find(x => x.id === el.dataset.art);
+  const v = el.querySelector("[data-td-valor]"), n = el.querySelector("[data-td-n]"), pr = el.querySelector("[data-td-precio]");
+  return {a, o:{valor:v ? Number(v.value) : undefined, n:n ? n.value : 1, precio:pr ? pr.value : undefined, gratis:TIENDA.gratis}};
+}
+/* Precio de lo que se va a comprar y si llega el dinero */
+function revisarCompraTienda(el){
+  if(!el || !el.querySelector('[data-td="comprar"]')) return;
+  const {a, o} = datosCompraTienda(el);
+  if(!a) return;
+  const unidad = a.cfg ? precioPieza(a.p, o.valor) : a.precio;
+  const prEl = el.querySelector("[data-td-pr]");
+  if(prEl && unidad !== null) prEl.textContent = textoCreditos(unidad) + (a.lote > 1 ? " la caja" : a.cantidad ? " cada una" : "");
+  const n = a.cantidad ? Math.max(1, Math.floor(num(o.n) || 1)) : 1;
+  const u = unidad === null ? (o.precio === undefined || o.precio === "" ? null : num(o.precio)) : unidad;
+  const total = TIENDA.gratis ? 0 : u === null ? null : u * n, dinero = leerDinero();
+  const b = el.querySelector('[data-td="comprar"]'), falta = el.querySelector(".td-falta");
+  let motivo = "";
+  if(!TIENDA.gratis && total === null) motivo = "Escribe el precio";
+  else if(total > 0 && dinero === null) motivo = "Tu dinero no es un número";
+  else if(total > 0 && dinero < total) motivo = "Te faltan " + textoCreditos(total - dinero);
+  b.disabled = !!motivo;
+  b.textContent = TIENDA.gratis ? "Añadir" : total > 0 && n > 1 ? "Comprar (" + textoCreditos(total) + ")" : "Comprar";
+  falta.textContent = motivo;
+}
+function revisarVentaTienda(el){
+  if(!el) return;
+  const x = vendibles().find(y => claveVendible(y) === el.dataset.venta);
+  if(!x) return;
+  const inp = el.querySelector("[data-td-vn]"), n = inp ? Math.max(1, Math.min(x.n, Math.floor(num(inp.value) || 1))) : 1;
+  const dev = reembolso(x.cat, x.id, x.v, n, false);
+  el.querySelector("[data-td-dev]").textContent = textoCreditos(dev);
+  el.querySelector("[data-td-nota]").textContent = dev ? "" : "No consta lo que pagaste (de antes de la tienda o sin pagar).";
+}
+function eventosTienda(raiz){
+  const S = () => TIENDA;
+  raiz.addEventListener("click", ev => {
     const c = ev.target.closest("[data-td-cat]");
-    if(c){ S.cat = c.dataset.tdCat; S.foco = ""; pintar(); return; }
+    if(c){ S().cat = c.dataset.tdCat; S().sel = ""; pintarTienda(); raiz.querySelector(".td-lista").scrollTop = 0; return; }
+    const f = ev.target.closest(".td-fila");
+    if(f){ S().sel = f.dataset.art || f.dataset.venta; raiz.querySelectorAll(".td-fila").forEach(x => { const si = x === f; x.classList.toggle("sel", si); x.setAttribute("aria-pressed", si); });
+      pintarDetalleTienda(raiz); const det = raiz.querySelector(".td-detalle"); det.scrollTop = 0;
+      if(raiz.querySelector(".td-pag.con-detalle") && window.matchMedia && !matchMedia("(min-width: 821px)").matches) try{ det.scrollIntoView({block:"start"}); }catch(e){}
+      return; }
     const b = ev.target.closest("[data-td]");
     if(!b || b.disabled) return;
-    if(b.dataset.td === "cerrar") return cerrar();
+    if(b.dataset.td === "volver"){ const sel = S().sel; S().sel = ""; raiz.querySelector(".td-pag").classList.remove("con-detalle");
+      const fl = sel && raiz.querySelector(`.td-fila[data-art="${CSS.escape(sel)}"],.td-fila[data-venta="${CSS.escape(sel)}"]`); if(fl) try{ fl.scrollIntoView({block:"center"}); fl.focus({preventScroll:true}); }catch(e){} return; }
     if(b.dataset.td === "comprar"){
-      const el = b.closest(".td-art"), {a, o} = datosCompra(el);
-      const r = comprar(S.cat, a.id, o);
-      if(!r.ok){ toast(r.motivo, 4000); return revisar(el); }
+      const el = b.closest(".td-art"), {a, o} = datosCompraTienda(el);
+      const r = comprar(S().cat, a.id, o);
+      if(!r.ok){ toast(r.motivo, 4000); return revisarCompraTienda(el); }
       toast((o.gratis ? "Añadido: " : "Comprado: ") + a.n + (r.n > 1 ? " ×" + r.n : "") + (r.total ? " · −" + textoCreditos(r.total) : "") + (a.cat === "ciber" ? ". Ya puedes instalarlo." : ""), 3500);
-      S.foco = a.id;
       despuesDeComprar();
-      pintar();
+      return;
     }
     if(b.dataset.td === "vender" || b.dataset.td === "vender-uno"){
       const el = b.closest(".td-art"), clave = b.dataset.td === "vender" ? el.dataset.venta : b.dataset.clave;
@@ -8804,31 +8980,19 @@ function abrirTienda(o){
       const r = vender(clave, inp ? inp.value : 1);
       if(!r.ok){ toast(r.motivo, 4000); return; }
       toast("Vendido: " + r.x.nombre.replace(/ \(.*\)$/, "") + (r.n > 1 ? " ×" + r.n : "") + " · +" + textoCreditos(r.total), 3500);
-      if(b.dataset.td === "vender-uno") S.foco = r.x.id;
       despuesDeComprar();
-      pintar();
     }
   });
-  velo.addEventListener("change", ev => {
-    if(ev.target.dataset.td === "gratis"){ S.gratis = ev.target.checked; lista.querySelectorAll(".td-art").forEach(revisar); return; }
-    const v = ev.target.closest(".td-venta"); if(v) return revisarVenta(v);
-    const el = ev.target.closest(".td-art"); if(el) revisar(el);
+  raiz.addEventListener("change", ev => {
+    if(ev.target.dataset.td === "gratis"){ S().gratis = ev.target.checked; revisarCompraTienda(raiz.querySelector(".td-detalle .td-art")); return; }
+    const v = ev.target.closest(".td-venta"); if(v) return revisarVentaTienda(v);
+    const el = ev.target.closest(".td-art"); if(el) revisarCompraTienda(el);
   });
-  velo.addEventListener("input", ev => {
-    if(ev.target === buscar){ S.q = buscar.value; S.foco = ""; pintar(); return; }
-    const v = ev.target.closest(".td-venta"); if(v) return revisarVenta(v);
-    const el = ev.target.closest(".td-art"); if(el) revisar(el);
+  raiz.addEventListener("input", ev => {
+    if(ev.target.classList.contains("td-buscar")){ S().q = ev.target.value; pintarListaTienda(raiz); pintarDetalleTienda(raiz); return; }
+    const v = ev.target.closest(".td-venta"); if(v) return revisarVentaTienda(v);
+    const el = ev.target.closest(".td-art"); if(el) revisarCompraTienda(el);
   });
-  pintar();
-  setTimeout(() => { try{ buscar.focus({preventScroll:true}); }catch(e){} }, 10);
-}
-function cerrarTienda(){
-  const S = TIENDA;
-  const v = document.querySelector(".velo.tienda");
-  if(v) v.remove();
-  if(S && S.tecla) document.removeEventListener("keydown", S.tecla, true);
-  TIENDA = null;
-  if(S && S.trigger && document.body.contains(S.trigger)) try{ S.trigger.focus({preventScroll:true}); }catch(e){}
 }
 /* Tras una compra: guardar y repintar lo que enseña posesiones */
 function despuesDeComprar(){
@@ -8840,6 +9004,7 @@ function despuesDeComprar(){
   if(typeof pintarPosesiones === "function") pintarPosesiones();
   if(typeof pintarCiber === "function") pintarCiber();
   if(typeof recalcular === "function") recalcular();
+  if(typeof PESTANYA !== "undefined" && PESTANYA === "tienda") pintarTienda();
 }
 /* Pestañas del inventario (se recuerda la última en este dispositivo) */
 (function(){
@@ -8857,7 +9022,7 @@ function despuesDeComprar(){
   tabs.forEach(b => b.addEventListener("click", () => mostrar(b.dataset.invTab)));
   window.mostrarPestanyaInventario = mostrar;
 })();
-/* Cualquier botón con data-tienda abre la tienda (data-tienda="cat" y, si hay, data-tienda-id) */
+/* Cualquier botón con data-tienda lleva a la pestaña Tienda (data-tienda="cat" y, si hay, data-tienda-id, que queda elegido) */
 document.addEventListener("click", ev => {
   const b = ev.target.closest && ev.target.closest("[data-tienda]");
   if(!b) return;
@@ -9051,8 +9216,7 @@ function pintarTerminal(){
   const zona = document.getElementById("terminal-hackeos");
   if(zona) zona.hidden = !t;
   let html = `<div class="ar-anyadir"><label>Ciberterminal <select id="termExt">${opT}</select></label>
-    ${t && !t.modelo.inventario ? `<label>Dónde lo llevas <select id="termUso">${["externo", "integrado", "craneal"].filter(k => k === "externo" || A[k]).map(k => `<option value="${k}"${t.k === k ? " selected" : ""}>${esc(ALOJAMIENTOS[k])}</option>`).join("")}</select></label>` : ""}
-    <button type="button" class="btn fina" data-tienda="terminales">Tienda</button></div>`;
+    ${t && !t.modelo.inventario ? `<label>Dónde lo llevas <select id="termUso">${["externo", "integrado", "craneal"].filter(k => k === "externo" || A[k]).map(k => `<option value="${k}"${t.k === k ? " selected" : ""}>${esc(ALOJAMIENTOS[k])}</option>`).join("")}</select></label>` : ""}</div>`;
   if(t){
     const partes = [t.base + " del terminal"].concat(t.aloj ? [t.alojTxt] : []).concat(t.bonusNR ? ["+" + t.bonusNR + " de Netrunner"] : []).concat(t.bonusRaza ? ["+1 de Elfo"] : []);
     const hwChips = t.serie.map(id => `<span class="term-hw-chip serie" title="${esc(HW_DEF[id].d)}">${esc(HW_DEF[id].n)} · de serie</span>`)
@@ -9064,8 +9228,7 @@ function pintarTerminal(){
         t.extraHw ? `<p class="term-ranuras">Ranuras de hardware (Ampliación): <b>${t.hwEnAmp} / ${t.extraHw}</b> <span>(solo hardware; se llenan antes que las normales)</span></p>` : ""}
       ${t.modelo.inventario ? "" : `<div class="term-hw">${hwChips || `<span class="apagado">Sin hardware.</span>`}</div>
       <div class="ar-anyadir"><label>Añadir hardware <select id="termHw"><option value="">Elige…</option>${opcionesPosesion(listaHw, tengoH, "")}</select></label>
-        <button type="button" class="btn fina" data-term="anyadir-hw"${listaHw.some(h => tengoH(h.id) > 0 && !h.no) ? "" : " disabled"}>Añadir</button>
-        <button type="button" class="btn fina" data-tienda="hardware">Tienda</button></div>`}`;
+        <button type="button" class="btn fina" data-term="anyadir-hw"${listaHw.some(h => tengoH(h.id) > 0 && !h.no) ? "" : " disabled"}>Añadir</button></div>`}`;
     // hardware en el cerebro (Puerto Neural PCIq 10.0)
     const nP = puertosNeurales();
     if(nP || T.hw.cerebro.length){
@@ -10757,6 +10920,7 @@ function repintarTodo(){
   ESTADISTICAS.forEach(e => { $("#s-"+e.c).value = D["stat_"+e.c] !== undefined ? D["stat_"+e.c] : "0"; });
   ["inventario","hackeos"].forEach(t => { if(!Array.isArray(D[t]) || !D[t].length) D[t] = [{},{},{}]; });
   arrancar();
+  if(PESTANYA === "tienda" && typeof pintarTienda === "function") pintarTienda();
 }
 
 /* Si la misma ficha está abierta en otra pestaña o ventana, esta se pone al día en vez
@@ -10773,19 +10937,23 @@ function repintarTodo(){
 function pestanya(cual){
   PESTANYA = cual;
   document.body.classList.toggle("en-ficha", cual === "ficha");
-  ["ficha","ciber","combate"].forEach(p => {
-    $("#pag-" + p).classList.toggle("viva", p === cual);
-    $("#tab-" + p).setAttribute("aria-selected", p === cual);
+  ["ficha","ciber","combate","tienda"].forEach(p => {
+    const pag = $("#pag-" + p), tab = $("#tab-" + p);
+    if(pag) pag.classList.toggle("viva", p === cual);
+    if(tab) tab.setAttribute("aria-selected", p === cual);
   });
   $("#hoja").classList.toggle("ancha", cual !== "ficha");
   window.scrollTo(0,0);
   if(cual === "ciber") pintarCiber();
   if(cual === "combate"){ iniciarCombate(); pintarCombate(); }
+  if(cual === "tienda" && typeof pintarTienda === "function") pintarTienda();
   if(typeof holoEntrar === "function") holoEntrar(cual);
 }
 /*<UI>*/$("#tab-ficha").onclick = () => pestanya("ficha");
 $("#tab-ciber").onclick = () => pestanya("ciber");
-$("#tab-combate").onclick = () => pestanya("combate");/*</UI>*/
+$("#tab-combate").onclick = () => pestanya("combate");
+$("#tab-tienda").onclick = () => pestanya("tienda");
+if(typeof SIN_TIENDA !== "undefined" && SIN_TIENDA) $("#tab-tienda").hidden = true;/*</UI>*/
 
 /* ================= EXPORTAR ================= */
 /* Piezas iguales (mismo nombre y mismo efecto) en una sola línea: «Ciberbrazo x2», con los sitios juntos */
