@@ -296,39 +296,67 @@
   .iets-estado.est-mal{color:var(--rojo-t)}
   .iets-prog-acc{display:flex;gap:6px;align-items:center}
   /* Tienda */
-  .velo.tienda .tienda-modal{width:min(980px,96vw);max-width:none;height:min(860px,92vh);max-height:92vh;display:flex;flex-direction:column;padding:16px 18px}
-  .td-cab{display:flex;align-items:center;gap:12px}
-  .td-cab h3{margin:0;flex:1}
+  /* Pestaña Tienda: lista a la izquierda, ficha del objeto a la derecha */
+  body.sin-compra .solo-compra{display:none}
+  .ar-pista{font-size:var(--t-s);color:var(--apagado);align-self:center}
+  .td-pag .td-cab{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;padding:12px 16px;margin-bottom:10px}
+  .td-cab h2{margin:0;flex:1;font-size:var(--t-l)}
   .td-dinero{font-size:var(--t-s)}
   .td-dinero .mal{color:var(--rojo-t)}
-  .td-pestanyas{display:flex;flex-wrap:wrap;gap:4px;margin:12px 0 8px}
-  .td-pestanyas button{background:transparent;border:1px solid var(--linea);color:var(--texto);border-radius:var(--r-s);padding:5px 10px;font:inherit;font-size:var(--t-s);cursor:pointer}
-  .td-pestanyas button.activa{border-color:var(--rosa);color:var(--rosa);background:color-mix(in srgb,var(--rosa) 12%,transparent)}
-  .td-filtros{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-  .td-buscar{flex:1;min-width:180px}
   .td-gratis{font-size:var(--t-s);color:var(--apagado);display:flex;gap:6px;align-items:center;white-space:nowrap}
   .td-gratis input{width:16px;height:16px}
-  .td-gratis[hidden]{display:none}
-  .td-lista{overflow:auto;flex:1;padding-right:4px}
-  .td-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:6px;align-items:start}
-  .td-grupo h4{grid-column:1/-1;margin:14px 0 0;font-size:var(--t-s);color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
+  .td-gratis[hidden],.td-pestanyas [hidden]{display:none}
+  .td-pestanyas{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px}
+  .td-pestanyas button{background:transparent;border:1px solid var(--linea);color:var(--texto);border-radius:var(--r-s);padding:6px 12px;font:inherit;font-size:var(--t-s);cursor:pointer;min-height:36px}
+  .td-pestanyas button.activa{border-color:var(--rosa);color:var(--rosa);background:color-mix(in srgb,var(--rosa) 12%,transparent)}
+  .td-cuerpo{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:12px;align-items:start}
+  .td-col{padding:10px;margin:0;position:sticky;top:calc(var(--alto-barra) + 8px);max-height:calc(100vh - var(--alto-barra) - 24px);display:flex;flex-direction:column}
+  .td-buscar{width:100%;margin-bottom:6px}
+  .td-lista{overflow:auto;flex:1;min-height:0;padding-right:2px;position:relative}
+  .td-nota{margin:0 0 6px}
+  .td-grupo h4{margin:12px 4px 4px;font-size:var(--t-xs);color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
+  .td-grupo:first-child h4{margin-top:4px}
   .td-grupo h4 span{opacity:.6}
-  .td-art{border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;display:flex;flex-direction:column;gap:2px;height:100%}
-  .td-art .td-compra{margin-top:auto}
-  .td-art.foco{border-color:var(--rosa);box-shadow:0 0 0 1px var(--rosa)}
-  .td-art-cab{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-  .td-tengo{font-size:var(--t-xs);color:var(--rosa)}
-  .td-hum{font-size:var(--t-xs);color:var(--uva-t)}
-  .td-desc{margin:2px 0 6px;font-size:var(--t-xs);line-height:1.35;color:var(--apagado);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  .td-art.foco .td-desc,.td-art:hover .td-desc{-webkit-line-clamp:unset;display:block}
-  .td-compra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--t-s)}
-  .td-compra label{display:flex;gap:6px;align-items:center}
-  .td-compra input[data-td-n]{width:56px}
-  .td-compra input[data-td-precio]{width:80px}
+  .td-fila{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:var(--r-s);padding:7px 8px;
+    font:inherit;font-size:var(--t-s);color:var(--texto);cursor:pointer;min-height:36px}
+  .td-fila:hover{background:color-mix(in srgb,var(--uva) 12%,transparent)}
+  .td-fila.sel{border-color:var(--rosa);background:color-mix(in srgb,var(--rosa) 10%,transparent)}
+  .td-fila-n{flex:1;min-width:0}
+  .td-fila-pr{color:var(--aviso);white-space:nowrap;font-size:var(--t-xs)}
+  .td-tengo{font-size:var(--t-xs);color:var(--rosa);white-space:nowrap}
+  .td-detalle{margin:0;padding:16px 18px;min-height:200px}
+  .td-detalle h3{margin:0;font-size:var(--t-l)}
+  .td-detalle h4{margin:14px 0 4px;font-size:var(--t-xs);color:var(--apagado);text-transform:uppercase;letter-spacing:.05em}
+  .td-sub{margin:2px 0 8px;color:var(--apagado);font-size:var(--t-s)}
+  .td-precio-grande{margin:0 0 4px;font-size:var(--t-m)}
   .td-precio{font-weight:600;color:var(--aviso)}
+  .td-efecto,.td-aspecto{margin:0;line-height:1.5}
+  .td-aspecto{color:var(--apagado);font-style:italic}
+  .td-chips{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 0}
+  .td-datos{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:12px 0 0;font-size:var(--t-s)}
+  .td-datos dt{color:var(--apagado)}
+  .td-datos dd{margin:0}
+  .td-tabla{width:100%;border-collapse:collapse;margin:12px 0 0;font-size:var(--t-s)}
+  .td-tabla caption{text-align:left;color:var(--apagado);font-size:var(--t-xs);padding-bottom:4px}
+  .td-tabla th,.td-tabla td{border-bottom:1px solid var(--linea-suave);padding:5px 6px;text-align:left;vertical-align:top}
+  .td-tabla th{color:var(--apagado);font-weight:500}
+  .td-dist th,.td-dist td{text-align:center}
+  .td-compra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:var(--t-s);margin-top:16px;padding-top:12px;border-top:1px solid var(--linea)}
+  .td-compra label{display:flex;gap:6px;align-items:center}
+  .td-compra input[data-td-n],.td-compra input[data-td-vn]{width:60px}
+  .td-compra input[data-td-precio]{width:90px}
   .td-falta{color:var(--rojo-t);font-size:var(--t-xs)}
-  .td-deshacer{margin-top:6px;font-size:var(--t-xs);color:var(--apagado);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .td-deshacer{margin-top:8px;font-size:var(--t-xs);color:var(--apagado);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   .td-venta .td-falta{color:var(--apagado)}
+  .td-volver{display:none;margin-bottom:10px}
+  @media (max-width:820px){
+    .td-cuerpo{grid-template-columns:1fr}
+    .td-col{position:static;max-height:none}
+    .td-lista{overflow:visible}
+    .td-pag:not(.con-detalle) .td-detalle{display:none}
+    .td-pag.con-detalle .td-col{display:none}
+    .td-volver{display:inline-flex}
+  }
 
   .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
   .stat{background:var(--panel-alto);border:1px solid var(--linea);border-radius:var(--r-m);padding:6px 6px 4px;text-align:center;transition:border-color var(--rapido)}
@@ -1299,7 +1327,7 @@
     /* FIC-04 en móvil: una fila de pestañas + «⋯» (Exportar y Partida van dentro) y debajo la franja */
     .barra > #btnExportar, .barra > #btnNube{display:none}
     .marca{display:none}
-    .pestanya{flex:1 1 0;min-width:0;padding:7px 6px}
+    .pestanya{flex:1 1 auto;min-width:0;padding:7px 4px}
     .franja{gap:6px}
     .fr-dato{flex:1 1 0;justify-content:center;padding:4px 6px 6px;min-width:0}
     .fr-dato small{font-size:var(--t-xs);letter-spacing:.02em}
@@ -1487,7 +1515,7 @@
      sistema visual cambiados por la paleta del jugador (rojo por defecto), esquinas de visor, líneas de barrido y paneles que se
      despliegan al cambiar de pestaña. Va en html.holo; el menú «⋯» deja volver a la vista clásica (src/holo.js). */
   :root{
-    --holo-rojo:#FF3B3B; --holo-ambar:#FFAA2B; --holo-cian:#35DCFF; --holo-verde:#3DFF88; --holo-violeta:#B36BFF; --holo-blanco:#E8EEF5;
+    --holo-rojo:#FF3B3B; --holo-ambar:#FFAA2B; --holo-cian:#35DCFF; --holo-verde:#3DFF88; --holo-violeta:#B36BFF; --holo-rosa:#FF6AC8; --holo-blanco:#E8EEF5;
     --holo-acento:#3FE6FF; --holo-acento-2:#FF4FD8; --holo-peligro:#B83A0A; --holo-base:#0B0506; --holo-gris:#B9AEB0; --holo-tinta:#FFF4F2;
   }
   html.holo{--hp:var(--holo-rojo);--ha:var(--holo-acento)}
@@ -1495,6 +1523,7 @@
   html.holo[data-paleta="cian"]{--hp:var(--holo-cian);--ha:var(--holo-acento-2)}
   html.holo[data-paleta="verde"]{--hp:var(--holo-verde)}
   html.holo[data-paleta="violeta"]{--hp:var(--holo-violeta)}
+  html.holo[data-paleta="rosa"]{--hp:var(--holo-rosa)}
   html.holo[data-paleta="blanco"]{--hp:var(--holo-blanco);--ha:var(--holo-rojo)}
   html.holo{
     --violeta:color-mix(in srgb,var(--hp) 30%,var(--holo-base)); --violeta-sup:color-mix(in srgb,var(--hp) 12%,var(--holo-base));
@@ -1527,12 +1556,12 @@
   html.holo .holo-capa{display:block;position:fixed;inset:0;pointer-events:none;contain:strict;transform:translateZ(0);backface-visibility:hidden}
   html.holo .holo-rejilla{z-index:0;opacity:.1;background-image:linear-gradient(var(--hp) 1px,transparent 1px),linear-gradient(90deg,var(--hp) 1px,transparent 1px);background-size:64px 64px;
     -webkit-mask:radial-gradient(ellipse at 50% 20%,var(--negro) 10%,transparent 70%);mask:radial-gradient(ellipse at 50% 20%,var(--negro) 10%,transparent 70%)}
-  html.holo .holo-barrido{z-index:9000;background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--negro) 16%,transparent) 0 1px,transparent 1px 3px);opacity:.9}
+  html.holo .holo-barrido{z-index:9000;bottom:30px;background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--negro) 16%,transparent) 0 1px,transparent 1px 3px);opacity:.9}
   html.holo .holo-pasada{z-index:9001;inset:0 0 auto 0;height:140px;background:linear-gradient(transparent,color-mix(in srgb,var(--hp) 6%,transparent),transparent);
     transform:translateY(-140px);will-change:transform;animation:holo-pasada 10s linear infinite}
   @keyframes holo-pasada{to{transform:translateY(100vh)}}
   /* con un diálogo abierto, lo que se mueve de fondo se para (no hay que repintar nada mientras se usa el diálogo) */
-  html.holo body:has(.velo) :is(.holo-pasada,.holo-noticias div),html.holo body:has(.velo) .retrato.con-holo::after,html.holo body:has(.velo) .cw-cuerpo::after{animation-play-state:paused}
+  html.holo body:has(.velo) .holo-pasada,html.holo body:has(.velo) .retrato.con-holo::after,html.holo body:has(.velo) .cw-cuerpo::after{animation-play-state:paused}
   html.holo .hoja{position:relative;z-index:1}
   html.holo .barra{background:var(--fondo-cab)}
   html.holo .marca{text-shadow:0 0 12px color-mix(in srgb,var(--hp) 55%,transparent);letter-spacing:.04em}
@@ -1543,10 +1572,10 @@
   .holo-reloj.vivo{color:var(--texto-2)}
   .holo-reloj.cambia{animation:holo-reloj 1.2s ease-out}
   @keyframes holo-reloj{0%,30%{color:var(--ha);text-shadow:0 0 10px var(--ha)}}
-  @media (max-width:760px){ .holo-reloj{display:none!important} }
+  @media (max-width:760px){ html.holo .holo-reloj{display:none!important} }
   /* pestañas: mayúsculas espaciadas y subrayado que brilla */
   html.holo .pestanya{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em}
-  @media (max-width:600px){ html.holo .pestanya{letter-spacing:.03em;padding-left:9px;padding-right:9px} }
+  @media (max-width:600px){ html.holo .pestanya{letter-spacing:0;padding-left:4px;padding-right:4px;font-size:var(--t-xs)} }
   html.holo .pestanya[aria-selected=true]{color:var(--cereza-t);text-shadow:0 0 10px color-mix(in srgb,var(--hp) 50%,transparent)}
   /* paneles: esquinas de visor (cuatro escuadras) */
   html.holo :is(.caja,.cm-vida,.cm-he,.cm-tile,.cm-bloque,.cw-region,.fr-dato,.modal,.cw-cuerpo){
@@ -1638,10 +1667,10 @@
   .holo-noticias{display:none}
   html.holo .holo-noticias{display:flex;align-items:center;position:fixed;left:0;right:0;bottom:0;z-index:60;height:30px;overflow:hidden;
     border-top:1px solid var(--linea-suave);background:var(--fondo-cab);font:var(--t-xs) var(--mono);letter-spacing:.1em;color:var(--apagado);contain:strict}
-  .holo-noticias div{white-space:nowrap;padding-left:100%;will-change:transform;animation:holo-correr var(--dur,90s) linear infinite}
+  .holo-noticias div{flex:none;white-space:nowrap;will-change:transform;backface-visibility:hidden;transform:translate3d(100vw,0,0)}
+  @media (prefers-reduced-motion:reduce){ .holo-noticias div{transform:none;padding-left:16px} }
   .holo-noticias span{margin-right:60px}
   .holo-noticias b{color:var(--cereza-t);font-weight:400}
-  @keyframes holo-correr{to{transform:translateX(-100%)}}
   /* arranque (una vez por sesión): líneas, barra de carga y la pantalla de redOS */
   .holo-arranque{position:fixed;inset:0;z-index:9500;background:var(--fondo);display:grid;place-items:center;font-family:var(--mono);color:var(--texto);transition:opacity .45s}
   .holo-arranque.fuera{opacity:0;pointer-events:none}
@@ -1677,9 +1706,9 @@
   .holo-paletas button{width:26px;height:26px;border:2px solid var(--linea);background:var(--c);cursor:pointer}
   .holo-paletas button[aria-pressed=true]{border-color:var(--texto);box-shadow:0 0 10px var(--c)}
   .holo-paletas [data-paleta=rojo]{--c:var(--holo-rojo)} .holo-paletas [data-paleta=ambar]{--c:var(--holo-ambar)} .holo-paletas [data-paleta=cian]{--c:var(--holo-cian)}
-  .holo-paletas [data-paleta=verde]{--c:var(--holo-verde)} .holo-paletas [data-paleta=violeta]{--c:var(--holo-violeta)} .holo-paletas [data-paleta=blanco]{--c:var(--holo-blanco)}
+  .holo-paletas [data-paleta=verde]{--c:var(--holo-verde)} .holo-paletas [data-paleta=violeta]{--c:var(--holo-violeta)} .holo-paletas [data-paleta=rosa]{--c:var(--holo-rosa)} .holo-paletas [data-paleta=blanco]{--c:var(--holo-blanco)}
   html:not(.holo) .holo-paletas,html:not(.holo) .holo-paleta-t{display:none}
-  @media (prefers-reduced-motion:reduce){ html.holo :is(.holo-pasada,.holo-noticias div,.retrato::after,.cw-cuerpo::after){animation:none!important} }
+  @media (prefers-reduced-motion:reduce){ html.holo :is(.holo-pasada,.retrato::after,.cw-cuerpo::after){animation:none!important} }
   @media print{ .holo-capa,.holo-arranque,.holo-noticias{display:none!important} }
 /* ================= TRACKER DEL MÁSTER ================= */
   body.tracker{font-size:var(--t-m)}
@@ -6905,6 +6934,7 @@ function pintarReparto(){
 function activarCreacion(activo){
   D.modoCreacion = !!activo;
   document.body.classList.toggle("creando", D.modoCreacion);
+  document.body.classList.toggle("sin-compra", typeof compraActiva === "function" && !compraActiva());
   $("#reparto").hidden = !D.modoCreacion;
   const b = $("#btnCreacion");
   b.textContent = D.modoCreacion ? "Salir de creación" : "Modo creación";
@@ -7445,7 +7475,7 @@ function pintarArmamento(){
       ${libre ? `<label>Añadir arma <select id="arNueva">${CATALOGO_ARMAS.length ? `<optgroup label="Catálogo">${CATALOGO_ARMAS.map(a => `<option value="${esc(a.id)}">${esc(a.n)}${TIPOS_ARMA[a.tipo] ? " · " + esc(TIPOS_ARMA[a.tipo].n) : ""}</option>`).join("")}</optgroup>` : `<option disabled>El catálogo de armas está vacío</option>`}
         <option value="__propia"${CATALOGO_ARMAS.length ? "" : " selected"}>Arma propia (escribir sus datos)</option></select></label>
       <button type="button" class="btn fina" data-ar="nueva-arma">Añadir</button>`
-      : `<button type="button" class="btn fina principal" data-tienda="armas">Comprar en la tienda</button>
+      : `<span class="ar-pista">Las armas se compran en la pestaña Tienda.</span>
       <button type="button" class="btn fina" data-ar="nueva-propia" title="Un arma que no está en el catálogo: escribes sus datos">Arma propia</button>`}
       <button type="button" class="btn fina" data-ar="mejoras" title="Apunta la mejora que un técnico le ha hecho a un arma o a un ciberware">Mejoras de técnico</button>
     </div>
@@ -7464,7 +7494,7 @@ function pintarArmamento(){
         <option value="__propia"${CATALOGO_MUNICION.length ? "" : " selected"}>Munición propia (escribir su nombre)</option></select></label>
       <input id="arNuevaMunN" inputmode="numeric" placeholder="cantidad" aria-label="Cantidad de munición">
       <button type="button" class="btn fina" data-ar="nueva-mun">Añadir</button>`
-      : `<button type="button" class="btn fina principal" data-tienda="municion">Comprar en la tienda</button>
+      : `<span class="ar-pista">La munición se compra en la pestaña Tienda.</span>
       <button type="button" class="btn fina" data-ar="nueva-mun-propia" title="Munición que no está en el catálogo">Munición propia</button>`}</div>
     <section class="ar-grupo"><h4>Munición en el inventario <span>${mun.length}</span></h4>
       ${mun.length ? mun.map(htmlMunicionFicha).join("") : `<p class="vacio-hab">Sin munición. La que cargas en un arma sale en esa arma y no se cuenta aquí.</p>`}</section>`;
@@ -8043,7 +8073,7 @@ function pintarConsumibles(){
   const libre = !(typeof compraActiva === "function" && compraActiva());
   caja.innerHTML = `<div class="ar-anyadir">${libre ? `<label>Añadir consumible <select id="conNuevo">${grupos.map(([g, l]) => l.length ? `<optgroup label="${esc(g)}">${l.map(x => `<option value="${esc(x.id)}">${esc(x.n)}</option>`).join("")}</optgroup>` : "").join("")}</select></label>
       <input id="conNuevoN" inputmode="numeric" value="1" aria-label="Cuántos" style="width:60px">
-      <button type="button" class="btn fina" data-con="nuevo">Añadir</button>` : `<button type="button" class="btn fina principal" data-tienda="consumibles">Comprar en la tienda</button>`}
+      <button type="button" class="btn fina" data-con="nuevo">Añadir</button>` : `<span class="ar-pista">Se compran en la pestaña Tienda.</span>`}
       <button type="button" class="btn fina" data-con="dia" title="Vuelven los usos «una vez al día» (MaxDoc, Velosan, Stim…)">Nuevo día</button></div>
     ${granadas.length || L.length ? `<ul class="con-lista">${granadas.map(va => `<li><b>${esc(va.nombre)}</b> <span class="con-n">×${va.cantidad}</span><span class="con-d">Se lanza desde Combate (ataque).</span></li>`).join("")}
       ${L.map(v => `<li><b>${esc(v.nombre)}</b> <span class="con-n">×${v.n}</span>
@@ -8985,8 +9015,7 @@ function pintarTerminal(){
   const zona = document.getElementById("terminal-hackeos");
   if(zona) zona.hidden = !t;
   let html = `<div class="ar-anyadir"><label>Ciberterminal <select id="termExt">${opT}</select></label>
-    ${t && !t.modelo.inventario ? `<label>Dónde lo llevas <select id="termUso">${["externo", "integrado", "craneal"].filter(k => k === "externo" || A[k]).map(k => `<option value="${k}"${t.k === k ? " selected" : ""}>${esc(ALOJAMIENTOS[k])}</option>`).join("")}</select></label>` : ""}
-    <button type="button" class="btn fina" data-tienda="terminales">Tienda</button></div>`;
+    ${t && !t.modelo.inventario ? `<label>Dónde lo llevas <select id="termUso">${["externo", "integrado", "craneal"].filter(k => k === "externo" || A[k]).map(k => `<option value="${k}"${t.k === k ? " selected" : ""}>${esc(ALOJAMIENTOS[k])}</option>`).join("")}</select></label>` : ""}</div>`;
   if(t){
     const partes = [t.base + " del terminal"].concat(t.aloj ? [t.alojTxt] : []).concat(t.bonusNR ? ["+" + t.bonusNR + " de Netrunner"] : []).concat(t.bonusRaza ? ["+1 de Elfo"] : []);
     const hwChips = t.serie.map(id => `<span class="term-hw-chip serie" title="${esc(HW_DEF[id].d)}">${esc(HW_DEF[id].n)} · de serie</span>`)
@@ -8998,8 +9027,7 @@ function pintarTerminal(){
         t.extraHw ? `<p class="term-ranuras">Ranuras de hardware (Ampliación): <b>${t.hwEnAmp} / ${t.extraHw}</b> <span>(solo hardware; se llenan antes que las normales)</span></p>` : ""}
       ${t.modelo.inventario ? "" : `<div class="term-hw">${hwChips || `<span class="apagado">Sin hardware.</span>`}</div>
       <div class="ar-anyadir"><label>Añadir hardware <select id="termHw"><option value="">Elige…</option>${opcionesPosesion(listaHw, tengoH, "")}</select></label>
-        <button type="button" class="btn fina" data-term="anyadir-hw"${listaHw.some(h => tengoH(h.id) > 0 && !h.no) ? "" : " disabled"}>Añadir</button>
-        <button type="button" class="btn fina" data-tienda="hardware">Tienda</button></div>`}`;
+        <button type="button" class="btn fina" data-term="anyadir-hw"${listaHw.some(h => tengoH(h.id) > 0 && !h.no) ? "" : " disabled"}>Añadir</button></div>`}`;
     // hardware en el cerebro (Puerto Neural PCIq 10.0)
     const nP = puertosNeurales();
     if(nP || T.hw.cerebro.length){
@@ -9515,6 +9543,7 @@ function repintarTodo(){
   ESTADISTICAS.forEach(e => { $("#s-"+e.c).value = D["stat_"+e.c] !== undefined ? D["stat_"+e.c] : "0"; });
   ["inventario","hackeos"].forEach(t => { if(!Array.isArray(D[t]) || !D[t].length) D[t] = [{},{},{}]; });
   arrancar();
+  if(PESTANYA === "tienda" && typeof pintarTienda === "function") pintarTienda();
 }
 
 /* Si la misma ficha está abierta en otra pestaña o ventana, esta se pone al día en vez
@@ -9525,14 +9554,16 @@ function repintarTodo(){
 function pestanya(cual){
   PESTANYA = cual;
   document.body.classList.toggle("en-ficha", cual === "ficha");
-  ["ficha","ciber","combate"].forEach(p => {
-    $("#pag-" + p).classList.toggle("viva", p === cual);
-    $("#tab-" + p).setAttribute("aria-selected", p === cual);
+  ["ficha","ciber","combate","tienda"].forEach(p => {
+    const pag = $("#pag-" + p), tab = $("#tab-" + p);
+    if(pag) pag.classList.toggle("viva", p === cual);
+    if(tab) tab.setAttribute("aria-selected", p === cual);
   });
   $("#hoja").classList.toggle("ancha", cual !== "ficha");
   window.scrollTo(0,0);
   if(cual === "ciber") pintarCiber();
   if(cual === "combate"){ iniciarCombate(); pintarCombate(); }
+  if(cual === "tienda" && typeof pintarTienda === "function") pintarTienda();
   if(typeof holoEntrar === "function") holoEntrar(cual);
 }
 
@@ -9923,7 +9954,30 @@ const imagenPdfValida = src => typeof src === "string" && /^data:image\/(jpeg|jp
    atributos y competencias en barras (sin números), cómo pelea, qué lleva y su cuerpo (el ciberware contado como se ve). */
 /* VIS-06: la paleta del PDF (oscuro, con la identidad morado-rojo). Son los únicos colores escritos fuera del CSS
    (pdfmake no entiende variables CSS); se corresponden con las de :root: acento = cereza, resalte = rosa, morado = uva para texto. */
-const PDF_C = { fondo:"#0A0710", panel:"#120C1A", panel2:"#1A1226", borde:"#2E2140", texto:"#EEE8F5", suave:"#A396B5", tenue:"#7E7092", acento:"#F31365", morado:"#B98AE6", resalte:"#E154B9" };
+const PDF_C = { base:"#07050A", tinta:"#FFF4F2", paletas:{ rojo:"#FF3B3B", ambar:"#FFAA2B", cian:"#35DCFF", verde:"#3DFF88", violeta:"#B36BFF", rosa:"#FF6AC8", blanco:"#E8EEF5" }, acentos:{ otro:"#3FE6FF", cian:"#FF4FD8", blanco:"#FF3B3B" } };
+/* Los colores del PDF salen de la paleta que el jugador eligió para la ficha (rojo si no eligió ninguna): fondos casi negros
+   teñidos de su color, el color en títulos y barras, y el acento (cian, o magenta/rojo según la paleta) en los rótulos pequeños */
+function mezclaColor(a, b, t){
+  const h = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16)), A = h(a), B = h(b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+function paletaPDF(){
+  let v = {}; try{ v = JSON.parse(localStorage.getItem("xana-vista") || "{}") || {}; }catch(e){}
+  const k = PDF_C.paletas[v.paleta] ? v.paleta : "rojo", p = PDF_C.paletas[k], a = PDF_C.acentos[k] || PDF_C.acentos.otro, B = PDF_C.base, W = PDF_C.tinta, m = mezclaColor;
+  return { nombre:k, fondo:m(B, p, .035), rejilla:m(B, p, .075), panel:m(B, p, .075), panel2:m(B, p, .16), borde:m(B, p, .4),
+    texto:m(W, p, .06), suave:m(m(W, B, .3), p, .3), tenue:m(m(W, B, .5), p, .3), acento:p, resalte:m(p, W, .25), morado:a };
+}
+/* Fondo holográfico de las páginas: casi negro, rejilla fina, banda arriba y esquinas en el color de la paleta */
+function fondoHoloPDF(K){
+  return (pag, tam) => {
+    const l = [{ type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo }];
+    for(let x = 24; x < tam.width; x += 24) l.push({ type:"line", x1:x, y1:0, x2:x, y2:tam.height, lineWidth:0.3, lineColor:K.rejilla });
+    for(let y = 24; y < tam.height; y += 24) l.push({ type:"line", x1:0, y1:y, x2:tam.width, y2:y, lineWidth:0.3, lineColor:K.rejilla });
+    const esq = (x, y, dx, dy) => [{ type:"line", x1:x, y1:y, x2:x + dx, y2:y, lineWidth:1.2, lineColor:K.acento }, { type:"line", x1:x, y1:y, x2:x, y2:y + dy, lineWidth:1.2, lineColor:K.acento }];
+    return { canvas:l.concat([{ type:"rect", x:0, y:0, w:tam.width, h:3, color:K.acento }, { type:"rect", x:0, y:tam.height - 2, w:tam.width, h:2, color:K.borde }],
+      esq(14, 14, 26, 26), esq(tam.width - 14, 14, -26, 26), esq(14, tam.height - 14, 26, -26), esq(tam.width - 14, tam.height - 14, -26, -26)) };
+  };
+}
 /* Una regla reducida a su efecto: frases mecánicas, como mucho dos y unos 230 caracteres (cortando por frase) */
 function reglaCorta(txt, max){
   max = max || 230;
@@ -9991,10 +10045,29 @@ function aspectoCuerpo(max){
   for(const f of frases){ if(max && out && (out + " " + f).length > max) break; out = out ? out + " " + f : mayus(f); n++; }
   return out;
 }
+/* Número de expediente estable para cada personaje (sale de su nombre, raza y fecha de creación) */
+function numeroExpediente(){
+  const t = [val("f-nombre"), val("f-raza"), D.creada || D.idNube || ""].join("|");
+  let h = 5381, h2 = 52711; for(let i = 0; i < t.length; i++){ h = ((h << 5) + h + t.charCodeAt(i)) | 0; h2 = ((h2 << 5) + h2 ^ t.charCodeAt(i)) | 0; }
+  const a = String((h >>> 0) % 10000).padStart(4, "0"), b = ((h2 >>> 0) % 1679616).toString(36).toUpperCase().padStart(4, "0");
+  return "RCC-" + a + "-" + b;
+}
+/* Fecha de emisión: la de la partida si la ficha tiene el reloj del máster (dd/mm/aaaa) */
+function fechaEmisionPDF(){
+  try{ const t = typeof ahoraJuego === "function" ? ahoraJuego() : null; if(t === null) return ""; const f = fechaDe(t); return dosCifras(f.d) + "/" + dosCifras(f.m) + "/" + f.a; }catch(e){ return ""; }
+}
+/* Código de barras decorativo a partir del número de expediente */
+function codigoBarrasPDF(txt, ancho, alto, color){
+  let h = 7; const barras = [];
+  for(let i = 0; i < 46; i++){ h = (h * 31 + txt.charCodeAt(i % txt.length) + i) % 9973; barras.push(1 + h % 3); }
+  const total = barras.reduce((a, b) => a + b * 2, 0), k = ancho / total, out = [];
+  let x = 0; barras.forEach((w, i) => { if(i % 2 === 0) out.push({ type:"rect", x, y:0, w:w * k, h:alto, color }); x += w * 2 * k; });
+  return out;
+}
 /* nivel: cuánto se compacta para que quepa en 1 página (0 = normal; cada nivel recorta un poco más, la historia nunca) */
 function definicionPDF(nivel){
   nivel = Math.max(0, Math.min(8, num(nivel)));
-  const R = resumen(), T = textoPdf, K = PDF_C, ANCHO = 523;
+  const R = resumen(), T = textoPdf, K = paletaPDF(), ANCHO = 523;
   const nombre = val("f-nombre") || "Personaje sin nombre";
   let M = null;
   try{ M = modeloCombate(); }catch(e){ M = null; }
@@ -10015,8 +10088,9 @@ function definicionPDF(nivel){
   const lay = (fondo, borde) => ({ hLineWidth:() => 0.6, vLineWidth:() => 0.6, hLineColor:() => borde || K.borde, vLineColor:() => borde || K.borde,
     fillColor:() => fondo || K.panel, paddingLeft:() => pad, paddingRight:() => pad, paddingTop:() => pad - 2, paddingBottom:() => pad - 2 });
   const panel = (stack, extra) => Object.assign({ table:{ widths:["*"], body:[[{ stack }]] }, layout:lay() }, extra || {});
+  let nSec = 0;
   const seccion = (txt, ancho) => ({ margin:[0, nivel >= 4 ? 7 : 10, 0, 4], stack:[
-    { text:T(txt).toUpperCase(), color:K.texto, bold:true, fontSize:9, characterSpacing:2 },
+    { text:[{ text:"§" + String(++nSec).padStart(2, "0") + "  ", color:K.acento }, { text:T(txt).toUpperCase() }], color:K.texto, bold:true, fontSize:9, characterSpacing:2 },
     { canvas:[{ type:"line", x1:0, y1:3, x2:ancho || ANCHO, y2:3, lineWidth:0.7, lineColor:K.borde }, { type:"rect", x:0, y:1.6, w:30, h:2.6, color:K.acento }] }
   ] });
   const puntos = n => ({ width:7 * Math.min(10, n) + 4, canvas:Array.from({ length:Math.min(10, n) }, (_, i) => ({ type:"ellipse", x:i * 7 + 4, y:5, r1:2.2, r2:2.2, color:K.resalte })) });
@@ -10030,48 +10104,66 @@ function definicionPDF(nivel){
   const vacio = txt => ({ text:T(txt), color:K.tenue, italics:true });
   const MITAD = (ANCHO - 14) / 2;
 
-  // ---- cabecera
-  const linea1 = [val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : "", val("f-edad") ? val("f-edad") + " años" : ""].filter(Boolean).join("   ·   ");
-  const estado = [R.vida < R.vidaMax ? R.estado.replace(/:.*$/, "") : "", textoHeridasFicha() ? textoHeridasFicha() : ""].filter(Boolean).join("  ·  ");
-  const cab = { stack:[
-    { text:"XANA  //  FICHA DE PERSONAJE", fontSize:6.6, color:K.tenue, characterSpacing:2.4 },
-    { text:T(nombre), fontSize:nivel >= 4 ? 24 : 28, bold:true, color:K.texto, margin:[0, 2, 0, 2] },
-    linea1 ? { text:T(linea1).toUpperCase(), fontSize:8.2, bold:true, color:K.morado, characterSpacing:1.3 } : "",
-    { text:T(resumenPerfil(R)), fontSize:8.6, color:K.resalte, margin:[0, 5, 0, 0], lineHeight:1.25 },
-    estado ? { text:T("Ahora: " + estado), fontSize:7.4, color:K.suave, margin:[0, 3, 0, 0] } : ""
-  ].filter(Boolean) };
-  const lado = nivel >= 4 ? 84 : 100;
-  c.push(imagenPdfValida(D.retrato)
-    ? { columns:[ { width:lado + 8, table:{ widths:[lado], body:[[{ image:D.retrato, fit:[lado, lado], alignment:"center" }]] }, layout:lay(K.panel, K.acento) }, Object.assign({ width:"*", margin:[12, 6, 0, 0] }, cab) ] }
-    : cab);
+  // ---- cabecera: expediente del Registro de Ciudadanos Conscientes de la FGC
+  const sello = { width:46, canvas:[{ type:"ellipse", x:23, y:23, r1:21, r2:21, lineWidth:1.2, lineColor:K.acento }, { type:"ellipse", x:23, y:23, r1:16, r2:16, lineWidth:0.5, lineColor:K.borde }]
+    .concat(Array.from({ length:8 }, (_, i) => { const an = i * Math.PI / 4; return { type:"line", x1:23 + Math.cos(an) * 6, y1:23 + Math.sin(an) * 6, x2:23 + Math.cos(an) * 13, y2:23 + Math.sin(an) * 13, lineWidth:0.9, lineColor:K.acento }; }))
+    .concat([{ type:"ellipse", x:23, y:23, r1:3.2, r2:3.2, color:K.acento }]) };
+  const exp = numeroExpediente(), emision = fechaEmisionPDF();
+  const barras = { canvas:codigoBarrasPDF(exp, 150, 16, K.texto) };
+  const cajaExp = { width:170, table:{ widths:["*"], body:[[{ stack:[
+      { text:"EXPEDIENTE Nº", fontSize:6, color:K.suave, characterSpacing:1.5 },
+      { text:exp, fontSize:11, bold:true, color:K.texto, characterSpacing:1.2, margin:[0, 1, 0, 3] },
+      barras,
+      { text:T((emision ? "EMITIDO " + emision + "  ·  " : "") + "ACCESO: PÚBLICO"), fontSize:5.8, color:K.suave, characterSpacing:1, margin:[0, 3, 0, 0] }] }]] }, layout:lay(K.panel, K.acento) };
+  c.push({ columns:[sello, { width:"*", margin:[10, 5, 0, 0], stack:[
+      { text:"FEDERACIÓN GALÁCTICA CENTRAL", fontSize:10.5, bold:true, color:K.texto, characterSpacing:2.2 },
+      { text:"REGISTRO DE CIUDADANOS CONSCIENTES", fontSize:7.4, bold:true, color:K.acento, characterSpacing:1.8, margin:[0, 2, 0, 2] },
+      { text:"Expediente de identidad · copia certificada", fontSize:6.8, color:K.tenue, italics:true }] }, cajaExp], columnGap:6 });
+  c.push({ canvas:[{ type:"line", x1:0, y1:6, x2:ANCHO, y2:6, lineWidth:0.7, lineColor:K.borde }, { type:"rect", x:0, y:4.6, w:60, h:2.8, color:K.acento }], margin:[0, 2, 0, 8] });
+  // ficha de identidad: foto de registro y datos
+  const dato = (etq, v) => [{ text:T(etq).toUpperCase(), fontSize:6, color:K.suave, characterSpacing:1.2, margin:[0, 1.4, 0, 0] }, { text:T(v || "—"), color:v ? K.texto : K.tenue, bold:!!v }];
+  const especie = val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "";
+  const estadoAct = [R.vida < R.vidaMax ? R.estado.replace(/:.*$/, "") : "", textoHeridasFicha() ? textoHeridasFicha() : ""].filter(Boolean).join(" · ");
+  const datos = [dato("Especie", especie), dato("Ocupación registrada", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : ""), dato("Edad", val("f-edad") ? val("f-edad") + " años" : ""), dato("Estado actual", estadoAct || "Sin incidencias")];
+  const ident = { stack:[
+    { text:"TITULAR", fontSize:6, color:K.suave, characterSpacing:1.5 },
+    { text:T(nombre), fontSize:nivel >= 4 ? 22 : 26, bold:true, color:K.texto, margin:[0, 0, 0, 4] },
+    { table:{ widths:[96, "*"], body:datos }, layout:{ hLineWidth:(i, n) => i === 0 || i === n.table.body.length ? 0 : 0.4, vLineWidth:() => 0, hLineColor:() => K.borde, paddingLeft:() => 0, paddingRight:() => 4, paddingTop:() => 2.4, paddingBottom:() => 2.4 } },
+    { text:T(resumenPerfil(R)), fontSize:8, color:K.resalte, margin:[0, 6, 0, 0], lineHeight:1.25 }] };
+  const lado = nivel >= 4 ? 92 : 108;
+  const foto = { width:lado + 10, stack:[
+    { table:{ widths:[lado], heights:[lado], body:[[imagenPdfValida(D.retrato) ? { image:D.retrato, fit:[lado, lado], alignment:"center" }
+      : { text:"SIN IMAGEN\nDE REGISTRO", alignment:"center", fontSize:6.4, color:K.tenue, characterSpacing:1.2, margin:[0, lado / 2 - 9, 0, 0] }]] }, layout:lay(K.panel, K.acento) },
+    { text:"IMAGEN DE REGISTRO", fontSize:5.6, color:K.suave, characterSpacing:1.2, alignment:"center", margin:[0, 3, 0, 0] }] };
+  c.push({ columns:[foto, Object.assign({ width:"*", margin:[8, 0, 0, 0] }, ident)] });
 
   // ---- historia (entera, siempre)
-  c.push(seccion("Historia"));
-  c.push(val("f-notas") ? panel([{ text:T(val("f-notas")), color:K.texto, lineHeight:1.3 }]) : vacio("Sin historia escrita."));
+  c.push(seccion("Antecedentes"));
+  c.push(val("f-notas") ? panel([{ text:T(val("f-notas")), color:K.texto, lineHeight:1.3 }]) : vacio("Sin antecedentes registrados."));
 
   // ---- raza y rol
   const rasgos = R.rasgosRaza.filter(x => !/^Competencias iniciales/i.test(x) && !/^Optimización de Papilón: eliges/i.test(x)).slice(0, L.rasgos).map(x => {
     const m = String(x).match(/^([^:]{3,48}):\s*(.+)$/);
     return m && !/\d/.test(m[1]) ? vineta(m[1].replace(/^Papilón · /, "Papilón: "), reglaCorta(m[2], L.regla)) : vineta(reglaCorta(x, L.regla + 20));
   });
-  const colRaza = val("f-raza") ? { stack:[sub("Raza · " + val("f-raza") + (R.r.t ? " — " + R.r.t : ""))].concat(rasgos.length ? rasgos : [vacio("Sin rasgos.")]) } : { stack:[sub("Raza"), vacio("Sin elegir.")] };
+  const colRaza = val("f-raza") ? { stack:[sub("Especie · " + val("f-raza") + (R.r.t ? " — " + R.r.t : ""))].concat(rasgos.length ? rasgos : [vacio("Sin rasgos.")]) } : { stack:[sub("Especie"), vacio("Sin registrar.")] };
   const habR = val("f-trabajo") ? habilidadesRol(R) : [];
   const introRol = L.intro && val("f-trabajo") && R.t.intro && R.t.intro[0] ? (String(R.t.intro[0]).match(/^[^.]*\./) || [String(R.t.intro[0])])[0] : "";
-  const colRol = val("f-trabajo") ? { stack:[sub("Rol · " + val("f-trabajo") + (R.t.t ? " — " + R.t.t : "") + " · nivel " + R.nivelT)]
+  const colRol = val("f-trabajo") ? { stack:[sub("Ocupación · " + val("f-trabajo") + (R.t.t ? " — " + R.t.t : "") + " · nivel " + R.nivelT)]
       .concat(introRol ? [{ text:T(introRol), color:K.suave, italics:true, fontSize:L.fuente - 0.6, margin:[0, 0, 0, 4] }] : [])
       .concat(habR.length ? habR.map(h => vineta(h.n, !h.puntos && h.grupo && h.grupo !== h.n ? h.grupo : "", K.resalte, h.puntos || 0)) : [vacio("Todavía sin habilidades de rol.")]) }
-    : { stack:[sub("Rol"), vacio("Sin elegir.")] };
-  c.push({ unbreakable:true, stack:[seccion("Raza y rol"), { table:{ widths:["*", "*"], body:[[colRaza, colRol]] }, layout:lay() }] });
+    : { stack:[sub("Ocupación"), vacio("Sin registrar.")] };
+  c.push({ unbreakable:true, stack:[seccion("Especie y ocupación"), { table:{ widths:["*", "*"], body:[[colRaza, colRol]] }, layout:lay() }] });
 
   // ---- atributos
-  c.push({ unbreakable:true, stack:[seccion("Atributos"), { table:{ widths:ESTADISTICAS.map(() => "*"), body:[ESTADISTICAS.map(e => ({ stack:[
+  c.push({ unbreakable:true, stack:[seccion("Evaluación de aptitudes"), { table:{ widths:ESTADISTICAS.map(() => "*"), body:[ESTADISTICAS.map(e => ({ stack:[
       { text:T(e.n).toUpperCase(), fontSize:6.4, color:K.suave, characterSpacing:1, margin:[0, 0, 0, 3] }, barra(R.s[e.c], K.acento, 60)] }))] }, layout:lay() }] });
 
   // ---- en qué destaca (izquierda) · cómo pelea y lo que lleva (derecha)
   const comps = [].concat(...R.comps.map(g => g.lista.filter(x => x.total !== null && x.nivel > 0).map(x => Object.assign({ est:g.nombre }, x)))).sort((a, b) => b.nivel - a.nivel || b.total - a.total);
   const filaComp = x => ({ columns:[{ width:"*", text:[{ text:T(x.n), color:K.texto }, { text:"  " + T(x.est), color:K.tenue, fontSize:6.2 }] }, { width:56, stack:[barra(x.nivel, K.resalte, 56)], margin:[0, 3, 0, 0] }], margin:[0, 0, 0, 3.4] });
   const lista = comps.slice(0, L.comps);
-  const colComps = { stack:[seccion("En qué destaca", MITAD), comps.length ? panel(lista.map(filaComp).concat(comps.length > L.comps ? [{ text:T("Y también: " + comps.slice(L.comps).map(x => x.n).join(", ") + "."), color:K.suave, fontSize:L.fuente - 1, margin:[0, 2, 0, 0] }] : []))
+  const colComps = { stack:[seccion("Competencias destacadas", MITAD), comps.length ? panel(lista.map(filaComp).concat(comps.length > L.comps ? [{ text:T("Y también: " + comps.slice(L.comps).map(x => x.n).join(", ") + "."), color:K.suave, fontSize:L.fuente - 1, margin:[0, 2, 0, 0] }] : []))
     : vacio("No tiene ninguna competencia aprendida.")] };
   const armas = typeof armasDelPersonaje === "function" ? armasDelPersonaje() : [];
   const tipoArma = va => va.escudo ? "escudo" : va.unUso ? "granada" : va.tipo && TIPOS_ARMA[va.tipo] ? TIPOS_ARMA[va.tipo].n.toLowerCase() : "";
@@ -10098,36 +10190,30 @@ function definicionPDF(nivel){
   if(accs.length) encima.push(vineta("Accesorios", uno(accs)));
   if(lleva.length) encima.push(vineta("Lleva encima", lleva.join(", ")));
   if(val("f-dinero")) encima.push(vineta("Dinero", val("f-dinero")));
-  const colDer = { stack:[seccion("Cómo pelea", MITAD), pelea.length ? panel(pelea) : vacio("No lleva armas ni capacidades de combate."),
-    seccion("Qué lleva", MITAD), encima.length ? panel(encima) : vacio("No lleva nada encima.")] };
+  const colDer = { stack:[seccion("Capacidad de combate", MITAD), pelea.length ? panel(pelea) : vacio("No lleva armas ni capacidades de combate."),
+    seccion("Efectos personales", MITAD), encima.length ? panel(encima) : vacio("No lleva nada encima.")] };
   c.push({ columns:[Object.assign({ width:"*" }, colComps), Object.assign({ width:"*" }, colDer)], columnGap:14 });
 
   // ---- su cuerpo: el ciberware contado como se ve
   const cuerpo = aspectoCuerpo(L.cuerpo);
-  c.push({ unbreakable:true, stack:[seccion("Su cuerpo"), cuerpo ? panel([{ text:T(cuerpo), color:K.texto, lineHeight:1.3 }]) : vacio("Sin ciberware a la vista: un cuerpo de carne y hueso (solo el IETS de serie).")] });
+  c.push({ unbreakable:true, stack:[seccion("Descripción física"), cuerpo ? panel([{ text:T(cuerpo), color:K.texto, lineHeight:1.3 }]) : vacio("Sin ciberware a la vista: un cuerpo de carne y hueso (solo el IETS de serie).")] });
 
   return {
     pageSize:"A4", pageOrientation:"portrait", pageMargins:nivel >= 4 ? [30, 30, 30, 34] : [34, 36, 34, 40],
-    info:{ title:"XANA · " + nombre, author:"XANA", subject:"Ficha de personaje" },
-    background:(pag, tam) => ({ canvas:[
-      { type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo },
-      { type:"rect", x:0, y:0, w:tam.width, h:3, color:K.acento },
-      { type:"line", x1:16, y1:16, x2:40, y2:16, lineWidth:1, lineColor:K.acento }, { type:"line", x1:16, y1:16, x2:16, y2:40, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 40, y2:tam.height - 16, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 16, y2:tam.height - 40, lineWidth:1, lineColor:K.acento }
-    ] }),
+    info:{ title:"FGC · RCC · " + nombre, author:"Federación Galáctica Central", subject:"Expediente del Registro de Ciudadanos Conscientes" },
+    background:fondoHoloPDF(K),
     content:c,
     footer:(pag, total) => { definicionPDF.paginas = total; return { columns:[
-      { text:"XANA  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 },
-      { text:total > 1 ? pag + " / " + total : "", alignment:"right" }
-    ], margin:[34, 14, 34, 0], fontSize:6.4, color:K.tenue }; },
+      { text:"FGC · RCC  //  " + exp + "  //  DOCUMENTO OFICIAL: SU ALTERACIÓN ES UN DELITO FEDERAL", alignment:"left", characterSpacing:1.1 },
+      { text:total > 1 ? pag + " / " + total : "", alignment:"right", width:30 }
+    ], margin:[34, 14, 34, 0], fontSize:5.8, color:K.tenue }; },
     defaultStyle:{ font:"Roboto", fontSize:L.fuente, lineHeight:1.18, color:K.texto }
   };
 }
 
 /* ---------- PDF completo: toda la ficha, con sus números y reglas, en varias páginas y con el mismo estilo oscuro ---------- */
 function definicionPDFCompleta(){
-  const R = resumen(), T = textoPdf, K = PDF_C, ANCHO = 527;
+  const R = resumen(), T = textoPdf, K = paletaPDF(), ANCHO = 527;
   const nombre = val("f-nombre") || "Personaje sin nombre";
   const c = [];
   const lay = (fondo, borde) => ({ hLineWidth:() => 0.6, vLineWidth:() => 0.6, hLineColor:() => borde || K.borde, vLineColor:() => borde || K.borde,
@@ -10151,7 +10237,7 @@ function definicionPDFCompleta(){
   // ---- cabecera
   const linea1 = [val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : "", val("f-edad") ? val("f-edad") + " años" : ""].filter(Boolean).join("   ·   ");
   const cab = { stack:[
-    { text:"XANA  //  FICHA DE PERSONAJE · COMPLETA", fontSize:6.6, color:K.tenue, characterSpacing:2.4 },
+    { text:"redOS  //  SHELL  ·  FICHA DE PERSONAJE COMPLETA", fontSize:6.6, color:K.acento, characterSpacing:2.4 },
     { text:T(nombre), fontSize:28, bold:true, color:K.texto, margin:[0, 2, 0, 2] },
     linea1 ? { text:T(linea1).toUpperCase(), fontSize:8.2, bold:true, color:K.morado, characterSpacing:1.3 } : "",
     { text:T(resumenPerfil(R)), fontSize:8.6, color:K.resalte, margin:[0, 5, 0, 0] },
@@ -10226,15 +10312,9 @@ function definicionPDFCompleta(){
   return {
     pageSize:"A4", pageOrientation:"portrait", pageMargins:[34, 36, 34, 40],
     info:{ title:"XANA · " + nombre + " (completa)", author:"XANA", subject:"Ficha de personaje" },
-    background:(pag, tam) => ({ canvas:[
-      { type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo },
-      { type:"rect", x:0, y:0, w:tam.width, h:3, color:K.acento },
-      { type:"line", x1:16, y1:16, x2:40, y2:16, lineWidth:1, lineColor:K.acento }, { type:"line", x1:16, y1:16, x2:16, y2:40, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 40, y2:tam.height - 16, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 16, y2:tam.height - 40, lineWidth:1, lineColor:K.acento }
-    ] }),
+    background:fondoHoloPDF(K),
     content:c,
-    footer:(pag, total) => ({ columns:[{ text:"XANA  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 }, { text:pag + " / " + total, alignment:"right" }],
+    footer:(pag, total) => ({ columns:[{ text:"redOS  //  SHELL  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 }, { text:pag + " / " + total, alignment:"right" }],
       margin:[34, 14, 34, 0], fontSize:6.4, color:K.tenue }),
     defaultStyle:{ font:"Roboto", fontSize:8.2, lineHeight:1.2, color:K.texto }
   };

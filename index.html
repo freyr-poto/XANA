@@ -11341,7 +11341,30 @@ const imagenPdfValida = src => typeof src === "string" && /^data:image\/(jpeg|jp
    atributos y competencias en barras (sin números), cómo pelea, qué lleva y su cuerpo (el ciberware contado como se ve). */
 /* VIS-06: la paleta del PDF (oscuro, con la identidad morado-rojo). Son los únicos colores escritos fuera del CSS
    (pdfmake no entiende variables CSS); se corresponden con las de :root: acento = cereza, resalte = rosa, morado = uva para texto. */
-const PDF_C = { fondo:"#0A0710", panel:"#120C1A", panel2:"#1A1226", borde:"#2E2140", texto:"#EEE8F5", suave:"#A396B5", tenue:"#7E7092", acento:"#F31365", morado:"#B98AE6", resalte:"#E154B9" };
+const PDF_C = { base:"#07050A", tinta:"#FFF4F2", paletas:{ rojo:"#FF3B3B", ambar:"#FFAA2B", cian:"#35DCFF", verde:"#3DFF88", violeta:"#B36BFF", rosa:"#FF6AC8", blanco:"#E8EEF5" }, acentos:{ otro:"#3FE6FF", cian:"#FF4FD8", blanco:"#FF3B3B" } };
+/* Los colores del PDF salen de la paleta que el jugador eligió para la ficha (rojo si no eligió ninguna): fondos casi negros
+   teñidos de su color, el color en títulos y barras, y el acento (cian, o magenta/rojo según la paleta) en los rótulos pequeños */
+function mezclaColor(a, b, t){
+  const h = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16)), A = h(a), B = h(b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+function paletaPDF(){
+  let v = {}; try{ v = JSON.parse(localStorage.getItem("xana-vista") || "{}") || {}; }catch(e){}
+  const k = PDF_C.paletas[v.paleta] ? v.paleta : "rojo", p = PDF_C.paletas[k], a = PDF_C.acentos[k] || PDF_C.acentos.otro, B = PDF_C.base, W = PDF_C.tinta, m = mezclaColor;
+  return { nombre:k, fondo:m(B, p, .035), rejilla:m(B, p, .075), panel:m(B, p, .075), panel2:m(B, p, .16), borde:m(B, p, .4),
+    texto:m(W, p, .06), suave:m(m(W, B, .3), p, .3), tenue:m(m(W, B, .5), p, .3), acento:p, resalte:m(p, W, .25), morado:a };
+}
+/* Fondo holográfico de las páginas: casi negro, rejilla fina, banda arriba y esquinas en el color de la paleta */
+function fondoHoloPDF(K){
+  return (pag, tam) => {
+    const l = [{ type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo }];
+    for(let x = 24; x < tam.width; x += 24) l.push({ type:"line", x1:x, y1:0, x2:x, y2:tam.height, lineWidth:0.3, lineColor:K.rejilla });
+    for(let y = 24; y < tam.height; y += 24) l.push({ type:"line", x1:0, y1:y, x2:tam.width, y2:y, lineWidth:0.3, lineColor:K.rejilla });
+    const esq = (x, y, dx, dy) => [{ type:"line", x1:x, y1:y, x2:x + dx, y2:y, lineWidth:1.2, lineColor:K.acento }, { type:"line", x1:x, y1:y, x2:x, y2:y + dy, lineWidth:1.2, lineColor:K.acento }];
+    return { canvas:l.concat([{ type:"rect", x:0, y:0, w:tam.width, h:3, color:K.acento }, { type:"rect", x:0, y:tam.height - 2, w:tam.width, h:2, color:K.borde }],
+      esq(14, 14, 26, 26), esq(tam.width - 14, 14, -26, 26), esq(14, tam.height - 14, 26, -26), esq(tam.width - 14, tam.height - 14, -26, -26)) };
+  };
+}
 /* Una regla reducida a su efecto: frases mecánicas, como mucho dos y unos 230 caracteres (cortando por frase) */
 function reglaCorta(txt, max){
   max = max || 230;
@@ -11409,10 +11432,29 @@ function aspectoCuerpo(max){
   for(const f of frases){ if(max && out && (out + " " + f).length > max) break; out = out ? out + " " + f : mayus(f); n++; }
   return out;
 }
+/* Número de expediente estable para cada personaje (sale de su nombre, raza y fecha de creación) */
+function numeroExpediente(){
+  const t = [val("f-nombre"), val("f-raza"), D.creada || D.idNube || ""].join("|");
+  let h = 5381, h2 = 52711; for(let i = 0; i < t.length; i++){ h = ((h << 5) + h + t.charCodeAt(i)) | 0; h2 = ((h2 << 5) + h2 ^ t.charCodeAt(i)) | 0; }
+  const a = String((h >>> 0) % 10000).padStart(4, "0"), b = ((h2 >>> 0) % 1679616).toString(36).toUpperCase().padStart(4, "0");
+  return "RCC-" + a + "-" + b;
+}
+/* Fecha de emisión: la de la partida si la ficha tiene el reloj del máster (dd/mm/aaaa) */
+function fechaEmisionPDF(){
+  try{ const t = typeof ahoraJuego === "function" ? ahoraJuego() : null; if(t === null) return ""; const f = fechaDe(t); return dosCifras(f.d) + "/" + dosCifras(f.m) + "/" + f.a; }catch(e){ return ""; }
+}
+/* Código de barras decorativo a partir del número de expediente */
+function codigoBarrasPDF(txt, ancho, alto, color){
+  let h = 7; const barras = [];
+  for(let i = 0; i < 46; i++){ h = (h * 31 + txt.charCodeAt(i % txt.length) + i) % 9973; barras.push(1 + h % 3); }
+  const total = barras.reduce((a, b) => a + b * 2, 0), k = ancho / total, out = [];
+  let x = 0; barras.forEach((w, i) => { if(i % 2 === 0) out.push({ type:"rect", x, y:0, w:w * k, h:alto, color }); x += w * 2 * k; });
+  return out;
+}
 /* nivel: cuánto se compacta para que quepa en 1 página (0 = normal; cada nivel recorta un poco más, la historia nunca) */
 function definicionPDF(nivel){
   nivel = Math.max(0, Math.min(8, num(nivel)));
-  const R = resumen(), T = textoPdf, K = PDF_C, ANCHO = 523;
+  const R = resumen(), T = textoPdf, K = paletaPDF(), ANCHO = 523;
   const nombre = val("f-nombre") || "Personaje sin nombre";
   let M = null;
   try{ M = modeloCombate(); }catch(e){ M = null; }
@@ -11433,8 +11475,9 @@ function definicionPDF(nivel){
   const lay = (fondo, borde) => ({ hLineWidth:() => 0.6, vLineWidth:() => 0.6, hLineColor:() => borde || K.borde, vLineColor:() => borde || K.borde,
     fillColor:() => fondo || K.panel, paddingLeft:() => pad, paddingRight:() => pad, paddingTop:() => pad - 2, paddingBottom:() => pad - 2 });
   const panel = (stack, extra) => Object.assign({ table:{ widths:["*"], body:[[{ stack }]] }, layout:lay() }, extra || {});
+  let nSec = 0;
   const seccion = (txt, ancho) => ({ margin:[0, nivel >= 4 ? 7 : 10, 0, 4], stack:[
-    { text:T(txt).toUpperCase(), color:K.texto, bold:true, fontSize:9, characterSpacing:2 },
+    { text:[{ text:"§" + String(++nSec).padStart(2, "0") + "  ", color:K.acento }, { text:T(txt).toUpperCase() }], color:K.texto, bold:true, fontSize:9, characterSpacing:2 },
     { canvas:[{ type:"line", x1:0, y1:3, x2:ancho || ANCHO, y2:3, lineWidth:0.7, lineColor:K.borde }, { type:"rect", x:0, y:1.6, w:30, h:2.6, color:K.acento }] }
   ] });
   const puntos = n => ({ width:7 * Math.min(10, n) + 4, canvas:Array.from({ length:Math.min(10, n) }, (_, i) => ({ type:"ellipse", x:i * 7 + 4, y:5, r1:2.2, r2:2.2, color:K.resalte })) });
@@ -11448,48 +11491,66 @@ function definicionPDF(nivel){
   const vacio = txt => ({ text:T(txt), color:K.tenue, italics:true });
   const MITAD = (ANCHO - 14) / 2;
 
-  // ---- cabecera
-  const linea1 = [val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : "", val("f-edad") ? val("f-edad") + " años" : ""].filter(Boolean).join("   ·   ");
-  const estado = [R.vida < R.vidaMax ? R.estado.replace(/:.*$/, "") : "", textoHeridasFicha() ? textoHeridasFicha() : ""].filter(Boolean).join("  ·  ");
-  const cab = { stack:[
-    { text:"XANA  //  FICHA DE PERSONAJE", fontSize:6.6, color:K.tenue, characterSpacing:2.4 },
-    { text:T(nombre), fontSize:nivel >= 4 ? 24 : 28, bold:true, color:K.texto, margin:[0, 2, 0, 2] },
-    linea1 ? { text:T(linea1).toUpperCase(), fontSize:8.2, bold:true, color:K.morado, characterSpacing:1.3 } : "",
-    { text:T(resumenPerfil(R)), fontSize:8.6, color:K.resalte, margin:[0, 5, 0, 0], lineHeight:1.25 },
-    estado ? { text:T("Ahora: " + estado), fontSize:7.4, color:K.suave, margin:[0, 3, 0, 0] } : ""
-  ].filter(Boolean) };
-  const lado = nivel >= 4 ? 84 : 100;
-  c.push(imagenPdfValida(D.retrato)
-    ? { columns:[ { width:lado + 8, table:{ widths:[lado], body:[[{ image:D.retrato, fit:[lado, lado], alignment:"center" }]] }, layout:lay(K.panel, K.acento) }, Object.assign({ width:"*", margin:[12, 6, 0, 0] }, cab) ] }
-    : cab);
+  // ---- cabecera: expediente del Registro de Ciudadanos Conscientes de la FGC
+  const sello = { width:46, canvas:[{ type:"ellipse", x:23, y:23, r1:21, r2:21, lineWidth:1.2, lineColor:K.acento }, { type:"ellipse", x:23, y:23, r1:16, r2:16, lineWidth:0.5, lineColor:K.borde }]
+    .concat(Array.from({ length:8 }, (_, i) => { const an = i * Math.PI / 4; return { type:"line", x1:23 + Math.cos(an) * 6, y1:23 + Math.sin(an) * 6, x2:23 + Math.cos(an) * 13, y2:23 + Math.sin(an) * 13, lineWidth:0.9, lineColor:K.acento }; }))
+    .concat([{ type:"ellipse", x:23, y:23, r1:3.2, r2:3.2, color:K.acento }]) };
+  const exp = numeroExpediente(), emision = fechaEmisionPDF();
+  const barras = { canvas:codigoBarrasPDF(exp, 150, 16, K.texto) };
+  const cajaExp = { width:170, table:{ widths:["*"], body:[[{ stack:[
+      { text:"EXPEDIENTE Nº", fontSize:6, color:K.suave, characterSpacing:1.5 },
+      { text:exp, fontSize:11, bold:true, color:K.texto, characterSpacing:1.2, margin:[0, 1, 0, 3] },
+      barras,
+      { text:T((emision ? "EMITIDO " + emision + "  ·  " : "") + "ACCESO: PÚBLICO"), fontSize:5.8, color:K.suave, characterSpacing:1, margin:[0, 3, 0, 0] }] }]] }, layout:lay(K.panel, K.acento) };
+  c.push({ columns:[sello, { width:"*", margin:[10, 5, 0, 0], stack:[
+      { text:"FEDERACIÓN GALÁCTICA CENTRAL", fontSize:10.5, bold:true, color:K.texto, characterSpacing:2.2 },
+      { text:"REGISTRO DE CIUDADANOS CONSCIENTES", fontSize:7.4, bold:true, color:K.acento, characterSpacing:1.8, margin:[0, 2, 0, 2] },
+      { text:"Expediente de identidad · copia certificada", fontSize:6.8, color:K.tenue, italics:true }] }, cajaExp], columnGap:6 });
+  c.push({ canvas:[{ type:"line", x1:0, y1:6, x2:ANCHO, y2:6, lineWidth:0.7, lineColor:K.borde }, { type:"rect", x:0, y:4.6, w:60, h:2.8, color:K.acento }], margin:[0, 2, 0, 8] });
+  // ficha de identidad: foto de registro y datos
+  const dato = (etq, v) => [{ text:T(etq).toUpperCase(), fontSize:6, color:K.suave, characterSpacing:1.2, margin:[0, 1.4, 0, 0] }, { text:T(v || "—"), color:v ? K.texto : K.tenue, bold:!!v }];
+  const especie = val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "";
+  const estadoAct = [R.vida < R.vidaMax ? R.estado.replace(/:.*$/, "") : "", textoHeridasFicha() ? textoHeridasFicha() : ""].filter(Boolean).join(" · ");
+  const datos = [dato("Especie", especie), dato("Ocupación registrada", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : ""), dato("Edad", val("f-edad") ? val("f-edad") + " años" : ""), dato("Estado actual", estadoAct || "Sin incidencias")];
+  const ident = { stack:[
+    { text:"TITULAR", fontSize:6, color:K.suave, characterSpacing:1.5 },
+    { text:T(nombre), fontSize:nivel >= 4 ? 22 : 26, bold:true, color:K.texto, margin:[0, 0, 0, 4] },
+    { table:{ widths:[96, "*"], body:datos }, layout:{ hLineWidth:(i, n) => i === 0 || i === n.table.body.length ? 0 : 0.4, vLineWidth:() => 0, hLineColor:() => K.borde, paddingLeft:() => 0, paddingRight:() => 4, paddingTop:() => 2.4, paddingBottom:() => 2.4 } },
+    { text:T(resumenPerfil(R)), fontSize:8, color:K.resalte, margin:[0, 6, 0, 0], lineHeight:1.25 }] };
+  const lado = nivel >= 4 ? 92 : 108;
+  const foto = { width:lado + 10, stack:[
+    { table:{ widths:[lado], heights:[lado], body:[[imagenPdfValida(D.retrato) ? { image:D.retrato, fit:[lado, lado], alignment:"center" }
+      : { text:"SIN IMAGEN\nDE REGISTRO", alignment:"center", fontSize:6.4, color:K.tenue, characterSpacing:1.2, margin:[0, lado / 2 - 9, 0, 0] }]] }, layout:lay(K.panel, K.acento) },
+    { text:"IMAGEN DE REGISTRO", fontSize:5.6, color:K.suave, characterSpacing:1.2, alignment:"center", margin:[0, 3, 0, 0] }] };
+  c.push({ columns:[foto, Object.assign({ width:"*", margin:[8, 0, 0, 0] }, ident)] });
 
   // ---- historia (entera, siempre)
-  c.push(seccion("Historia"));
-  c.push(val("f-notas") ? panel([{ text:T(val("f-notas")), color:K.texto, lineHeight:1.3 }]) : vacio("Sin historia escrita."));
+  c.push(seccion("Antecedentes"));
+  c.push(val("f-notas") ? panel([{ text:T(val("f-notas")), color:K.texto, lineHeight:1.3 }]) : vacio("Sin antecedentes registrados."));
 
   // ---- raza y rol
   const rasgos = R.rasgosRaza.filter(x => !/^Competencias iniciales/i.test(x) && !/^Optimización de Papilón: eliges/i.test(x)).slice(0, L.rasgos).map(x => {
     const m = String(x).match(/^([^:]{3,48}):\s*(.+)$/);
     return m && !/\d/.test(m[1]) ? vineta(m[1].replace(/^Papilón · /, "Papilón: "), reglaCorta(m[2], L.regla)) : vineta(reglaCorta(x, L.regla + 20));
   });
-  const colRaza = val("f-raza") ? { stack:[sub("Raza · " + val("f-raza") + (R.r.t ? " — " + R.r.t : ""))].concat(rasgos.length ? rasgos : [vacio("Sin rasgos.")]) } : { stack:[sub("Raza"), vacio("Sin elegir.")] };
+  const colRaza = val("f-raza") ? { stack:[sub("Especie · " + val("f-raza") + (R.r.t ? " — " + R.r.t : ""))].concat(rasgos.length ? rasgos : [vacio("Sin rasgos.")]) } : { stack:[sub("Especie"), vacio("Sin registrar.")] };
   const habR = val("f-trabajo") ? habilidadesRol(R) : [];
   const introRol = L.intro && val("f-trabajo") && R.t.intro && R.t.intro[0] ? (String(R.t.intro[0]).match(/^[^.]*\./) || [String(R.t.intro[0])])[0] : "";
-  const colRol = val("f-trabajo") ? { stack:[sub("Rol · " + val("f-trabajo") + (R.t.t ? " — " + R.t.t : "") + " · nivel " + R.nivelT)]
+  const colRol = val("f-trabajo") ? { stack:[sub("Ocupación · " + val("f-trabajo") + (R.t.t ? " — " + R.t.t : "") + " · nivel " + R.nivelT)]
       .concat(introRol ? [{ text:T(introRol), color:K.suave, italics:true, fontSize:L.fuente - 0.6, margin:[0, 0, 0, 4] }] : [])
       .concat(habR.length ? habR.map(h => vineta(h.n, !h.puntos && h.grupo && h.grupo !== h.n ? h.grupo : "", K.resalte, h.puntos || 0)) : [vacio("Todavía sin habilidades de rol.")]) }
-    : { stack:[sub("Rol"), vacio("Sin elegir.")] };
-  c.push({ unbreakable:true, stack:[seccion("Raza y rol"), { table:{ widths:["*", "*"], body:[[colRaza, colRol]] }, layout:lay() }] });
+    : { stack:[sub("Ocupación"), vacio("Sin registrar.")] };
+  c.push({ unbreakable:true, stack:[seccion("Especie y ocupación"), { table:{ widths:["*", "*"], body:[[colRaza, colRol]] }, layout:lay() }] });
 
   // ---- atributos
-  c.push({ unbreakable:true, stack:[seccion("Atributos"), { table:{ widths:ESTADISTICAS.map(() => "*"), body:[ESTADISTICAS.map(e => ({ stack:[
+  c.push({ unbreakable:true, stack:[seccion("Evaluación de aptitudes"), { table:{ widths:ESTADISTICAS.map(() => "*"), body:[ESTADISTICAS.map(e => ({ stack:[
       { text:T(e.n).toUpperCase(), fontSize:6.4, color:K.suave, characterSpacing:1, margin:[0, 0, 0, 3] }, barra(R.s[e.c], K.acento, 60)] }))] }, layout:lay() }] });
 
   // ---- en qué destaca (izquierda) · cómo pelea y lo que lleva (derecha)
   const comps = [].concat(...R.comps.map(g => g.lista.filter(x => x.total !== null && x.nivel > 0).map(x => Object.assign({ est:g.nombre }, x)))).sort((a, b) => b.nivel - a.nivel || b.total - a.total);
   const filaComp = x => ({ columns:[{ width:"*", text:[{ text:T(x.n), color:K.texto }, { text:"  " + T(x.est), color:K.tenue, fontSize:6.2 }] }, { width:56, stack:[barra(x.nivel, K.resalte, 56)], margin:[0, 3, 0, 0] }], margin:[0, 0, 0, 3.4] });
   const lista = comps.slice(0, L.comps);
-  const colComps = { stack:[seccion("En qué destaca", MITAD), comps.length ? panel(lista.map(filaComp).concat(comps.length > L.comps ? [{ text:T("Y también: " + comps.slice(L.comps).map(x => x.n).join(", ") + "."), color:K.suave, fontSize:L.fuente - 1, margin:[0, 2, 0, 0] }] : []))
+  const colComps = { stack:[seccion("Competencias destacadas", MITAD), comps.length ? panel(lista.map(filaComp).concat(comps.length > L.comps ? [{ text:T("Y también: " + comps.slice(L.comps).map(x => x.n).join(", ") + "."), color:K.suave, fontSize:L.fuente - 1, margin:[0, 2, 0, 0] }] : []))
     : vacio("No tiene ninguna competencia aprendida.")] };
   const armas = typeof armasDelPersonaje === "function" ? armasDelPersonaje() : [];
   const tipoArma = va => va.escudo ? "escudo" : va.unUso ? "granada" : va.tipo && TIPOS_ARMA[va.tipo] ? TIPOS_ARMA[va.tipo].n.toLowerCase() : "";
@@ -11516,36 +11577,30 @@ function definicionPDF(nivel){
   if(accs.length) encima.push(vineta("Accesorios", uno(accs)));
   if(lleva.length) encima.push(vineta("Lleva encima", lleva.join(", ")));
   if(val("f-dinero")) encima.push(vineta("Dinero", val("f-dinero")));
-  const colDer = { stack:[seccion("Cómo pelea", MITAD), pelea.length ? panel(pelea) : vacio("No lleva armas ni capacidades de combate."),
-    seccion("Qué lleva", MITAD), encima.length ? panel(encima) : vacio("No lleva nada encima.")] };
+  const colDer = { stack:[seccion("Capacidad de combate", MITAD), pelea.length ? panel(pelea) : vacio("No lleva armas ni capacidades de combate."),
+    seccion("Efectos personales", MITAD), encima.length ? panel(encima) : vacio("No lleva nada encima.")] };
   c.push({ columns:[Object.assign({ width:"*" }, colComps), Object.assign({ width:"*" }, colDer)], columnGap:14 });
 
   // ---- su cuerpo: el ciberware contado como se ve
   const cuerpo = aspectoCuerpo(L.cuerpo);
-  c.push({ unbreakable:true, stack:[seccion("Su cuerpo"), cuerpo ? panel([{ text:T(cuerpo), color:K.texto, lineHeight:1.3 }]) : vacio("Sin ciberware a la vista: un cuerpo de carne y hueso (solo el IETS de serie).")] });
+  c.push({ unbreakable:true, stack:[seccion("Descripción física"), cuerpo ? panel([{ text:T(cuerpo), color:K.texto, lineHeight:1.3 }]) : vacio("Sin ciberware a la vista: un cuerpo de carne y hueso (solo el IETS de serie).")] });
 
   return {
     pageSize:"A4", pageOrientation:"portrait", pageMargins:nivel >= 4 ? [30, 30, 30, 34] : [34, 36, 34, 40],
-    info:{ title:"XANA · " + nombre, author:"XANA", subject:"Ficha de personaje" },
-    background:(pag, tam) => ({ canvas:[
-      { type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo },
-      { type:"rect", x:0, y:0, w:tam.width, h:3, color:K.acento },
-      { type:"line", x1:16, y1:16, x2:40, y2:16, lineWidth:1, lineColor:K.acento }, { type:"line", x1:16, y1:16, x2:16, y2:40, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 40, y2:tam.height - 16, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 16, y2:tam.height - 40, lineWidth:1, lineColor:K.acento }
-    ] }),
+    info:{ title:"FGC · RCC · " + nombre, author:"Federación Galáctica Central", subject:"Expediente del Registro de Ciudadanos Conscientes" },
+    background:fondoHoloPDF(K),
     content:c,
     footer:(pag, total) => { definicionPDF.paginas = total; return { columns:[
-      { text:"XANA  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 },
-      { text:total > 1 ? pag + " / " + total : "", alignment:"right" }
-    ], margin:[34, 14, 34, 0], fontSize:6.4, color:K.tenue }; },
+      { text:"FGC · RCC  //  " + exp + "  //  DOCUMENTO OFICIAL: SU ALTERACIÓN ES UN DELITO FEDERAL", alignment:"left", characterSpacing:1.1 },
+      { text:total > 1 ? pag + " / " + total : "", alignment:"right", width:30 }
+    ], margin:[34, 14, 34, 0], fontSize:5.8, color:K.tenue }; },
     defaultStyle:{ font:"Roboto", fontSize:L.fuente, lineHeight:1.18, color:K.texto }
   };
 }
 
 /* ---------- PDF completo: toda la ficha, con sus números y reglas, en varias páginas y con el mismo estilo oscuro ---------- */
 function definicionPDFCompleta(){
-  const R = resumen(), T = textoPdf, K = PDF_C, ANCHO = 527;
+  const R = resumen(), T = textoPdf, K = paletaPDF(), ANCHO = 527;
   const nombre = val("f-nombre") || "Personaje sin nombre";
   const c = [];
   const lay = (fondo, borde) => ({ hLineWidth:() => 0.6, vLineWidth:() => 0.6, hLineColor:() => borde || K.borde, vLineColor:() => borde || K.borde,
@@ -11569,7 +11624,7 @@ function definicionPDFCompleta(){
   // ---- cabecera
   const linea1 = [val("f-raza") ? val("f-raza") + (val("f-subraza") && R.r.subrazas ? " (" + val("f-subraza") + ")" : "") : "", val("f-trabajo") ? val("f-trabajo") + " · nivel " + R.nivelT : "", val("f-edad") ? val("f-edad") + " años" : ""].filter(Boolean).join("   ·   ");
   const cab = { stack:[
-    { text:"XANA  //  FICHA DE PERSONAJE · COMPLETA", fontSize:6.6, color:K.tenue, characterSpacing:2.4 },
+    { text:"redOS  //  SHELL  ·  FICHA DE PERSONAJE COMPLETA", fontSize:6.6, color:K.acento, characterSpacing:2.4 },
     { text:T(nombre), fontSize:28, bold:true, color:K.texto, margin:[0, 2, 0, 2] },
     linea1 ? { text:T(linea1).toUpperCase(), fontSize:8.2, bold:true, color:K.morado, characterSpacing:1.3 } : "",
     { text:T(resumenPerfil(R)), fontSize:8.6, color:K.resalte, margin:[0, 5, 0, 0] },
@@ -11644,15 +11699,9 @@ function definicionPDFCompleta(){
   return {
     pageSize:"A4", pageOrientation:"portrait", pageMargins:[34, 36, 34, 40],
     info:{ title:"XANA · " + nombre + " (completa)", author:"XANA", subject:"Ficha de personaje" },
-    background:(pag, tam) => ({ canvas:[
-      { type:"rect", x:0, y:0, w:tam.width, h:tam.height, color:K.fondo },
-      { type:"rect", x:0, y:0, w:tam.width, h:3, color:K.acento },
-      { type:"line", x1:16, y1:16, x2:40, y2:16, lineWidth:1, lineColor:K.acento }, { type:"line", x1:16, y1:16, x2:16, y2:40, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 40, y2:tam.height - 16, lineWidth:1, lineColor:K.acento },
-      { type:"line", x1:tam.width - 16, y1:tam.height - 16, x2:tam.width - 16, y2:tam.height - 40, lineWidth:1, lineColor:K.acento }
-    ] }),
+    background:fondoHoloPDF(K),
     content:c,
-    footer:(pag, total) => ({ columns:[{ text:"XANA  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 }, { text:pag + " / " + total, alignment:"right" }],
+    footer:(pag, total) => ({ columns:[{ text:"redOS  //  SHELL  //  " + T(nombre).toUpperCase(), alignment:"left", characterSpacing:1.5 }, { text:pag + " / " + total, alignment:"right" }],
       margin:[34, 14, 34, 0], fontSize:6.4, color:K.tenue }),
     defaultStyle:{ font:"Roboto", fontSize:8.2, lineHeight:1.2, color:K.texto }
   };
