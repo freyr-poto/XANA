@@ -297,6 +297,11 @@
   .iets-prog-acc{display:flex;gap:6px;align-items:center}
   /* Tienda */
   /* Pestaña Tienda: lista a la izquierda, ficha del objeto a la derecha */
+  /* Aviso de versión nueva (version.js) */
+  .aviso-version{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:200;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:var(--panel-alto);border:1px solid var(--rosa);border-radius:var(--r-m);padding:10px 14px;box-shadow:0 8px 30px color-mix(in srgb,var(--sombra) 60%,transparent);max-width:calc(100vw - 32px);font-size:var(--t-s)}
+  html.holo .aviso-version{bottom:calc(46px + env(safe-area-inset-bottom))}
+  .ver-app{display:block;color:var(--apagado);font-size:var(--t-xs);padding:6px 8px 0;text-align:right}
   body.sin-compra .solo-compra{display:none}
   .ar-pista{font-size:var(--t-s);color:var(--apagado);align-self:center}
   .td-pag .td-cab{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;padding:12px 16px;margin-bottom:10px}
@@ -1998,6 +2003,10 @@
   .tk-nube-auto input{width:auto;min-width:0;margin:0;flex:0 0 auto}
   .tk-nube-estado{font-size:var(--t-s);color:var(--apagado);flex:1 1 180px}
   .tk-nube-estado.mal{color:var(--aviso)}
+  .tk-nube-master{margin-top:12px;padding:10px 12px;border:1px solid var(--linea);border-radius:var(--r-s);font-size:var(--t-s)}
+  .tk-nube-master .tk-nube-codigo{font-size:var(--t-m);margin:0 8px}
+  .tk-nube-master p{margin:6px 0 0;color:var(--apagado)}
+  .tk-nube-ayuda{font-size:var(--t-s);color:var(--apagado);margin:4px 0}
   .tk-sec-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
   .tk-sec-cab h2{font-family:var(--display);font-size:var(--t-xl);font-weight:700;letter-spacing:.04em;color:var(--texto);line-height:1.1;margin:0}
   .tk-sec-cab p{margin:0;color:var(--apagado);font-size:var(--t-s);flex:1 1 260px}
@@ -2978,6 +2987,35 @@ function iconizar(raiz){
   document.addEventListener("scroll", ocultar, true);
   document.addEventListener("keydown", ev => { if(ev.key === "Escape" && actual) ocultar(); }, true);
 })();
+/* ===== version.js · Aviso de versión nueva (ficha y tracker) =====
+   build.py pone aquí la versión de este archivo (AAAA.MM.DD-HHMM) y deja al lado un version.json con la misma. Publicados
+   en la web, la ficha y el tracker miran ese version.json al abrirse, al volver a la pestaña y cada 5 minutos: si hay uno
+   más nuevo que el suyo, sale un aviso con «Recargar», que abre la página con ?v=<versión> para saltarse la caché del
+   navegador. Abiertos como archivo (file://) no miran nada. */
+const VERSION_APP = "2026.11.10-1632";
+const VERSION_AVISO = {visto:""};
+function comprobarVersion(){
+  if(!/^https?:$/.test(location.protocol) || !window.fetch) return;
+  fetch("version.json?t=" + Date.now(), {cache:"no-store"}).then(r => r.ok ? r.json() : null).then(v => {
+    if(v && typeof v.version === "string" && /^\d{4}\.\d\d\.\d\d-\d{4}$/.test(v.version) && v.version > VERSION_APP) avisoVersion(v.version);
+  }).catch(() => {});
+}
+function avisoVersion(v){
+  if(VERSION_AVISO.visto === v || document.getElementById("avisoVersion")) return;
+  const d = document.createElement("div");
+  d.id = "avisoVersion"; d.className = "aviso-version"; d.setAttribute("role", "status");
+  d.innerHTML = `<span>Hay una versión nueva de XANA.</span><button type="button" class="btn principal" data-v="recargar">Recargar</button><button type="button" class="btn fina" data-v="luego" aria-label="Luego">Luego</button>`;
+  d.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-v]"); if(!b) return;
+    if(b.dataset.v === "luego"){ VERSION_AVISO.visto = v; d.remove(); return; }
+    const u = new URL(location.href); u.searchParams.set("v", v); location.replace(u.toString());
+  });
+  document.body.appendChild(d);
+}
+function textoVersion(){ return /^\d/.test(VERSION_APP) ? "Versión " + VERSION_APP : ""; }
+setTimeout(comprobarVersion, 4000);
+setInterval(() => { if(document.visibilityState === "visible") comprobarVersion(); }, 5 * 60000);
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") comprobarVersion(); });
 </script>
 <script>
 "use strict";
@@ -6374,7 +6412,7 @@ const RELLENO_MECANICO = [
   /,? ?con menos ranuras\.?/gi, /Los androides llevan dos de serie\.?/gi
 ];
 /* ¿Le queda a la pieza algo mecánico aparte de los modificadores que ya se aplican solos? */
-const SENYAL_MECANICA = /[+−-]\d|\dd\d|d6|herramienta|burl|escáner|salt|tirada|Acci[oó]n|Movimiento|casilla|turno|inmun|\bCB\b|dificultad|daño|arma|hackeo|\bRAM\b|ranura|Carta|D12|cura|vida|herida|penaliz|ignora|esquiv|ocult|detect|identific|localiz|ves |oyes|transmi|repar|apnea|asfixia|oxígeno|sin gastar|activ|resist|veneno|aturd|ceg|inconscien|salvaci|alcance|cortafuegos|Tecnomancia|conect|agarr|sigilo|ventaja|crític|inyect|dispar|explot|tecnomante|biomonitor|comunicaci|cifrad|grabaci|radio|graba|piloto|dron|vehículo|PEM|ataque|bloque|control|percib|oscuridad|infrarroj|olfato|rastre|memoria|chip|competencia|nivel|descans|terminal|respiras|bajo el agua|afect|eyect|funcionan igual|Cuerpo|Destreza|Inteligencia|Tecnolog|Temple|Reflejos/i;
+const SENYAL_MECANICA = /[+−-]\d|\dd\d|d6|herramienta|burl|escáner|salt|tirada|Acci[oó]n|Movimiento|casilla|turno|inmun|\bCB\b|dificultad|daño|arma|hackeo|\bRAM\b|ranura|D12|cura|vida|herida|penaliz|ignora|esquiv|ocult|detect|identific|localiz|ves |oyes|transmi|repar|apnea|asfixia|oxígeno|sin gastar|activ|resist|veneno|aturd|ceg|inconscien|salvaci|alcance|cortafuegos|Tecnomancia|conect|agarr|sigilo|ventaja|crític|inyect|dispar|explot|tecnomante|biomonitor|comunicaci|cifrad|grabaci|radio|graba|piloto|dron|vehículo|PEM|ataque|bloque|control|percib|oscuridad|infrarroj|olfato|rastre|memoria|chip|competencia|nivel|descans|terminal|respiras|bajo el agua|afect|eyect|funcionan igual|Cuerpo|Destreza|Inteligencia|Tecnolog|Temple|Reflejos/i;
 
 /* ¿Tiene cola? Una cola cibernética instalada, ser dracónido, o una característica de vastaya que hable de cola */
 function tieneCola(piezas){
@@ -7974,15 +8012,15 @@ function resolverMezcla(e, total, doce){
   return {ok, danyo:ok ? MEZCLA.resiste : MEZCLA.falla, txt:"mezcla de drogas (con " + e.con.join(", ") + "): " + (total === null ? "sin Vigor, no resiste" : "Cuerpo + Vigor + D12 = " + total + " contra " + e.dif + (ok ? ", resiste" : ", no resiste"))};
 }
 /* Pide el D12 de una tirada (los PJ tiran el dado de verdad). Devuelve el número o null si se cancela. */
-function pedirCarta(titulo, texto){
+function pedirD12(titulo, texto){
   return new Promise(res => {
     const velo = document.createElement("div");
     velo.className = "velo dialogo";
     velo.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><h3>${esc(titulo)}</h3><p class="dlg-texto">${esc(texto).replace(/\n/g, "<br>")}</p>
-      <label style="display:flex;gap:8px;align-items:center">D12 <input class="dlg-campo" id="cartaMezcla" placeholder="1–12" inputmode="numeric" autocomplete="off" style="width:5em"></label>
+      <label style="display:flex;gap:8px;align-items:center">D12 <input class="dlg-campo" id="d12Mezcla" placeholder="1–12" inputmode="numeric" autocomplete="off" style="width:5em"></label>
       <div class="dlg-botones"><button class="btn" data-r="no">Cancelar</button><button class="btn principal" data-r="si">Tirar</button></div></div>`;
     document.body.appendChild(velo);
-    const i = velo.querySelector("#cartaMezcla");
+    const i = velo.querySelector("#d12Mezcla");
     const fin = v => { velo.remove(); res(v); };
     velo.querySelector('[data-r="no"]').onclick = () => fin(null);
     velo.querySelector('[data-r="si"]').onclick = () => { if(String(i.value).trim() === ""){ i.focus(); return; } fin(num(i.value)); };
@@ -8094,7 +8132,7 @@ function usarConsumibleFicha(def, quitar){
   const mz = r.efectos.find(e => e.tipo === "mezcla");
   if(mz){
     const tir = tiradaCombate(C, "cuerpo", "Vigor");
-    return pedirCarta("Mezclar drogas", "Ya llevas " + mz.con.join(", ") + ". Para resistir: Cuerpo + Vigor (" + num(tir.total) + ") + D12 contra " + mz.dif + ".\nSi fallas: 5 de daño y Aturdido 1 turno. Si resistes: solo 2 de daño. En los dos casos, −1 de humanidad durante el combate.")
+    return pedirD12("Mezclar drogas", "Ya llevas " + mz.con.join(", ") + ". Para resistir: Cuerpo + Vigor (" + num(tir.total) + ") + D12 contra " + mz.dif + ".\nSi fallas: 5 de daño y Aturdido 1 turno. Si resistes: solo 2 de daño. En los dos casos, −1 de humanidad durante el combate.")
       .then(carta => { if(carta === null) return false; mz.carta = carta; return terminarConsumibleFicha(def, quitar, r); });
   }
   return terminarConsumibleFicha(def, quitar, r);
@@ -9922,11 +9960,23 @@ function cargarScript(src){
   });
 }
 
+/* El maquetador que va dentro de la ficha (comprimido en <script id="libPdf">): se descomprime y se ejecuta al pedir el PDF.
+   En navegadores sin DecompressionStream (iOS anterior a 16.4) se usa el de internet. */
+async function pdfMakeIncluido(){
+  const el = document.getElementById("libPdf"), b64 = el && el.textContent.trim();
+  if(!b64 || /^\/\*/.test(b64) || typeof DecompressionStream === "undefined") return false;
+  const bin = atob(b64), bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const texto = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  const s = document.createElement("script"); s.textContent = texto; document.head.appendChild(s); s.remove();
+  return !!(window.pdfMake && typeof window.pdfMake.createPdf === "function");
+}
 function cargarPdfMake(){
   if(window.pdfMake && typeof window.pdfMake.createPdf === "function" && window.__xanaFuentesPdf)
     return Promise.resolve(window.pdfMake);
   if(promesaPdfMake) return promesaPdfMake;
   promesaPdfMake = (async () => {
+    try{ if(await pdfMakeIncluido()){ window.__xanaFuentesPdf = true; return window.pdfMake; } }catch(e){ /* al de internet */ }
     const origenes = (location.protocol === "file:" ? [["lib/pdfmake.min.js", "lib/vfs_fonts.js"]] : []).concat(ORIGENES_PDF);
     for(const par of origenes){
       try{
@@ -10495,7 +10545,7 @@ var HERIDA_TEMPORAL = {"ojo dañado":["Cabeza", 4], "oído dañado":["Cabeza", 9
 function efectosDeTexto(txt){
   const t = String(txt || "").replace(/\s+/g, " ");
   const out = {sinDanyo:/no hacen? daño/i.test(t), soloSiCB:/a través de su CB/i.test(t) && /Ardiendo|arder/i.test(t), auto:[], salv:null, falla:[]};
-  const ms = t.match(/tira (Cuerpo|Destreza|Inteligencia|Tecnología|Temple|Reflejos) \+ ([A-ZÁÉÍÓÚ][^+]*?) \+ (?:D12|Carta) contra (?:(?:dificultad |la dificultad )?(\d+)|(tu ataque))/i);
+  const ms = t.match(/tira (Cuerpo|Destreza|Inteligencia|Tecnología|Temple|Reflejos) \+ ([A-ZÁÉÍÓÚ][^+]*?) \+ D12 contra (?:(?:dificultad |la dificultad )?(\d+)|(tu ataque))/i);
   const tras = ms ? t.slice(t.indexOf(ms[0]) + ms[0].length) : "";
   const lista = ms ? out.falla : out.auto;
   const zona = ms ? tras : t;
@@ -10693,7 +10743,7 @@ function textoEncendida(e){
 /* ---------- Resumen mecánico ----------
    Quita la ambientación («Armazón sigiloso yakuza…:»), los requisitos y lo que ya va sumado en los números,
    y deja frases cortas con efecto de juego. */
-var SENYAL_EFECTO = /[+−-]\d|\dd6|\binmun|\bCB\b|casilla|ignora|tirada|Carta|D12|acci[oó]n|turno|rotaci|vida|herid|salvaci|daño|esquiv|resist|veneno|Envenen|Ardiendo|aturd|ceg|PEM|hackeo|RAM|ocult|detect|oscuridad|infrarroj|visión|\bves\b|oyes|agarr|crític|penaliz|iniciativa|movimiento|cura|dificultad|\bno puedes?\b|\bpuedes\b|anula|bloque/i;
+var SENYAL_EFECTO = /[+−-]\d|\dd6|\binmun|\bCB\b|casilla|ignora|tirada|D12|acci[oó]n|turno|rotaci|vida|herid|salvaci|daño|esquiv|resist|veneno|Envenen|Ardiendo|aturd|ceg|PEM|hackeo|RAM|ocult|detect|oscuridad|infrarroj|visión|\bves\b|oyes|agarr|crític|penaliz|iniciativa|movimiento|cura|dificultad|\bno puedes?\b|\bpuedes\b|anula|bloque/i;
 function resumenMecanico(e, quitar){
   let t = String(e || "").replace(/\s+/g, " ").trim();
   (quitar || []).forEach(q => { t = t.split(q).join(" "); });
@@ -10927,7 +10977,7 @@ function ataqueDeTexto(e){
   const cono = mc ? {n:mc[1].trim(), gasta:num(mc[2]), que:mc[3], casillas:num(mc[4]), danyo:mc[5], frase:mc[0]} : null;
   if(mc) e = e.replace(mc[0], " ");
   let est, comp, cad, cc = false;
-  const m = e.match(/\((Reflejos|Destreza|Cuerpo|Inteligencia|Tecnología|Temple) \+ ([^+()]+?) \+ (?:D12|Carta)(?:,? Cadencia (\d+))?\)/);
+  const m = e.match(/\((Reflejos|Destreza|Cuerpo|Inteligencia|Tecnología|Temple) \+ ([^+()]+?) \+ D12(?:,? Cadencia (\d+))?\)/);
   if(m){ est = CLAVE_ESTADISTICA[m[1].toLowerCase()]; comp = m[2].trim(); cad = m[3] || (e.match(/Cadencia (\d+)/) || [])[1] || ""; cc = /Cuerpo a Cuerpo/i.test(comp); }
   else if(/arma cuerpo a cuerpo (ligera|mediana|pesada|muy pesada)|golpeas como arma cuerpo a cuerpo|\(arma (ligera|mediana|pesada)[:,]|\barma ligera de mala calidad/i.test(e)){
     est = "destreza"; comp = "Armas Cuerpo a Cuerpo"; cad = (e.match(/Cadencia (\d+)/) || [])[1] || "2"; cc = true;
@@ -11943,6 +11993,7 @@ function sanearTracker(t){
     const vistos = {};
     if(obj(t.nube.vistos)) Object.keys(t.nube.vistos).forEach(k => { if(num(t.nube.vistos[k]) > 0) vistos[k] = num(t.nube.vistos[k]); });
     out.nube = {codigo:nubeCodigoValido(t.nube.codigo) ? t.nube.codigo : "", auto:t.nube.auto !== false, vistos};
+    if(/^XANAM(-[A-Z0-9]{5}){4}$/.test(String(t.nube.master || ""))) out.nube.master = t.nube.master;
   }
   if(obj(t.combate) && Array.isArray(t.combate.participantes)){
     const c = t.combate;
@@ -12119,7 +12170,7 @@ function anyadirVipUno(v, nombre){
   reponerPorCombate(ficha);
   ficha["f-nombre"] = nombre;
   const p = {id:nuevoIdT("c"), tipo:"pnj", vip:true, ref:v.id, nombre, ficha, carta:"", fuera:false, notas:String(ficha["f-heridas"] || ""), foto:v.foto || "", heridas:heridas.map(h => Object.assign({}, h))};
-  cartaPnj(p);
+  tirarIniciativaPnj(p);
   T.combate.participantes.push(p); p.inicio = fotoInicio(p);
   anotarIceArmado(p, conFicha(ficha, () => armarIceInicial()));
   return p;
@@ -12434,9 +12485,11 @@ function deshacer(){
 }
 /* +X a la iniciativa mientras dure una pieza (Sandevistan: «vuelves a tirar tu Iniciativa con +5») */
 const iniMas = p => ((p.ficha.combate && p.ficha.combate.estados) || []).reduce((s, x) => s + num(x.iniMas), 0);
+/* Ojo: en los datos guardados el D12 de iniciativa sigue llamándose «carta» (p.carta) y el del ataque S.cartaA / S.cartaD,
+   de cuando el sistema usaba cartas de póker. Solo es el nombre interno: cambiarlo rompería los combates guardados. */
 function totalIni(p, R){ return p.carta === "" ? null : (R || resumenFicha(p.ficha)).ini + num(p.carta) + iniMas(p); }
 /* D12 de iniciativa de un PNJ: se tira solo. El de los PJ se escribe a mano. */
-function cartaPnj(p, motivo){
+function tirarIniciativaPnj(p, motivo){
   const c = tirarD12();
   p.carta = String(c.v);
   if(motivo) anotar(p.nombre + ": D12 " + c.txt + " (" + motivo + ").", "turno");
@@ -12488,7 +12541,7 @@ function anyadirPnj(t, n){
     const ficha = fichaDePnj(t);
     ficha["f-nombre"] = nombre;
     const p = {id:nuevoIdT("c"), tipo:"pnj", ref:t.id, nombre, ficha, carta:"", fuera:false, notas:"", foto:"", heridas:[]};     // sus notas fijas salen aparte
-    cartaPnj(p);
+    tirarIniciativaPnj(p);
     T.combate.participantes.push(p); p.inicio = fotoInicio(p);
     anotarIceArmado(p, conFicha(ficha, () => armarIceInicial()));
     out.push(p);
@@ -13120,7 +13173,7 @@ function abrirAtaque(atkId, accId, opc){
     if(k === "modo"){ S.modo = b.dataset.v; return pintarTodo(); }
     if(k === "obj"){ S.obj = b.dataset.v; S.extras = S.extras.filter(x => x !== S.obj); cartaDefensor(); ponerTramoMapa(); return pintarTodo(); }
     if(k === "retirar"){ const quien = b.dataset.v === "cartaA" ? p.nombre : (q() || {}).nombre; autoCarta(b.dataset.v, quien); return pintarTodo(); }
-    if(k === "baraja"){ reaccionBaraja(S, b, p, q(), autoCarta, caja); return pintarTodo(); }
+    if(k === "baraja"){ reaccionDados(S, b, p, q(), autoCarta, caja); return pintarTodo(); }
     if(k === "tramo"){ S.tramo = num(b.dataset.v); S.tramoManual = true; return pintarTodo(); }
     if(k === "tirar"){ const R = resolverAtaque(S); S.dados = tirarDados(R.nDados || 0); return pintarTodo(); }
     if(k === "tirar-crit"){ S.crit = tirarDados(2); return pintarTodo(); }
@@ -13240,7 +13293,7 @@ function htmlIniciativa(c){
     return `<li class="tk-fila ${R.nivel} ${estado}${p.id === c.sel ? " sel" : ""}">
       <button type="button" class="tk-fila-b" data-sel="${esc(p.id)}" aria-pressed="${p.id === c.sel}" aria-label="Ver ${esc(p.nombre)}">
         <span class="pos">${p.fuera ? "—" : pos + 1}</span>
-        <span class="ini" title="${tot === null ? "Sin carta: iniciativa base " + R.ini : "Base " + R.ini + " + D12 " + p.carta}">${tot === null ? R.ini : tot}<small>${tot === null ? "base" : "INI"}</small></span>
+        <span class="ini" title="${tot === null ? "Sin D12: iniciativa base " + R.ini : "Base " + R.ini + " + D12 " + p.carta}">${tot === null ? R.ini : tot}<small>${tot === null ? "base" : "INI"}</small></span>
         <span class="nom"><b>${esc(p.nombre)}</b><i class="${p.tipo}">${p.tipo === "pj" ? "PJ" : "PNJ"}</i>${etiqueta ? `<em>${etiqueta}</em>` : ""}</span>
         <span class="vida"><b>${R.vida}</b><small>/${R.vidaMax}</small></span>
         <span class="barra-v"><i style="width:${pct}%"></i></span>
@@ -13258,7 +13311,7 @@ function htmlIniciativa(c){
     </div>
     <ol class="tk-orden">${filas}</ol>
     <div class="tk-orden-pie"><button type="button" class="btn" data-t="anyadir">+ Añadir combatiente</button>
-      <button type="button" class="btn" data-t="cartas-pnj" title="Vuelve a tirar el D12 de iniciativa de todos los PNJ">Tirar D12 de los PNJ</button>
+      <button type="button" class="btn" data-t="d12-pnjs" title="Vuelve a tirar el D12 de iniciativa de todos los PNJ">Tirar D12 de los PNJ</button>
       <button type="button" class="btn" data-t="ordenar" title="Vuelve a ordenar a todos por iniciativa">Ordenar por iniciativa</button></div>`;
 }
 function htmlPreparar(){
@@ -13317,7 +13370,7 @@ function usoDeAtaque(a){
   if(T0 && T0.comp) return ESTADISTICA_NOMBRES[T0.est] + " + " + T0.comp;
   if(a.id === "lucha") return "Cuerpo + Lucha";
   if(a.id === "artes") return "Destreza + Artes Marciales";
-  const m = String(a.e || "").match(/\((Reflejos|Destreza|Cuerpo|Inteligencia|Tecnología|Temple) \+ ([^+()]+?) \+ (?:D12|Carta)/);
+  const m = String(a.e || "").match(/\((Reflejos|Destreza|Cuerpo|Inteligencia|Tecnología|Temple) \+ ([^+()]+?) \+ D12/);
   if(m) return m[1] + " + " + m[2].trim();
   if(/arma cuerpo a cuerpo/i.test(a.e || "")) return "Destreza + Armas Cuerpo a Cuerpo";
   return "";
@@ -13568,7 +13621,7 @@ function htmlDetalle(p){
           ${M.cb.menos ? `<span class="cm-mini-mandos"><button type="button" class="btn fina" data-cm="cb-reparar" data-n="1">Reparar 1</button><button type="button" class="btn fina" data-cm="cb-reparar" data-n="0">Todo</button></span>` : ""}</div>
         <div class="tk-rec" title="${esc(M.ini.desglose.join("\n"))}"><small>Iniciativa</small><b>${tot === null ? M.ini.v : tot}</b><span>${tot === null ? "base, falta el D12" : "base " + M.ini.v + " + D12 " + esc(p.carta)}</span>
           <label class="tk-ini">D12 <input id="tkCarta" inputmode="numeric" value="${esc(p.carta)}" placeholder="—" aria-label="D12 de iniciativa"></label>
-          ${p.tipo === "pnj" ? `<button type="button" class="btn fina" data-t="carta-pnj" title="Tira 1D12">Tirar D12</button>` : ""}${iniMas(p) ? `<span>+${iniMas(p)} por una pieza</span>` : ""}</div>
+          ${p.tipo === "pnj" ? `<button type="button" class="btn fina" data-t="d12-pnj" title="Tira 1D12">Tirar D12</button>` : ""}${iniMas(p) ? `<span>+${iniMas(p)} por una pieza</span>` : ""}</div>
         <div class="tk-rec" id="tkMov" title="${esc(M.mov.desglose.join("\n"))}"><small>Movimiento</small><b>${M.mov.v}</b><span>corriendo ${M.mov.correr}</span></div>
         <div class="tk-rec ram"><small>RAM</small><b>${M.ram.actual}<i> / ${M.ram.max}</i></b>
           <span class="cm-mini-mandos"><button type="button" class="btn fina" data-cm="ram" data-n="-1" aria-label="Gastar 1 RAM">−1</button><button type="button" class="btn fina" data-cm="ram" data-n="1" aria-label="Recuperar 1 RAM">+1</button></span></div>
@@ -13833,8 +13886,8 @@ async function accion(b){
   if(b.dataset.t === "activar" && sel){ activarPieza(sel, b.dataset.acc, false); return; }
   if(b.dataset.t === "apagar-pieza" && sel){ activarPieza(sel, b.dataset.acc, true); return; }
   if(b.dataset.t === "turno-acc" && sel){ accionTurno(sel, b.dataset.acc); return; }
-  if(b.dataset.t === "carta-pnj" && sel && sel.tipo === "pnj"){ antes("D12 · " + sel.nombre); cartaPnj(sel, "iniciativa"); ordenar(); guardarTracker(); pintar(); return; }
-  if(b.dataset.t === "cartas-pnj" && c){ antes("D12 de los PNJ"); c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).forEach(x => cartaPnj(x)); ordenar();
+  if(b.dataset.t === "d12-pnj" && sel && sel.tipo === "pnj"){ antes("D12 · " + sel.nombre); tirarIniciativaPnj(sel, "iniciativa"); ordenar(); guardarTracker(); pintar(); return; }
+  if(b.dataset.t === "d12-pnjs" && c){ antes("D12 de los PNJ"); c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).forEach(x => tirarIniciativaPnj(x)); ordenar();
     anotar("Iniciativa de los PNJ (D12): " + c.participantes.filter(x => x.tipo === "pnj" && !x.fuera).map(x => x.nombre + " " + x.carta).join(", ") + ".", "turno"); guardarTracker(); pintar(); return; }
   if(b.dataset.t === "hackear" && sel){ abrirHackeo(sel.id, b.dataset.acc); return; }
   if(b.dataset.t === "ice-armar" && sel){ const usa = gastoTecno(sel); if(!usa){ toast(sel.nombre + " ya ha usado su Acción y sus Acciones de Tecnomancia"); return; }
@@ -13905,16 +13958,23 @@ async function accion(b){
     case "ir-personajes": TAB = "personajes"; pintar(); return;
     case "cargar": $("#tkFichas").click(); return;
     case "cargar-vip": $("#tkVips").click(); return;
-    case "nube-crear": { const n = datosNubeT(); n.codigo = nubeNuevoCodigo(); n.vistos = {}; NUBE_T.usando = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeMSync(); return; }
+    case "nube-crear": { const n = datosNubeT(); n.codigo = nubeNuevoCodigo(); n.master = ""; n.vistos = {}; NUBE_T.usando = false; NUBE_M.comprobada = ""; NUBE_M.falta = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeMSync(); return; }
     case "nube-usar": NUBE_T.usando = true; pintarNubeT(); { const i = $("#tkNubeCodigo"); if(i) i.focus(); } return;
     case "nube-conectar": { const c = nubeNormalizar(($("#tkNubeCodigo") || {}).value);
       if(!nubeCodigoValido(c)){ toast("Ese código no tiene la forma XANA-XXXX-XXXX-XXXX"); return; }
-      const n = datosNubeT(); n.codigo = c; n.vistos = {}; NUBE_T.usando = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeActualizarT(false); nubeMSync(); return; }
+      const mc = nubeMNormalizar(($("#tkNubeMaster") || {}).value);
+      if(mc && !nubeMClaveValida(mc)){ toast("El código de máster tiene la forma XANAM-XXXXX-XXXXX-XXXXX-XXXXX"); return; }
+      const n = datosNubeT(); n.codigo = c; n.master = mc || ""; n.vistos = {}; NUBE_T.usando = false; NUBE_M.comprobada = ""; NUBE_M.falta = false; guardarTracker(); pintarNubeT(); nubeVigilar(); nubeActualizarT(false); nubeMSync(); return; }
+    case "nubem-ver": NUBE_M.ver = !NUBE_M.ver; pintarNubeT(); return;
+    case "nubem-copiar": { const ok = await copiar(datosNubeT().master); toast(ok ? "Código de máster copiado. Guárdalo solo para ti" : "No se ha podido copiar"); return; }
+    case "nubem-usar": { const mc = nubeMNormalizar(($("#tkNubeMaster") || {}).value);
+      if(!nubeMClaveValida(mc)){ toast("El código de máster tiene la forma XANAM-XXXXX-XXXXX-XXXXX-XXXXX"); return; }
+      datosNubeT().master = mc; NUBE_M.falta = false; guardarTracker(); pintarNubeT(); nubeMSync(); return; }
     case "nube-cancelar": NUBE_T.usando = false; pintarNubeT(); return;
     case "nube-copiar": { const ok = await copiar(datosNubeT().codigo); toast(ok ? "Código copiado: pégaselo a tus jugadores" : "No se ha podido copiar: díctalo"); return; }
     case "nube-actualizar": nubeActualizarT(false); return;
     case "nube-cambiar": if(await confirmar("Dejas de recibir las fichas de esta partida y tus datos de máster dejan de sincronizarse en este ordenador. Lo que ya tienes se queda en el tracker.", "Cambiar código")){
-      const n = datosNubeT(); n.codigo = ""; n.vistos = {}; guardarTracker(); pintarNubeT(); } return;
+      const n = datosNubeT(); n.codigo = ""; n.master = ""; n.vistos = {}; NUBE_M.comprobada = ""; NUBE_M.falta = false; guardarTracker(); pintarNubeT(); } return;
     case "nuevo-pnj": EDITANDO = PNJ_VACIO(); pintar(); window.scrollTo(0, 0); return;
     case "pnj-azar": EDITANDO = generarPnj(GEN.nivel, GEN.tipo, null); pintar(); window.scrollTo(0, 0); return;
     case "generar": { if(!EDITANDO) return; leerCreador(); GEN.nivel = ($("#genNivel") || {}).value || GEN.nivel; GEN.tipo = ($("#genTipo") || {}).value || "";
@@ -14054,7 +14114,7 @@ async function menu(){
     <button class="opcion" data-m="importar"><b>Importar copia (.json)</b><small>Sustituye todo lo del tracker por lo del archivo.</small></button>
     <button class="opcion" data-m="vaciar"><b>Vaciar el tracker</b><small>Borra fichas, PNJ y combate.</small></button>
     <button class="opcion" data-m="teclas"><b>Atajos de teclado</b><small>Espacio, flechas, número + D/S/C, Ctrl+Z (tecla ?)</small></button>
-    <button class="opcion" data-m="cerrar"><b>Cerrar</b></button></div></div>`;
+    <button class="opcion" data-m="cerrar"><b>Cerrar</b></button></div>${textoVersion() ? `<p class="ver-app">${esc(textoVersion())}</p>` : ""}</div>`;
   document.body.appendChild(velo);
   const cerrar = () => velo.remove();
   velo.addEventListener("click", async ev => {
@@ -14155,8 +14215,10 @@ function htmlNubeT(){
   const n = datosNubeT();
   if(!n.codigo){
     return NUBE_T.usando ? `<h3>Partida en la nube</h3>
-      <div class="tk-nube-fila"><input id="tkNubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANA-XXXX-XXXX-XXXX" aria-label="Código de partida">
-        <button type="button" class="btn principal" data-t="nube-conectar">Conectar</button><button type="button" class="btn" data-t="nube-cancelar">Cancelar</button></div>`
+      <div class="tk-nube-fila"><input id="tkNubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANA-XXXX-XXXX-XXXX" aria-label="Código de partida"></div>
+      <div class="tk-nube-fila"><input id="tkNubeMaster" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código de máster (si es tu partida)" aria-label="Código de máster"></div>
+      <p class="tk-nube-ayuda">El código de máster solo hace falta para traer tus PNJ, golpes y planos de tu otro ordenador. Si no lo tienes a mano, puedes ponerlo luego.</p>
+      <div class="tk-nube-fila"><button type="button" class="btn principal" data-t="nube-conectar">Conectar</button><button type="button" class="btn" data-t="nube-cancelar">Cancelar</button></div>`
     : `<h3>Partida en la nube</h3>
       <p>Crea un código de partida y pásaselo a tus jugadores. Lo ponen en su ficha (botón <b>☁ Partida</b>) y sus fichas te llegan solas cada vez que cambian algo.</p>
       <div class="tk-nube-fila"><button type="button" class="btn principal" data-t="nube-crear">Crear código de partida</button><button type="button" class="btn" data-t="nube-usar">Ya tengo un código</button></div>`;
@@ -14169,7 +14231,8 @@ function htmlNubeT(){
     <div class="tk-nube-fila"><label class="tk-nube-auto"><input type="checkbox" id="tkNubeAuto"${n.auto ? " checked" : ""}> Comprobar sola cada 30 s</label>
       <span class="tk-nube-estado${NUBE_T.error ? " mal" : ""}">${esc(est)}</span>
       <button type="button" class="btn fina" data-t="nube-cambiar">Cambiar código</button></div>
-    ${typeof nubeMTexto === "function" && nubeMTexto() ? `<p class="tk-nube-estado${NUBE_M.error ? " mal" : ""}">${esc(nubeMTexto())}</p>` : ""}`;
+    ${typeof nubeMTexto === "function" && nubeMTexto() ? `<p class="tk-nube-estado${NUBE_M.error ? " mal" : ""}">${esc(nubeMTexto())}</p>` : ""}
+    ${typeof htmlNubeMaster === "function" ? htmlNubeMaster() : ""}`;
 }
 const nubeHoraT = t => { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
 function pintarNubeT(){ const c = document.getElementById("tkNube"); if(c) c.innerHTML = htmlNubeT(); }
@@ -14763,7 +14826,7 @@ function htmlReaccionesBaraja(S, p, q, hayD){
         : boton(x, campo, dueno, "", x.verbo === "KILL" ? "Que repita el D12" : "Cambiar el D12 de")).join("")}</div>`).join("")}
     <p class="cm-vacio">KILL: su dueño repite el D12 (un PNJ lo tira solo). BOOST: suma o resta al D12. PUSH: quien hackea tira un D12 y sustituye al otro. Gasta la RAM al momento, aunque luego canceles el ataque.</p></details>`;
 }
-function reaccionBaraja(S, b, p, q, autoCarta, caja){
+function reaccionDados(S, b, p, q, autoCarta, caja){
   const h = participante(b.dataset.quien), x = reaccionesDisponibles().find(r => r.h.id === b.dataset.quien && r.a.id === b.dataset.hacc);
   if(!h || !x) return;
   const campo = b.dataset.campo, dueno = campo === "cartaA" ? p : q;
@@ -14956,7 +15019,7 @@ function activarPieza(p, accId, apagar){
   });
   const extra = [];
   if(ia.iniMas){
-    if(p.tipo === "pnj"){ const c = cartaPnj(p); extra.push("nuevo D12 de iniciativa " + c.txt + " +" + ia.iniMas); }
+    if(p.tipo === "pnj"){ const c = tirarIniciativaPnj(p); extra.push("nuevo D12 de iniciativa " + c.txt + " +" + ia.iniMas); }
     else { p.carta = ""; extra.push("pon su nuevo D12 de iniciativa (+" + ia.iniMas + ")"); }
     ordenar();
   }
@@ -15236,7 +15299,7 @@ async function accionTurno(p, id){
       if(mz){
         if(r.q.tipo === "pnj") mz.carta = tirarD12().v;
         else { const tot = conFicha(r.q.ficha, () => tiradaCombate(calcular(), "cuerpo", "Vigor")).total;
-          const carta = await pedirCarta("Mezclar drogas · " + r.q.nombre, r.q.nombre + " ya lleva " + mz.con.join(", ") + ". Cuerpo + Vigor (" + num(tot) + ") + D12 contra " + mz.dif + ".\nFalla: 5 de daño y Aturdido 1 turno. Resiste: 2 de daño. Siempre −1 de humanidad en este combate.");
+          const carta = await pedirD12("Mezclar drogas · " + r.q.nombre, r.q.nombre + " ya lleva " + mz.con.join(", ") + ". Cuerpo + Vigor (" + num(tot) + ") + D12 contra " + mz.dif + ".\nFalla: 5 de daño y Aturdido 1 turno. Resiste: 2 de daño. Siempre −1 de humanidad en este combate.");
           if(carta === null) return; mz.carta = carta; }
       }
     }
@@ -16492,10 +16555,12 @@ function eventosPlanos(caja){
   });
 }
 /* ===== tracker/tk-nube-master.js · Lo del máster en la nube: el mismo tracker en varios ordenadores ===== */
-/* Con el código de partida puesto, el tracker sube solo lo suyo y lo baja en los demás ordenadores donde se ponga ese
-   código («Ya tengo un código»):
-     partidas/<código>/master/indice/<clave> = {t}            (t = hora de la subida; b:1 si se ha borrado)
-     partidas/<código>/master/datos/<clave>  = {t, z, datos}  (z:1 = datos comprimidos con LZString)
+/* Lo del máster va aparte de la partida, bajo un CÓDIGO DE MÁSTER secreto (XANAM-XXXXX-XXXXX-XXXXX-XXXXX) que solo conoce
+   el máster: los jugadores tienen el código de partida, pero sin el de máster no pueden leer ni tocar sus datos.
+   El tracker lo crea solo (al crear la partida o la primera vez que sincroniza) y deja en la partida una marca sin el
+   código (partidas/<código>/maestro = {t}) para que otro ordenador no cree uno distinto: si ve la marca, pide el código.
+     master/<código de máster>/indice/<clave> = {t}            (t = hora de la subida; b:1 si se ha borrado)
+     master/<código de máster>/datos/<clave>  = {t, z, datos}  (z:1 = datos comprimidos con LZString)
    Claves: «tracker» (PJ, PNJ, PNJ creados, encuentros, combate, crónica, tiempo: un solo bloque), «g_<id>» cada golpe,
    «p_<id>» cada plano, «m_<id>» cada mapa (calibración y posiciones) e «i_<id>» su imagen.
    Gana el último cambio. Cada ordenador recuerda (xana-nube-master) con qué versión de cada clave está al día, la huella
@@ -16512,7 +16577,34 @@ function nubeMEstado(codigo){
   return S;
 }
 function nubeMGuardar(S){ try{ localStorage.setItem(CLAVE_NUBE_M, JSON.stringify(S)); }catch(e){} }
-const nubeMCodigo = () => nubeLista() && T && T.nube && nubeCodigoValido(T.nube.codigo) ? T.nube.codigo : "";
+const nubeMClaveValida = c => /^XANAM(-[A-Z0-9]{5}){4}$/.test(String(c || ""));
+/* El código de máster de este tracker (vacío si no hay partida o aún no lo tiene) */
+const nubeMCodigo = () => nubeLista() && T && T.nube && nubeCodigoValido(T.nube.codigo) && nubeMClaveValida(T.nube.master) ? T.nube.master : "";
+function nubeMNuevaClave(){
+  const A = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ", b = new Uint8Array(20);
+  (window.crypto || {getRandomValues:x => x.map(() => Math.floor(Math.random() * 256))}).getRandomValues(b);
+  const s = Array.from(b, x => A[x % 32]).join("");
+  return "XANAM-" + [0, 5, 10, 15].map(i => s.slice(i, i + 5)).join("-");
+}
+function nubeMNormalizar(t){
+  const s = String(t || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^XANAM/, "");
+  return s.length === 20 ? "XANAM-" + [0, 5, 10, 15].map(i => s.slice(i, i + 5)).join("-") : String(t || "").trim().toUpperCase();
+}
+const nubeMEscribir = (clave, cambios) => nubePedir("master/" + clave, {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(cambios)});
+/* Antes de sincronizar: si hay partida pero este tracker no tiene código de máster, lo crea (y deja la marca en la
+   partida) o, si la partida ya tiene uno, lo pide. Lo que hubiera de la versión anterior (partidas/<código>/master) se borra. */
+async function nubeMPreparar(){
+  const n = T && T.nube;
+  if(!nubeLista() || !n || !nubeCodigoValido(n.codigo) || nubeMClaveValida(n.master)) return;
+  if(NUBE_M.comprobada === n.codigo) return;
+  const marca = await nubePedir("partidas/" + n.codigo + "/maestro");
+  NUBE_M.comprobada = n.codigo;
+  if(marca){ NUBE_M.falta = true; pintarNubeT(); return; }
+  n.master = nubeMNuevaClave(); NUBE_M.falta = false;
+  await nubePedir("partidas/" + n.codigo + "/maestro", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({t:Date.now()})});
+  try{ await nubeEscribir(n.codigo, {master:null}); }catch(e){}
+  guardarTracker(); pintarNubeT();
+}
 const nubeMClave = (p, id) => p + String(id).replace(/[.#$\[\]\/]/g, "_");
 function nubeMHuella(t){
   t = String(t);
@@ -16607,11 +16699,12 @@ async function nubeMElegirTracker(remoto){
 
 /* ---------- Sincronizar: bajar lo nuevo de la nube y subir lo cambiado aquí ---------- */
 async function nubeMSync(){
+  try{ await nubeMPreparar(); }catch(e){ NUBE_M.error = e.message || String(e); NUBE_M.comprobada = ""; }
   const codigo = nubeMCodigo(); if(!codigo) return;
   if(NUBE_M.corriendo){ NUBE_M.otra = true; return; }
   if(typeof nubeOcupado === "function" && nubeOcupado() || typeof PL !== "undefined" && PL.arr){ nubeMCambio(); return; }   // se está escribiendo o arrastrando: luego
   NUBE_M.corriendo = true;
-  const base = "partidas/" + codigo + "/master/";
+  const base = "master/" + codigo + "/";
   let bajadas = 0;
   try{
     const S = nubeMEstado(codigo), L = await nubeMLocal(), ahora = Date.now(), marcas = nubeMMarcas(), cuando = k => Math.min(ahora, num(marcas[nubeMTipo(k)]) || ahora);
@@ -16665,14 +16758,14 @@ async function nubeMSync(){
     // 4. subir lo cambiado aquí (una petición por clave: un golpe o una imagen pueden pesar varios MB)
     for(const k of Object.keys(S.sucios)){
       const it = L3[k], t = Date.now();
-      if(!it){ await nubeEscribir(codigo, {["master/datos/" + k]:null, ["master/indice/" + k]:{t, b:1}}); }
+      if(!it){ await nubeMEscribir(codigo, {["datos/" + k]:null, ["indice/" + k]:{t, b:1}}); }
       else {
         let texto = it.texto !== undefined ? it.texto : await it.leer();
         if(!texto){ delete S.sucios[k]; continue; }
         let z = 0;
         if(k.indexOf("i_") !== 0 && texto.length > 20000){ texto = LZString.compressToBase64(texto); z = 1; }
         if(texto.length > 9000000){ NUBE_M.error = "«" + k + "» pesa demasiado para la nube"; delete S.sucios[k]; continue; }
-        await nubeEscribir(codigo, {["master/datos/" + k]:Object.assign({t, datos:texto}, z ? {z} : {}), ["master/indice/" + k]:{t}});
+        await nubeMEscribir(codigo, {["datos/" + k]:Object.assign({t, datos:texto}, z ? {z} : {}), ["indice/" + k]:{t}});
         S.h[k] = it.h;
       }
       if(!it) delete S.h[k];
@@ -16694,7 +16787,20 @@ function nubeMArrancar(){
 }
 const nubeMTexto = () => !nubeMCodigo() ? "" : NUBE_M.corriendo ? "Sincronizando tus datos de máster…" :
   NUBE_M.error ? "Tus datos de máster no se han podido sincronizar (" + NUBE_M.error + ")." :
-  NUBE_M.hora ? "Tus PNJ, combate, golpes, planos y mapas están en la nube (" + nubeHoraT(NUBE_M.hora) + "). En otro ordenador: «Ya tengo un código» con este código." : "";
+  NUBE_M.hora ? "Tus PNJ, combate, golpes, planos y mapas están en la nube (" + nubeHoraT(NUBE_M.hora) + ")." : "";
+/* El bloque del código de máster en el panel de la nube */
+function htmlNubeMaster(){
+  const n = T.nube || {};
+  if(!nubeCodigoValido(n.codigo)) return "";
+  if(nubeMClaveValida(n.master)) return `<div class="tk-nube-master"><b>Código de máster</b>
+      <span class="tk-nube-codigo${NUBE_M.ver ? "" : " oculto"}">${NUBE_M.ver ? esc(n.master) : "XANAM-•••••-•••••-•••••-•••••"}</span>
+      <button type="button" class="btn fina" data-t="nubem-ver">${NUBE_M.ver ? "Ocultar" : "Mostrar"}</button><button type="button" class="btn fina" data-t="nubem-copiar">Copiar</button>
+      <p>Es solo para ti: con él, tus otros ordenadores reciben tus PNJ, combate, golpes, planos y mapas («Ya tengo un código»). <b>No se lo des a los jugadores.</b></p></div>`;
+  if(NUBE_M.falta) return `<div class="tk-nube-master"><b>Esta partida ya tiene código de máster.</b> Escríbelo para sincronizar aquí tus datos de máster (lo ves en el tracker de tu otro ordenador, en este mismo panel).
+      <div class="tk-nube-fila"><input id="tkNubeMaster" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANAM-XXXXX-XXXXX-XXXXX-XXXXX" aria-label="Código de máster">
+      <button type="button" class="btn principal" data-t="nubem-usar">Usar</button></div></div>`;
+  return "";
+}
 setTimeout(() => { if(typeof T !== "undefined") nubeMArrancar(); }, 800);
 
 /* ---------- MAPA: imagen con su cuadrícula ya dibujada, calibrada a mano; fichas de los combatientes encima ----------
