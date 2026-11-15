@@ -615,6 +615,10 @@
   .nube-estado{font-size:var(--t-s);opacity:.85;min-height:1.2em}
   .nube-botones{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .modal .nube-nota{font-size:var(--t-xs);color:var(--aviso);margin:6px 0 10px}
+  .nube-enlace{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;margin:8px 0;background:var(--panel-alto)}
+  .nube-enlace b,.nube-enlace small{flex-basis:100%}
+  .nube-enlace small{color:var(--apagado);font-size:var(--t-xs)}
+  .nube-enlace input{flex:1 1 180px;min-width:0;font-size:var(--t-xs)}
   .nube-lista{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
   .nube-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;background:var(--panel-alto)}
   .nube-fila small{display:block;color:var(--apagado);font-size:var(--t-xs)}
@@ -2992,7 +2996,7 @@ function iconizar(raiz){
    en la web, la ficha y el tracker miran ese version.json al abrirse, al volver a la pestaña y cada 5 minutos: si hay uno
    más nuevo que el suyo, sale un aviso con «Recargar», que abre la página con ?v=<versión> para saltarse la caché del
    navegador. Abiertos como archivo (file://) no miran nada. */
-const VERSION_APP = "2026.11.11-0517";
+const VERSION_APP = "2026.11.15-1841";
 const VERSION_AVISO = {visto:""};
 function comprobarVersion(){
   if(!/^https?:$/.test(location.protocol) || !window.fetch) return;
@@ -9487,14 +9491,14 @@ function abrirReglas(q, apartado){
 /* ================= NUBE: fichas sincronizadas con la partida =================
    Base de datos: Firebase Realtime Database, por su API REST (fetch normal, sin librerías).
    · El máster crea en el tracker un código de partida (XANA-XXXX-XXXX-XXXX) y se lo da a los jugadores.
-   · La ficha, con el código puesto, sube sola cada cambio (3 s después del último) a
-       partidas/<código>/fichas/<id>  = {nombre, t, datos}   (datos = la copia de seguridad .json, en texto)
+   · La ficha, con el código puesto, sube sola cada cambio (1,5 s después del último) a
+       partidas/<código>/fichas/<id>  = {nombre, t, e, v, datos}   (datos = la copia de seguridad .json, en texto)
        partidas/<código>/indice/<id>  = {nombre, t}          (lo que mira el tracker para saber qué ha cambiado)
      El retrato se sube en pequeño (el tracker solo usa una miniatura).
    · El tracker mira el índice y baja solo las fichas que han cambiado.
-   · La misma ficha en varios dispositivos: cada uno recuerda con qué versión de la nube está al día (xana-nube-sync) y si
-     tiene cambios sin subir. Al abrirla, al volver a la pestaña, cada 20 s y antes de subir, mira el índice: si otro
-     dispositivo ha subido algo, lo baja. Si los dos tenían cambios, gana el último cambio (índice: e = hora del último cambio).
+   · La ficha de verdad es la de la nube: cada dispositivo trabaja con una copia y la junta con la nube al abrir, tras cada
+     cambio y cuando la nube avisa (ver «La nube manda», más abajo). Cada subida lleva un número de versión v.
+   · Para abrirla en otro dispositivo: la lista de la partida o el enlace ?partida=…&ficha=… («Copiar enlace»).
    Sin NUBE_URL no aparece nada de esto y todo sigue funcionando con .json. */
 const NUBE_URL = "https://xana-rol-default-rtdb.europe-west1.firebasedatabase.app".replace(/\/+$/, "");
 const nubeLista = () => /^https:\/\//.test(NUBE_URL);

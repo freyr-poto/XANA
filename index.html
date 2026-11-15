@@ -617,6 +617,10 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .nube-estado{font-size:var(--t-s);opacity:.85;min-height:1.2em}
   .nube-botones{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .modal .nube-nota{font-size:var(--t-xs);color:var(--aviso);margin:6px 0 10px}
+  .nube-enlace{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;margin:8px 0;background:var(--panel-alto)}
+  .nube-enlace b,.nube-enlace small{flex-basis:100%}
+  .nube-enlace small{color:var(--apagado);font-size:var(--t-xs)}
+  .nube-enlace input{flex:1 1 180px;min-width:0;font-size:var(--t-xs)}
   .nube-lista{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
   .nube-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;background:var(--panel-alto)}
   .nube-fila small{display:block;color:var(--apagado);font-size:var(--t-xs)}
@@ -2612,7 +2616,7 @@ function iconizar(raiz){
    en la web, la ficha y el tracker miran ese version.json al abrirse, al volver a la pestaña y cada 5 minutos: si hay uno
    más nuevo que el suyo, sale un aviso con «Recargar», que abre la página con ?v=<versión> para saltarse la caché del
    navegador. Abiertos como archivo (file://) no miran nada. */
-const VERSION_APP = "2026.11.11-0517";
+const VERSION_APP = "2026.11.15-1841";
 const VERSION_AVISO = {visto:""};
 function comprobarVersion(){
   if(!/^https?:$/.test(location.protocol) || !window.fetch) return;
@@ -9788,14 +9792,14 @@ function abrirReglas(q, apartado){
 /* ================= NUBE: fichas sincronizadas con la partida =================
    Base de datos: Firebase Realtime Database, por su API REST (fetch normal, sin librerías).
    · El máster crea en el tracker un código de partida (XANA-XXXX-XXXX-XXXX) y se lo da a los jugadores.
-   · La ficha, con el código puesto, sube sola cada cambio (3 s después del último) a
-       partidas/<código>/fichas/<id>  = {nombre, t, datos}   (datos = la copia de seguridad .json, en texto)
+   · La ficha, con el código puesto, sube sola cada cambio (1,5 s después del último) a
+       partidas/<código>/fichas/<id>  = {nombre, t, e, v, datos}   (datos = la copia de seguridad .json, en texto)
        partidas/<código>/indice/<id>  = {nombre, t}          (lo que mira el tracker para saber qué ha cambiado)
      El retrato se sube en pequeño (el tracker solo usa una miniatura).
    · El tracker mira el índice y baja solo las fichas que han cambiado.
-   · La misma ficha en varios dispositivos: cada uno recuerda con qué versión de la nube está al día (xana-nube-sync) y si
-     tiene cambios sin subir. Al abrirla, al volver a la pestaña, cada 20 s y antes de subir, mira el índice: si otro
-     dispositivo ha subido algo, lo baja. Si los dos tenían cambios, gana el último cambio (índice: e = hora del último cambio).
+   · La ficha de verdad es la de la nube: cada dispositivo trabaja con una copia y la junta con la nube al abrir, tras cada
+     cambio y cuando la nube avisa (ver «La nube manda», más abajo). Cada subida lleva un número de versión v.
+   · Para abrirla en otro dispositivo: la lista de la partida o el enlace ?partida=…&ficha=… («Copiar enlace»).
    Sin NUBE_URL no aparece nada de esto y todo sigue funcionando con .json. */
 const NUBE_URL = "https://xana-rol-default-rtdb.europe-west1.firebasedatabase.app".replace(/\/+$/, "");
 const nubeLista = () => /^https:\/\//.test(NUBE_URL);
@@ -9844,9 +9848,19 @@ var NUBE = null;
 var CLAVE_NUBE = "xana-nube";
 var NUBE_APLICANDO = false;          // lo que llega del combate no se vuelve a subir
 var NUBE_VIVO = {fuente:null, sondeo:null, datos:null, hora:0, error:""};
-/* Sincronización de esta ficha con la nube en este dispositivo: {id, t (versión de la nube con la que está al día),
-   sucio (cambios sin subir), e (hora del último cambio hecho aquí)} */
-var CLAVE_SYNC = "xana-nube-sync";
+/* ---------- La nube manda (una sola versión de cada ficha) ----------
+   La ficha de la nube es LA ficha; lo que hay en cada dispositivo es una copia de trabajo. Cada dispositivo recuerda la
+   «base»: la última versión de la nube que ha visto (en IndexedDB, xana-nube-base:<id>, con su número de versión v).
+   · Lo cambiado aquí = lo que difiere de la base, campo a campo (ciberware, objetos, vida, notas…).
+   · Al sincronizar se baja la de la nube y se juntan: se queda la de la nube, y encima solo los campos cambiados aquí.
+     Así un dispositivo atrasado que solo ha tocado la vida no borra el ciberware que se añadió en otro.
+   · Se sube con el número de versión siguiente (v + 1); las reglas de Firebase rechazan una subida hecha sobre una versión
+     vieja, y entonces se vuelve a bajar, juntar y subir. Nunca se pisa una versión que no se ha visto.
+   · Un dispositivo sin base (la ficha se abre aquí por primera vez con este sistema) no sube su copia: se queda la de la
+     nube y la de aquí va a «Versiones anteriores». Si tenía cambios sin subir de la versión anterior, se pregunta.
+   Sincroniza al abrir, 1,5 s después de cada cambio, cuando la nube avisa (EventSource), al volver a la pestaña y cada 20 s.
+   Lo que llega del combate en directo (vida, estados…) cuenta como cambio de aquí: así la nube también queda al día. */
+var CLAVE_SYNC = "xana-nube-sync";              // de la versión anterior: {id, t, sucio, e} (solo para pasar a la base)
 function nubeSync(){
   let S = null;
   try{ S = JSON.parse(localStorage.getItem(CLAVE_SYNC) || "null"); }catch(e){ S = null; }
@@ -9855,30 +9869,44 @@ function nubeSync(){
   return S;
 }
 function nubeSyncGuardar(S){ try{ localStorage.setItem(CLAVE_SYNC, JSON.stringify(S)); }catch(e){} }
-/* ¿Esta ficha está unida a la partida? Solo entonces se sube sola. Al conectar no se sube nada hasta que el jugador elige
+const nubeClaveBase = id => "xana-nube-base:" + id;
+async function nubeLeerBase(id){ try{ const b = await Almacen.leer(nubeClaveBase(id)); return b && typeof b === "object" && b.obj ? b : null; }catch(e){ return null; } }
+async function nubeGuardarBase(id, v, obj, t){ NUBE.base = {id, v, obj, t}; try{ await Almacen.escribir(nubeClaveBase(id), NUBE.base); }catch(e){} }
+/* ¿Esta ficha está unida a la partida? Solo entonces se sincroniza. Al conectar no se sube nada hasta que el jugador elige
    «Subir esta ficha» o carga una de la partida: así no salen fichas repetidas (una ficha en blanco, una copia vieja…). */
 function nubeVinculada(){ return !!(NUBE && NUBE.codigo && D && D.nube && typeof D.nube === "object" && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && D.nube.partida === NUBE.codigo); }
-/* Huella del contenido (el retrato, por su firma; sin los datos de la nube): para saber si de verdad ha cambiado algo */
+/* Huella del contenido (el retrato, por su firma; sin los datos de la nube) */
 function nubeHuella(d){
   const t = JSON.stringify(Object.assign({}, fichaAGuardar(d), {retrato:undefined, retratoFirma:undefined, nube:undefined})) + "|" + nubeFirma(d.retrato || "");
   let h = 5381; for(let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
   return t.length + ":" + (h >>> 0).toString(36);
 }
+/* La ficha en el formato en que se guarda, para comparar campo a campo: el retrato cuenta por su firma */
+function nubeCampos(o, firma){
+  const c = Object.assign({}, fichaComparable(o));
+  c.retratoFirma = firma !== undefined ? firma : (o.retratoFirma || nubeFirma(o.retrato || ""));
+  delete c.retrato; delete c.nube;
+  return c;
+}
+const nubeIgual = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+/* Campos que difieren entre dos fichas ya pasadas por nubeCampos */
+function nubeDiferentes(a, b){
+  const ks = new Set(Object.keys(a).concat(Object.keys(b)));
+  return Array.from(ks).filter(k => !nubeIgual(a[k], b[k]));
+}
+/* Lo cambiado aquí desde la base. Lo que ha puesto el tracker del máster (vida, estados… en combate) no cuenta mientras
+   siga igual que como llegó: no se sube por sí solo (se va junto con el siguiente cambio del jugador) */
+function nubeMios(B, L){
+  const ext = NUBE.externas || {};
+  return nubeDiferentes(B, L).filter(k => !(k in ext && nubeIgual(ext[k], L[k])));
+}
 function nubeCambio(){
   if(!NUBE || !NUBE.codigo || !nubeLista()) return;
-  if(NUBE_APLICANDO){
-    // lo que llega de la nube (combate, reloj) pasa a ser la versión de base si aquí no había cambios propios
-    if(nubeVinculada()){ const S = nubeSync(); if(!S.sucio){ S.h = nubeHuella(D); nubeSyncGuardar(S); } }
-    return;
-  }
   if(!nubeVinculada()){ nubePintar(); return; }       // otra ficha (vaciada, importada…): no se sube hasta elegir
-  // al abrir la ficha se guarda sola (migraciones, raza…): eso no es un cambio del jugador hasta haber mirado la nube
-  if(!NUBE.listo) return;
-  const S = nubeSync();
-  if(S.h && nubeHuella(D) === S.h && !S.sucio) return;        // se ha guardado igual que estaba: nada que subir
-  S.sucio = true; S.e = Date.now(); nubeSyncGuardar(S);
+  if(!NUBE.listo) return;                             // al abrir, hasta haber mirado la nube
+  if(NUBE_APLICANDO) return;                          // lo del combate se va con la siguiente sincronización
   clearTimeout(NUBE.temporizador);
-  NUBE.temporizador = setTimeout(nubeEnviar, 3000);
+  NUBE.temporizador = setTimeout(nubeEnviar, 1500);
 }
 function nubeMini(src){
   if(!src || !/^data:image\//.test(src)) return Promise.resolve("");
@@ -9897,43 +9925,190 @@ function nubeMini(src){
     img.src = src;
   }).then(m => { NUBE.miniDe = src; NUBE.mini = m; return m; });
 }
+/* Pone aquí una ficha (de la nube o juntada) sin volver a subirla; conserva el retrato grande si es el mismo */
+function nubeAplicarFicha(obj){
+  const id = D.nube.id, partida = NUBE.codigo;
+  obj = JSON.parse(JSON.stringify(obj));
+  if(obj.retratoFirma && D.retrato && nubeFirma(D.retrato) === obj.retratoFirma) obj.retrato = D.retrato;
+  delete obj.retratoFirma;
+  obj.nube = {id, partida};
+  NUBE_APLICANDO = true;
+  try{
+    const modo = D.modoCreacion;
+    D = migrarModelo(sanear(obj), false);
+    D.modoCreacion = false;
+    Guardado.escribir(D);
+    if(typeof repintarTodo === "function") repintarTodo();
+  }finally{ NUBE_APLICANDO = false; }
+  NUBE.ultimo = ""; NUBE.error = "";
+}
+/* Lo que se sube: la ficha en su formato de guardado, con el retrato en pequeño y su firma */
+async function nubeCopiaSubir(){
+  const copia = Object.assign({}, fichaAGuardar(D));
+  const mini = await nubeMini(D.retrato);
+  if(mini){ copia.retrato = mini; copia.retratoFirma = nubeFirma(D.retrato); } else { delete copia.retrato; delete copia.retratoFirma; }
+  delete copia.nube;
+  // lo que ha puesto el tracker y sigue igual no se sube desde aquí: en la nube se queda lo que había
+  const ext = NUBE.externas || {}, base = NUBE.base && D.nube && NUBE.base.id === D.nube.id ? fichaComparable(NUBE.base.obj) : null;
+  if(base){
+    const L = nubeCampos(D, "");
+    Object.keys(ext).forEach(k => { if(k === "retratoFirma" || !nubeIgual(ext[k], L[k])) return; if(base[k] === undefined) delete copia[k]; else copia[k] = JSON.parse(JSON.stringify(base[k])); });
+  }
+  return copia;
+}
+/* Junta tres versiones de un valor: la base (lo último visto de la nube), la de la nube y la de aquí.
+   Lo que solo ha cambiado en un lado, se queda; en las listas (ciberware, objetos, heridas…) cada elemento cuenta por su
+   id, así que añadir un implante en un dispositivo y gastar munición en otro no se pisan. Si los dos cambian lo mismo,
+   gana lo de aquí (es el último cambio: lo de la nube ya estaba). */
+const nubeEsObj = v => !!v && typeof v === "object" && !Array.isArray(v);
+function nubeJuntarValor(b, r, l){
+  if(nubeIgual(l, b)) return r;
+  if(nubeIgual(r, b) || nubeIgual(r, l)) return l;
+  if(Array.isArray(b) && Array.isArray(r) && Array.isArray(l)) return nubeJuntarLista(b, r, l);
+  if(nubeEsObj(b) && nubeEsObj(r) && nubeEsObj(l)){
+    const out = {};
+    new Set(Object.keys(r).concat(Object.keys(l), Object.keys(b))).forEach(k => {
+      const v = nubeJuntarValor(b[k], r[k], l[k]);
+      if(v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  return l;
+}
+function nubeJuntarLista(b, r, l){
+  const clave = o => nubeEsObj(o) && (typeof o.id === "string" || typeof o.id === "number") ? "id:" + (o.clase || "") + ":" + (o.sub || "") + ":" + o.id : "j:" + JSON.stringify(o);
+  const mapa = L => { const m = new Map(); L.forEach(o => { const k = clave(o); if(!m.has(k)) m.set(k, o); }); return m; };
+  const B = mapa(b), Lm = mapa(l);
+  let out = r.map(o => ({k:clave(o), o}));
+  // quitado aquí → fuera
+  B.forEach((o, k) => { if(!Lm.has(k)) out = out.filter(x => x.k !== k); });
+  const usados = new Set(out.map(x => x.k));
+  l.forEach(o => {
+    const k = clave(o);
+    if(B.has(k)){
+      // cambiado aquí → esta versión (si en la nube lo han quitado, se queda quitado)
+      if(!nubeIgual(B.get(k), o)){ const x = out.find(x => x.k === k); if(x) x.o = o; }
+      return;
+    }
+    // añadido aquí
+    const x = out.find(x => x.k === k);
+    if(!x){ out.push({k, o}); usados.add(k); return; }
+    if(nubeIgual(x.o, o)) return;
+    // el mismo id para dos cosas distintas (añadidas a la vez en dos sitios): la de aquí, con otro id
+    const pre = String(o.id).replace(/\d+$/, ""), mayor = Math.max(0, ...out.map(y => nubeEsObj(y.o) ? parseInt(String(y.o.id || "").replace(/\D/g, ""), 10) || 0 : 0));
+    const copia = Object.assign({}, o, {id:typeof o.id === "number" ? mayor + 1 : pre + (mayor + 1)});
+    out.push({k:clave(copia), o:copia});
+  });
+  return out.map(x => JSON.parse(JSON.stringify(x.o)));
+}
+/* Junta la de la nube con lo cambiado aquí desde la base. Devuelve la ficha resultante (formato de guardado) */
+function nubeJuntar(base, remoto, local){
+  const B = nubeCampos(base), R = nubeCampos(remoto), L = nubeCampos(local, nubeFirma(local.retrato || ""));
+  const mios = nubeMios(B, L);
+  const out = nubeJuntarValor(B, R, L);
+  // lo puesto por el tracker: se queda aquí, salvo que en la nube haya llegado algo más nuevo
+  const ext = NUBE.externas || {};
+  Object.keys(ext).forEach(k => {
+    if(k === "retratoFirma" || !(k in ext) || !nubeIgual(ext[k], L[k]) || nubeIgual(R[k], B[k])) return;
+    if(R[k] === undefined) delete out[k]; else out[k] = JSON.parse(JSON.stringify(R[k]));
+    delete ext[k];
+  });
+  // el retrato va aparte: la nube lleva la miniatura y su firma
+  if(mios.includes("retratoFirma")) out.retrato = local.retrato; else if(remoto.retrato) out.retrato = remoto.retrato;
+  if(!out.retratoFirma) delete out.retratoFirma;
+  return {obj:out, mios};
+}
+/* Sincroniza esta ficha con la nube. Devuelve "igual", "bajada", "subida" o "nada" (no hay ficha en la nube).
+   subirSiNoEsta: si la nube no la tiene (recién unida a la partida), se sube. */
+async function nubeSincronizar(opc){
+  opc = opc || {};
+  const id = D.nube.id;
+  for(let intento = 0; intento < 4; intento++){
+    const r = await nubeFicha(NUBE.codigo, id);
+    let remoto = null;
+    if(r && typeof r.datos === "string"){ try{ remoto = JSON.parse(r.datos); }catch(e){ remoto = null; } }
+    const vR = remoto ? num(r.v) : 0;
+    let base = NUBE.base && NUBE.base.id === id ? NUBE.base : await nubeLeerBase(id);
+    if(!remoto){
+      if(!opc.subirSiNoEsta){ NUBE.borrada = !!base; return "nada"; }      // la han borrado de la partida: no se vuelve a subir sola
+      if(nubeFichaVacia()) return "nada";
+      const copia = await nubeCopiaSubir();
+      if(await nubeSubirVersion(id, copia, 1, null)){ NUBE.borrada = false; return "subida"; }
+      continue;
+    }
+    if(!base){
+      // primera vez con este sistema en este dispositivo
+      const S = nubeSync(), alDia = S.id === id && S.t !== null && (S.t === r.t);
+      if(alDia){ base = {id, v:vR, obj:remoto, t:r.t}; }      // estaba al día con la nube: lo que difiere es lo cambiado aquí
+      else{
+        const local = nubeCampos(D, nubeFirma(D.retrato || "")), nube = nubeCampos(remoto);
+        if(nubeDiferentes(local, nube).length){
+          let usarNube = true;
+          if(S.id === id && S.sucio){
+            usarNube = await dialogo({titulo:"Esta ficha ha cambiado en dos sitios",
+              texto:"Este dispositivo tiene cambios que no llegaron a subirse, y en la nube hay una versión más nueva hecha en otro.\n¿Con cuál te quedas? La otra se guarda en «⋯ › Versiones anteriores» de este dispositivo.",
+              aceptar:"Usar la de la nube", cancelar:"Quedarme con la de aquí"});
+          }
+          if(typeof Historial !== "undefined") await Historial.guardar(usarNube ? "La de este dispositivo (conflicto con la nube)" : "La de la nube (conflicto)", usarNube ? JSON.parse(JSON.stringify(D)) : remoto);
+          if(!usarNube){ base = {id, v:vR, obj:remoto, t:r.t}; }       // lo de aquí pasa a ser «lo cambiado» y se sube encima
+          else{ nubeAplicarFicha(remoto); await nubeGuardarBase(id, vR, remoto, r.t); nubeSyncGuardar({id, t:r.t, sucio:false, e:0}); toast("Ficha puesta al día con la versión de la nube.", 4500); return "bajada"; }
+        } else { await nubeGuardarBase(id, vR, remoto, r.t); return "igual"; }
+      }
+    }
+    // juntar: la de la nube + lo cambiado aquí desde la base
+    const local = JSON.parse(JSON.stringify(D));
+    const igualQueBase = num(base.v) === vR && base.t === r.t;
+    const {obj, mios} = igualQueBase ? {obj:null, mios:nubeMios(nubeCampos(base.obj), nubeCampos(local, nubeFirma(local.retrato || "")))} : nubeJuntar(base.obj, remoto, local);
+    if(!igualQueBase){
+      // lo de la nube (más lo de aquí) pasa a esta ficha
+      const juntada = obj;
+      if(nubeDiferentes(nubeCampos(juntada), nubeCampos(local, nubeFirma(local.retrato || ""))).length){
+        nubeAplicarFicha(juntada);
+        if(mios.length) toast("Se han juntado tus cambios con los hechos en otro dispositivo.", 4000);
+        else toast("Ficha actualizada con los cambios hechos en otro dispositivo.", 4000);
+      }
+    }
+    if(!mios.length){ if(!igualQueBase) await nubeGuardarBase(id, vR, remoto, r.t); return igualQueBase ? "igual" : "bajada"; }
+    if(nubeFichaVacia()) return "igual";
+    const copia = await nubeCopiaSubir();
+    if(await nubeSubirVersion(id, copia, vR + 1, r)) return "subida";
+    // la nube ha cambiado mientras tanto (otra versión): se vuelve a bajar y juntar
+  }
+  throw new Error("la ficha cambia en otro dispositivo sin parar; se vuelve a intentar");
+}
+/* Sube la ficha con el número de versión v. Devuelve false si la nube la rechaza por ser sobre una versión vieja */
+async function nubeSubirVersion(id, copia, v, anterior){
+  const t = Date.now(), nombre = String(D["f-nombre"] || "").trim() || "Sin nombre";
+  try{
+    await nubeEscribir(NUBE.codigo, {["fichas/" + id]:{nombre, t, e:t, v, datos:JSON.stringify(copia)}, ["indice/" + id]:{nombre, t, e:t, v}});
+  }catch(e){
+    if(anterior !== undefined && /permiso/.test(e.message || "")){
+      // ¿otra versión, o de verdad sin permiso? Si la nube ya no tiene la versión sobre la que se subía, es lo primero
+      const ent = await nubeEntrada(NUBE.codigo, id).catch(() => null);
+      if(ent && (num(ent.v) !== (anterior ? num(anterior.v) : 0) || (anterior && ent.t !== anterior.t))) return false;
+    }
+    throw e;
+  }
+  await nubeGuardarBase(id, v, copia, t);
+  nubeSyncGuardar({id, t, sucio:false, e:0});
+  NUBE.esperaT = t; NUBE.hora = Date.now(); NUBE.error = "";
+  return true;
+}
 async function nubeEnviar(forzar){
   clearTimeout(NUBE.temporizador); NUBE.temporizador = null;
   clearTimeout(NUBE.reintento); NUBE.reintento = null;
   if(!NUBE.codigo || !nubeLista()) return false;
   if(!nubeVinculada()){ nubePintar(); return false; }
   if(NUBE.enviando){ NUBE.pendiente = true; return false; }
-  if(nubeFichaVacia()){ nubePintar(); return false; }       // una ficha en blanco no se sube (dispositivo nuevo, «Vaciar»)
   NUBE.enviando = true; nubePintar();
   let ok = false;
-  try{
-    // antes de subir: si otro dispositivo ha subido algo más nuevo, se baja eso en vez de pisarlo («Subir ahora» sube sin mirar)
-    const r = forzar ? "subir" : await nubeComprobarDentro();
-    if(r === "bajada" || r === "igual"){ ok = true; NUBE.error = ""; }
-    else{
-      const copia = Object.assign({}, fichaAGuardar(D));      // TEC-10: sube la lista única
-      const mini = await nubeMini(D.retrato);
-      if(mini){ copia.retrato = mini; copia.retratoFirma = nubeFirma(D.retrato); } else { delete copia.retrato; delete copia.retratoFirma; }
-      const texto = JSON.stringify(copia), S = nubeSync();
-      if(!forzar && texto === NUBE.ultimo && !S.sucio){ ok = true; }
-      else{
-        const t = Date.now(), e = S.e || t;
-        NUBE.esperaT = t;
-        await nubeSubir(NUBE.codigo, D.nube.id, String(D["f-nombre"] || "").trim() || "Sin nombre", texto, t, e);
-        // si mientras subía se ha cambiado algo, sigue sucia (se volverá a subir)
-        const S2 = nubeSync(); S2.t = t; if(S2.e === S.e){ S2.sucio = false; S2.h = nubeHuella(D); } nubeSyncGuardar(S2);
-        NUBE.ultimo = texto; NUBE.hora = Date.now(); NUBE.error = ""; ok = true;
-      }
-    }
-  }catch(e){
-    NUBE.error = e.message || String(e);
-    NUBE.reintento = setTimeout(nubeEnviar, 30000);
-  }
+  try{ await nubeSincronizar({subirSiNoEsta:!!forzar}); ok = true; NUBE.error = ""; }
+  catch(e){ NUBE.error = e.message || String(e); NUBE.reintento = setTimeout(nubeEnviar, 30000); }
   NUBE.enviando = false; nubePintar();
-  if(NUBE.pendiente || nubeSync().sucio && ok && !NUBE.temporizador){ NUBE.pendiente = false; if(nubeSync().sucio) nubeCambioSinMarcar(); }
+  if(NUBE.pendiente){ NUBE.pendiente = false; nubeCambioSinMarcar(); }
   return ok;
 }
-function nubeCambioSinMarcar(){ clearTimeout(NUBE.temporizador); NUBE.temporizador = setTimeout(nubeEnviar, 3000); }
+function nubeCambioSinMarcar(){ clearTimeout(NUBE.temporizador); NUBE.temporizador = setTimeout(nubeEnviar, 1500); }
 /* Firma corta del retrato completo: si la nube trae la miniatura del mismo retrato, aquí se conserva el grande */
 function nubeFirma(src){
   if(!src) return "";
@@ -9942,65 +10117,21 @@ function nubeFirma(src){
   NUBE.firmaDe = src; NUBE.firma = src.length + ":" + (h >>> 0).toString(36);
   return NUBE.firma;
 }
-/* ¿Ha subido otro dispositivo una versión de esta ficha? Devuelve "igual" (al día), "subir" (aquí hay lo último), "bajada" (se ha
-   traído la de la nube) o "nada" (no está en la nube). Gana el último cambio: si los dos tienen cambios, el más reciente. */
-async function nubeComprobarDentro(){
-  const S = nubeSync(), id = D.nube.id;
-  const ent = await nubeEntrada(NUBE.codigo, id);
-  if(!ent || !ent.t) return S.sucio ? "subir" : "nada";
-  if(ent.t === S.t || ent.t === NUBE.esperaT){ if(S.t !== ent.t){ S.t = ent.t; nubeSyncGuardar(S); } return S.sucio ? "subir" : "igual"; }
-  // la nube tiene otra versión (de otro dispositivo)
-  // cambios casi a la vez, con conexión (lo de aquí lleva menos de 1 minuto sin subir): gana el último, como siempre
-  const pendienteViejo = S.sucio && S.t !== null && Date.now() - num(S.e) > 60000;
-  if(!pendienteViejo && S.sucio && S.t !== null && num(S.e) > num(ent.e || ent.t)) return "subir";
-  const f = await nubeFicha(NUBE.codigo, id);
-  if(!f || typeof f.datos !== "string") return S.sucio ? "subir" : "nada";
-  let obj;
-  try{ obj = JSON.parse(f.datos); }catch(e){ return "subir"; }
-  if(!obj || typeof obj !== "object") return "subir";
-  const perdidos = S.sucio;
-  // primera vez en este dispositivo (sin versión apuntada) y ya era igual: solo se apunta
-  const sinFoto = o => JSON.stringify(Object.assign({}, fichaComparable(o), {retrato:undefined, retratoFirma:undefined, nube:undefined}));
-  if(sinFoto(obj) === sinFoto(D)){ S.t = f.t || ent.t; S.h = nubeHuella(D); S.sucio = false; nubeSyncGuardar(S); return "igual"; }
-  // TEC-09: cambiada aquí (sin subir) y también en otro dispositivo: se pregunta cuál conservar; la otra queda en «Versiones anteriores»
-  if(pendienteViejo){
-    const hora = ms => { if(!ms) return "hace un rato"; const d = new Date(num(ms)); return d.toLocaleDateString("es-ES", {day:"numeric", month:"short"}) + " a las " + d.toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit"}); };
-    const usarNube = await dialogo({titulo:"Esta ficha ha cambiado en dos sitios",
-      texto:"Aquí la cambiaste el " + hora(S.e) + " y no llegó a subirse; en otro dispositivo se cambió el " + hora(ent.e || ent.t) + ".\n¿Con cuál te quedas? La otra se guarda en «⋯ › Versiones anteriores» de este dispositivo.",
-      aceptar:"Usar la de la nube", cancelar:"Quedarme con la de aquí"});
-    if(typeof Historial !== "undefined") Historial.guardar(usarNube ? "La de este dispositivo (conflicto con la nube)" : "La de la nube (conflicto)", usarNube ? JSON.parse(JSON.stringify(D)) : obj);
-    if(!usarNube) return "subir";
-    nubeAplicarFicha(obj, f.t || ent.t);
-    toast("Cargada la versión de la nube; la tuya queda en «Versiones anteriores».", 5000);
-    return "bajada";
-  }
-  nubeAplicarFicha(obj, f.t || ent.t);
-  toast("Ficha actualizada con los cambios hechos en otro dispositivo.", 5000);
-  return "bajada";
-}
-/* Pone aquí la versión de la nube (sin volver a subirla); conserva el retrato grande si es el mismo */
-function nubeAplicarFicha(obj, t){
-  const id = D.nube.id, partida = NUBE.codigo;
-  if(obj.retratoFirma && D.retrato && nubeFirma(D.retrato) === obj.retratoFirma) obj.retrato = D.retrato;
-  delete obj.retratoFirma;
-  obj.nube = {id, partida};
-  NUBE_APLICANDO = true;
-  try{
-    D = migrarModelo(sanear(obj), false);
-    D.modoCreacion = false;
-    Guardado.escribir(D);
-    if(typeof repintarTodo === "function") repintarTodo();
-  }finally{ NUBE_APLICANDO = false; }
-  nubeSyncGuardar({id, t, sucio:false, e:0, h:nubeHuella(D)});
-  NUBE.ultimo = ""; NUBE.error = "";
-}
-/* Mirar la nube por fuera de una subida (al abrir, al volver a la pestaña, cada 20 s o cuando la nube avisa) */
+/* Mirar la nube (al abrir, al volver a la pestaña, cada 20 s o cuando la nube avisa): si la versión es la misma que la base
+   y aquí no hay cambios, no se baja nada */
 async function nubeComprobar(){
   if(!NUBE || !NUBE.codigo || !nubeLista() || !nubeVinculada() || NUBE.enviando || NUBE.comprobando) return;
   NUBE.comprobando = true;
   try{
-    const r = await nubeComprobarDentro();
-    if(r === "subir") nubeCambioSinMarcar();
+    const id = D.nube.id, base = NUBE.base && NUBE.base.id === id ? NUBE.base : await nubeLeerBase(id);
+    const ent = base ? await nubeEntrada(NUBE.codigo, id) : null;
+    const alDia = base && ent && num(ent.v) === num(base.v) && ent.t === base.t;
+    if(!base){ NUBE.comprobando = false; await nubeEnviar(); return; }
+    if(!alDia || nubeMios(nubeCampos(base.obj), nubeCampos(D, nubeFirma(D.retrato || ""))).length){
+      NUBE.comprobando = false;
+      await nubeEnviar();
+    }
+    else NUBE.hora = Date.now();
     NUBE.error = ""; nubePintar();
   }catch(e){ /* sin conexión: ya se mirará */ }
   finally{ NUBE.comprobando = false; }
@@ -10032,10 +10163,11 @@ const nubeHora = t => { const d = new Date(t); return String(d.getHours()).padSt
 function nubeEstadoTexto(){
   if(!NUBE.codigo) return "";
   if(!nubeVinculada()) return "Conectada, pero esta ficha todavía no está en la partida: súbela o carga una de la partida.";
-  if(NUBE.enviando) return "Subiendo la ficha…";
+  if(NUBE.enviando) return "Sincronizando…";
+  if(NUBE.borrada) return "Esta ficha ya no está en la partida (la han borrado de la nube). «Subir ahora» la vuelve a subir.";
   if(NUBE.error) return "No se ha podido subir (" + NUBE.error + "). Se vuelve a intentar sola cada 30 s.";
-  if(NUBE.hora) return "Ficha subida a las " + nubeHora(NUBE.hora) + ". Cada cambio se sube solo.";
-  return "Conectada. Cada cambio se sube solo.";
+  if(NUBE.hora) return "Al día con la nube (" + nubeHora(NUBE.hora) + "). Es la misma ficha en todos tus dispositivos.";
+  return "Conectada. Es la misma ficha en todos tus dispositivos.";
 }
 function nubePintar(){
   const b = document.getElementById("btnNube");
@@ -10048,6 +10180,36 @@ function nubePintar(){
   }
   const est = document.getElementById("nubeEstado");
   if(est) est.textContent = nubeEstadoTexto();
+}
+/* Enlace directo a esta ficha de la partida: abre la ficha de la nube en cualquier dispositivo */
+function nubeEnlace(){
+  const base = location.href.split("#")[0].split("?")[0];
+  return base + "?partida=" + encodeURIComponent(NUBE.codigo) + "&ficha=" + encodeURIComponent(D.nube.id);
+}
+/* Nombre para comparar (sin tildes, mayúsculas ni espacios de más) */
+const nubeNombreClave = t => String(t || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+/* Trae una ficha de la partida a este dispositivo y la deja sincronizada (la de aquí, si tiene algo, va a Versiones anteriores) */
+async function nubeTraer(id, conCopia, pre){
+  let r = pre;
+  if(!r){
+    const f = await nubeFicha(NUBE.codigo, id);
+    if(!f || typeof f.datos !== "string") throw new Error("esa ficha ya no está en la nube");
+    const obj = JSON.parse(f.datos);
+    if(!obj || typeof obj !== "object") throw new Error("la ficha de la nube está dañada");
+    r = {obj, nombre:String(f.nombre || "ficha"), t:f.t || null, v:num(f.v)};
+  }
+  if(conCopia && !nubeFichaVacia() && typeof Historial !== "undefined") await Historial.guardar("Antes de cargar una ficha de la nube");
+  const remoto = JSON.parse(JSON.stringify(r.obj)); delete remoto.nube;
+  if(!D.nube || typeof D.nube !== "object") D.nube = {};
+  D.nube = {id, partida:NUBE.codigo};
+  nubeAplicarFicha(r.obj);
+  await nubeGuardarBase(id, r.v, remoto, r.t);
+  nubeSyncGuardar({id, t:r.t, sucio:false, e:0});
+  NUBE.borrada = false; NUBE.hora = Date.now(); NUBE.listo = true;
+  nubeEscucharFicha();
+  if(typeof pestanya === "function") pestanya("ficha");
+  nubePintar();
+  return r.nombre;
 }
 function nubeAbrir(){
   const velo = document.createElement("div");
@@ -10074,7 +10236,7 @@ function nubeAbrir(){
       velo.innerHTML = `<div class="modal">
         <h3>Fichas de la partida</h3>
         <p><b>Cargar aquí</b> pone esa ficha en este dispositivo y sigue sincronizándose con la misma ficha de la nube: así puedes pasar tu personaje del ordenador al móvil, o al revés. <b>.json</b> la descarga como copia de seguridad.</p>
-        <p class="nube-nota">La misma ficha se mantiene al día en todos los dispositivos donde la cargues. Si la cambias en dos a la vez, se queda el último cambio. El retrato viene en pequeño.</p>
+        <p class="nube-nota">Es la misma ficha en todos los dispositivos donde la cargues: lo que cambies en uno aparece en los demás. Si cambias cosas distintas en dos a la vez, se juntan; si es lo mismo, se queda el último cambio.</p>
         ${filas}
         <div class="nube-botones"><button class="btn" data-n="volver">Volver</button></div></div>`;
       return;
@@ -10094,9 +10256,11 @@ function nubeAbrir(){
     }
     velo.innerHTML = vista === "conectada" ? `<div class="modal">
         <h3>Partida en la nube</h3>
-        <p>Tu ficha está conectada a la partida <b class="nube-codigo">${esc(NUBE.codigo)}</b>. Cada cambio que hagas le llega solo al máster: ya no hace falta mandarle el .json.</p>
+        <p>Tu ficha está en la partida <b class="nube-codigo">${esc(NUBE.codigo)}</b>. La ficha de verdad es la de la nube: este dispositivo, tu móvil o el ordenador del máster ven la misma, y cada cambio llega solo a todos.</p>
         <p class="nube-estado" id="nubeEstado">${esc(nubeFichaVacia() ? "La ficha está en blanco: se subirá en cuanto tenga nombre o estadísticas." : nubeEstadoTexto())}</p>
-        <div class="nube-botones"><button class="btn principal" data-n="subir">Subir ahora</button>
+        ${nubeVinculada() ? `<div class="nube-enlace"><b>Abrir esta ficha en otro dispositivo</b><small>Abre este enlace en el móvil u otro ordenador (o guárdalo en favoritos): entra directo en esta ficha de la partida.</small>
+          <input readonly value="${esc(nubeEnlace())}" aria-label="Enlace de tu ficha" onclick="this.select()"><button class="btn" data-n="enlace">Copiar enlace</button>${navigator.share ? `<button class="btn" data-n="compartir">Enviar…</button>` : ""}</div>` : ""}
+        <div class="nube-botones"><button class="btn principal" data-n="subir">Sincronizar ahora</button>
           <button class="btn" data-n="lista">Fichas de la partida</button>
           <button class="btn" data-n="desconectar">Desconectar</button>
           <button class="btn" data-n="cerrar">Cerrar</button></div></div>`
@@ -10116,7 +10280,7 @@ function nubeAbrir(){
     const obj = JSON.parse(f.datos);
     if(!obj || typeof obj !== "object") throw new Error("la ficha de la nube está dañada");
     obj.nube = {id, partida:NUBE.codigo};
-    return {obj, nombre:String(f.nombre || "ficha"), t:f.t || null};
+    return {obj, nombre:String(f.nombre || "ficha"), t:f.t || null, v:num(f.v)};
   };
   pintarModal();
   document.body.appendChild(velo);
@@ -10134,7 +10298,7 @@ function nubeAbrir(){
       if(!nubeCodigoValido(c)){ aviso.textContent = "Ese código no tiene la forma XANA-XXXX-XXXX-XXXX. Cópialo tal cual te lo ha pasado el máster."; return; }
       b.disabled = true; aviso.textContent = "Conectando…";
       NUBE.codigo = c; NUBE.ultimo = ""; NUBE.error = ""; NUBE.listo = true; nubeEscucharCombate();
-      try{ localStorage.setItem(CLAVE_NUBE, c); }catch(e){}
+      try{ localStorage.setItem(CLAVE_NUBE, c); localStorage.removeItem(CLAVE_NUBE + "-fuera"); }catch(e){}
       nubePintar();
       // no se sube nada todavía: si ya era la ficha de esta partida, sigue; si no, el jugador elige subirla o cargar una
       if(nubeVinculada()){ vista = "conectada"; pintarModal(); nubeEscucharFicha(); nubeComprobar(); return; }
@@ -10145,10 +10309,30 @@ function nubeAbrir(){
     if(n === "subirla"){
       if(nubeFichaVacia()) return;
       b.disabled = true;
-      const id = D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") ? D.nube.id : "f" + nubeAzar(10);
+      // ¿ya hay en la partida una ficha con este nombre? Lo normal es que sea la misma (subida desde otro dispositivo)
+      const propio = D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") ? D.nube.id : "";
+      let gemela = null;
+      try{
+        const idx = await nubeIndice(NUBE.codigo), mio = nubeNombreClave(D["f-nombre"]);
+        const id2 = Object.keys(idx).find(k => k !== propio && idx[k] && nubeNombreClave(idx[k].nombre) === mio);
+        if(id2) gemela = {id:id2, nombre:String(idx[id2].nombre)};
+      }catch(e){}
+      if(gemela){
+        const r = await dialogo({titulo:"Ya hay una «" + gemela.nombre + "» en la partida",
+          texto:"Seguramente es esta misma ficha, subida desde otro dispositivo. Si la abres, este dispositivo pasa a usar esa (la de aquí se guarda en «⋯ › Versiones anteriores»). Si es otro personaje con el mismo nombre, súbela como otra.",
+          aceptar:"Abrir la de la partida", otro:"Subir como otra", cancelar:"Cancelar"});
+        if(r === false){ b.disabled = false; return; }
+        if(r === true){
+          try{ await nubeTraer(gemela.id, true); velo.remove(); toast("«" + gemela.nombre + "» cargada desde la nube.", 4000); }
+          catch(e){ b.disabled = false; avisar("No se ha podido traer la ficha: " + (e.message || e) + "."); }
+          return;
+        }
+      }
+      const id = propio || "f" + nubeAzar(10);
       D.nube = {id, partida:NUBE.codigo};
       Guardado.escribir(D);
       nubeSyncGuardar({id, t:null, sucio:true, e:Date.now()});
+      NUBE.base = null;
       const ok = await nubeEnviar(true);
       nubeEscucharFicha();
       vista = "conectada"; pintarModal();
@@ -10163,22 +10347,12 @@ function nubeAbrir(){
       if(n === "traer" && !nubeFichaVacia() && typeof Historial !== "undefined") await Historial.guardar("Antes de cargar una ficha de la nube");
       b.disabled = true;
       try{
-        const {obj, nombre, t} = await bajar(fila.id);
+        const {obj, nombre, t, v} = await bajar(fila.id);
         if(n === "json"){
           await descargar(JSON.stringify(fichaAGuardar(obj), null, 2), "application/json", "xana-" + (nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ficha") + ".json");
           b.disabled = false; return;
         }
-        if(obj.retratoFirma) delete obj.retratoFirma;
-        NUBE_APLICANDO = true;
-        try{ D = migrarModelo(sanear(obj), false); D.modoCreacion = false; }finally{ NUBE_APLICANDO = false; }
-        NUBE.ultimo = ""; NUBE.error = "";
-        nubeSyncGuardar({id:fila.id, t, sucio:false, e:0, h:nubeHuella(D)});
-        nubeEscucharFicha();
-        NUBE_APLICANDO = true;
-        let guardada = false;
-        try{ guardada = Guardado.escribir(D); }finally{ NUBE_APLICANDO = false; }
-        if(!guardada) avisar("La ficha se ha cargado, pero este navegador no deja guardarla: si cierras la página se perderá.");
-        repintarTodo(); pestanya("ficha"); nubePintar();
+        await nubeTraer(fila.id, false, {obj, nombre, t, v});
         velo.remove();
         toast("«" + nombre + "» cargada desde la nube. Sigue sincronizada.", 4000);
       }catch(e){ b.disabled = false; avisar("No se ha podido traer la ficha: " + (e.message || e) + "."); }
@@ -10206,8 +10380,11 @@ function nubeAbrir(){
       return;
     }
     if(n === "subir"){ b.disabled = true; await nubeEnviar(true); b.disabled = false; return; }
+    if(n === "enlace"){ copiar(nubeEnlace()).then(ok => toast(ok ? "Enlace copiado" : "Selecciona el enlace y cópialo a mano", 3000)); return; }
+    if(n === "compartir"){ try{ await navigator.share({title:"Mi ficha de XANA", url:nubeEnlace()}); }catch(e){} return; }
     if(n === "desconectar"){
       if(!await confirmar("La ficha deja de subirse a la partida. Lo que ya está subido se queda donde está.", "Desconectar")) return;
+      try{ localStorage.setItem(CLAVE_NUBE + "-fuera", NUBE.codigo); }catch(e){}
       NUBE.codigo = ""; NUBE.error = ""; NUBE.hora = 0; NUBE.ultimo = ""; nubeDejarCombate(); nubeDejarFicha();
       clearTimeout(NUBE.temporizador); clearTimeout(NUBE.reintento);
       try{ localStorage.removeItem(CLAVE_NUBE); }catch(e){}
@@ -10253,6 +10430,15 @@ function nubeDejarCombate(){
 function nubeVivoYo(){ const d = NUBE_VIVO && NUBE_VIVO.datos; return d && d.activo && D.nube && d.pjs ? d.pjs[D.nube.id] || null : null; }
 /* Lo que el máster cambia en el tracker (vida, estados, CB, RAM, usos) se pone en esta ficha sin volver a subirla */
 function nubeAplicarCombate(d){
+  const antes = nubeCampos(D, "");
+  try{ nubeAplicarCombateDentro(d); }
+  finally{
+    const despues = nubeCampos(D, "");
+    NUBE.externas = NUBE.externas || {};
+    nubeDiferentes(antes, despues).forEach(k => { NUBE.externas[k] = despues[k] === undefined ? undefined : JSON.parse(JSON.stringify(despues[k])); });
+  }
+}
+function nubeAplicarCombateDentro(d){
   const yo = d && d.activo && D.nube && d.pjs ? d.pjs[D.nube.id] : null;
   // el máster ha terminado el combate en el que estaba: fuera los estados y las heridas temporales (la vida y las demás heridas se quedan)
   const acabaCombate = !yo && d && D.combate && D.combate.vivo;
@@ -10323,22 +10509,55 @@ function htmlCombateVivo(){
     <details class="cm-vivo-reg" open><summary>Registro <span>${(d.registro || []).length}</span></summary><ol>${reg || `<li class="cm-vacio">Nada todavía.</li>`}</ol></details>
   </section>`;
 }
-NUBE = {codigo:"", hora:0, error:"", temporizador:null, reintento:null, ultimo:"", miniDe:"", mini:"", enviando:false, pendiente:false, listo:false, esperaT:0, comprobando:false, fuenteFicha:null, sondeoFicha:null};
+NUBE = {codigo:"", hora:0, error:"", temporizador:null, reintento:null, ultimo:"", miniDe:"", mini:"", enviando:false, pendiente:false, listo:false, esperaT:0, comprobando:false, fuenteFicha:null, sondeoFicha:null, base:null, borrada:false};
 if(nubeLista()){
   try{ const c = nubeNormalizar(localStorage.getItem(CLAVE_NUBE) || ""); if(nubeCodigoValido(c)) NUBE.codigo = c; }catch(e){}
+  // ¿se abre con el enlace de una ficha? (?partida=XANA-…&ficha=f…)
+  let delEnlace = null;
+  try{
+    const q = new URLSearchParams(location.search), c = nubeNormalizar(q.get("partida") || ""), f = String(q.get("ficha") || "");
+    if(nubeCodigoValido(c)){
+      delEnlace = {partida:c, ficha:/^f[A-Z0-9]{10}$/.test(f) ? f : ""};
+      NUBE.codigo = c;
+      try{ localStorage.setItem(CLAVE_NUBE, c); localStorage.removeItem(CLAVE_NUBE + "-fuera"); }catch(e){}
+      q.delete("partida"); q.delete("ficha");
+      const resto = q.toString();
+      try{ history.replaceState(null, "", location.pathname + (resto ? "?" + resto : "") + location.hash); }catch(e){}
+    }
+  }catch(e){}
+  // la ficha ya era de una partida y este dispositivo perdió el código (o no lo tenía): se vuelve a conectar solo,
+  // salvo que el jugador se desconectara a propósito
+  if(!NUBE.codigo && D && D.nube && nubeCodigoValido(D.nube.partida)){
+    let fuera = ""; try{ fuera = localStorage.getItem(CLAVE_NUBE + "-fuera") || ""; }catch(e){}
+    if(fuera !== D.nube.partida){ NUBE.codigo = D.nube.partida; try{ localStorage.setItem(CLAVE_NUBE, NUBE.codigo); }catch(e){} }
+  }
   const boton = document.getElementById("btnNube");
   if(boton){ boton.hidden = false; boton.onclick = nubeAbrir; }
   nubePintar();
   // fichas que ya se subían antes de que hubiera que elegir: este dispositivo estaba conectado, así que siguen unidas a la partida
   if(NUBE.codigo && D && D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && !D.nube.partida){ D.nube.partida = NUBE.codigo; Guardado.escribir(D); }
-  // al abrir: primero se mira si otro dispositivo ha subido algo (y se baja); si aquí hay cambios sin subir, se suben
-  if(NUBE.codigo){ setTimeout(() => nubeComprobar().then(() => { NUBE.listo = true; }, () => { NUBE.listo = true; }), 1200); setTimeout(nubeEscucharCombate, 800); setTimeout(nubeEscucharFicha, 1000); }
+  const arrancar = async () => {
+    if(delEnlace && delEnlace.ficha && !(D.nube && D.nube.id === delEnlace.ficha && D.nube.partida === NUBE.codigo)){
+      try{ const nombre = await nubeTraer(delEnlace.ficha, true); toast("«" + nombre + "» abierta desde la nube.", 4000); }
+      catch(e){ avisar("No se ha podido abrir la ficha del enlace: " + (e.message || e) + "."); }
+    }
+    // al abrir: se mira la nube (se baja lo de otros dispositivos y se sube lo de aquí)
+    try{ await nubeComprobar(); }catch(e){}
+    NUBE.listo = true;
+    // conectado a la partida pero con una ficha que no está en ella: se pregunta (una vez por sesión) para no quedarse en una copia vieja
+    let visto = ""; try{ visto = sessionStorage.getItem("xana-nube-pregunta") || ""; }catch(e){}
+    if(NUBE.codigo && !nubeVinculada() && visto !== NUBE.codigo && !document.querySelector(".velo")){
+      try{ sessionStorage.setItem("xana-nube-pregunta", NUBE.codigo); }catch(e){}
+      nubeAbrir();
+    }
+  };
+  if(NUBE.codigo){ setTimeout(arrancar, 1200); setTimeout(nubeEscucharCombate, 800); setTimeout(nubeEscucharFicha, 1000); }
   document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "hidden" && NUBE.temporizador) nubeEnviar();
     if(document.visibilityState === "visible") nubeComprobar();
   });
   window.addEventListener("focus", () => nubeComprobar());
-  window.addEventListener("online", () => { if(NUBE.codigo && NUBE.error) nubeEnviar(); });
+  window.addEventListener("online", () => { if(NUBE.codigo) nubeComprobar(); });
 }
 /*</UI>*/
 
