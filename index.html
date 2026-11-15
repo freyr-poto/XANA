@@ -2618,7 +2618,7 @@ function iconizar(raiz){
    en la web, la ficha y el tracker miran ese version.json al abrirse, al volver a la pestaña y cada 5 minutos: si hay uno
    más nuevo que el suyo, sale un aviso con «Recargar», que abre la página con ?v=<versión> para saltarse la caché del
    navegador. Abiertos como archivo (file://) no miran nada. */
-const VERSION_APP = "2026.11.15-1915";
+const VERSION_APP = "2026.11.15-2045";
 const VERSION_AVISO = {visto:""};
 function comprobarVersion(){
   if(!/^https?:$/.test(location.protocol) || !window.fetch) return;
@@ -9793,7 +9793,7 @@ function abrirReglas(q, apartado){
 
 /* ================= NUBE: fichas sincronizadas con la partida =================
    Base de datos: Firebase Realtime Database, por su API REST (fetch normal, sin librerías).
-   · El máster crea en el tracker un código de partida (XANA-XXXX-XXXX-XXXX) y se lo da a los jugadores.
+   · El máster elige en el tracker el código de la partida (de 4 a 12 letras o números, p. ej. XANA29) y se lo da a los jugadores.
    · La ficha, con el código puesto, sube sola cada cambio (1,5 s después del último) a
        partidas/<código>/fichas/<id>  = {nombre, t, e, v, datos}   (datos = la copia de seguridad .json, en texto)
        partidas/<código>/indice/<id>  = {nombre, t}          (lo que mira el tracker para saber qué ha cambiado)
@@ -9813,12 +9813,36 @@ function nubeAzar(n){
   return Array.from(a, x => NUBE_ALFABETO[x % NUBE_ALFABETO.length]).join("");
 }
 const nubeNuevoCodigo = () => "XANA-" + nubeAzar(4) + "-" + nubeAzar(4) + "-" + nubeAzar(4);
-/* Acepta el código como lo escriba el jugador: minúsculas, espacios, sin guiones… */
+/* Códigos de partida: los elige el máster (de 4 a 12 letras o números, p. ej. XANA29). Siguen valiendo los largos de antes
+   (XANA-XXXX-XXXX-XXXX). Se acepta como lo escriba el jugador: minúsculas, espacios, guiones… */
 function nubeNormalizar(t){
-  const s = String(t || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^XANA/, "");
-  return s.length === 12 ? "XANA-" + s.slice(0, 4) + "-" + s.slice(4, 8) + "-" + s.slice(8) : String(t || "").trim().toUpperCase();
+  const s = String(t || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if(s.length === 16 && s.startsWith("XANA")) return "XANA-" + s.slice(4, 8) + "-" + s.slice(8, 12) + "-" + s.slice(12);
+  return s.length >= 4 && s.length <= 12 ? s : String(t || "").trim().toUpperCase();
 }
-const nubeCodigoValido = c => /^XANA(-[A-Z0-9]{4}){3}$/.test(String(c || ""));
+const nubeCodigoLargo = c => /^XANA(-[A-Z0-9]{4}){3}$/.test(String(c || ""));
+const nubeCodigoValido = c => nubeCodigoLargo(c) || /^[A-Z0-9]{4,12}$/.test(String(c || ""));
+const NUBE_CODIGO_AYUDA = "El código de partida tiene de 4 a 12 letras o números (por ejemplo XANA29).";
+/* Partida que ha cambiado de código (el máster la pasó a uno corto): partidas/<viejo>/movida = {a:<nuevo>, t} */
+const nubeMovida = codigo => nubePedir("partidas/" + codigo + "/movida").then(m => m && nubeCodigoValido(m.a) && m.a !== codigo ? m.a : "").catch(() => "");
+/* ¿Está libre el código? (ninguna partida lo usa todavía) */
+async function nubeCodigoLibre(codigo){
+  const [m, i, mv] = await Promise.all(["maestro", "indice", "movida"].map(k => nubePedir("partidas/" + codigo + "/" + k + (k === "indice" ? "?shallow=true" : ""))));
+  return !m && !(i && Object.keys(i).length) && !mv;
+}
+/* Copia toda la partida a otro código y deja en el viejo un aviso para que las fichas y trackers conectados se pasen solos */
+async function nubeMoverPartida(viejo, nuevo){
+  if(!await nubeCodigoLibre(nuevo)) throw new Error("ese código ya lo usa otra partida");
+  const todo = await nubePedir("partidas/" + viejo);
+  const copia = todo && typeof todo === "object" ? JSON.parse(JSON.stringify(todo)) : {};
+  delete copia.movida;
+  // las fichas subidas con versiones anteriores no llevan número de versión: lo necesitan para las reglas nuevas
+  Object.keys(copia.fichas || {}).forEach(id => { const f = copia.fichas[id]; if(f && typeof f === "object" && typeof f.v !== "number") f.v = 1; });
+  Object.keys(copia.indice || {}).forEach(id => { const f = copia.indice[id]; if(f && typeof f === "object" && typeof f.v !== "number") f.v = (copia.fichas && copia.fichas[id] && copia.fichas[id].v) || 1; });
+  copia.maestro = {t:Date.now()};
+  await nubePedir("partidas/" + nuevo, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(copia)});
+  await nubePedir("partidas/" + viejo, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({movida:{a:nuevo, t:Date.now()}})});
+}
 async function nubePedir(ruta, opc){
   let r;
   try{ r = await fetch(NUBE_URL + "/" + ruta + ".json", Object.assign({cache:"no-store"}, opc || {})); }
@@ -10020,6 +10044,17 @@ function nubeJuntar(base, remoto, local){
   if(!out.retratoFirma) delete out.retratoFirma;
   return {obj:out, mios};
 }
+/* La partida ha cambiado de código: esta ficha pasa al nuevo sola */
+function nubeSeguirMovida(nuevo){
+  const viejo = NUBE.codigo;
+  NUBE.codigo = nuevo;
+  try{ localStorage.setItem(CLAVE_NUBE, nuevo); }catch(e){}
+  if(D && D.nube && D.nube.partida === viejo){ D.nube.partida = nuevo; Guardado.escribir(D); }
+  nubeDejarFicha(); nubeEscucharFicha();
+  if(typeof nubeEscucharCombate === "function") nubeEscucharCombate();
+  toast("La partida ha cambiado de código: ahora es " + nuevo + ".", 6000);
+  nubePintar();
+}
 /* Sincroniza esta ficha con la nube. Devuelve "igual", "bajada", "subida" o "nada" (no hay ficha en la nube).
    subirSiNoEsta: si la nube no la tiene (recién unida a la partida), se sube. */
 async function nubeSincronizar(opc){
@@ -10032,6 +10067,8 @@ async function nubeSincronizar(opc){
     const vR = remoto ? num(r.v) : 0;
     let base = NUBE.base && NUBE.base.id === id ? NUBE.base : await nubeLeerBase(id);
     if(!remoto){
+      const nuevo = await nubeMovida(NUBE.codigo);
+      if(nuevo){ nubeSeguirMovida(nuevo); continue; }
       if(!opc.subirSiNoEsta){ NUBE.borrada = !!base; return "nada"; }      // la han borrado de la partida: no se vuelve a subir sola
       if(nubeFichaVacia()) return "nada";
       const copia = await nubeCopiaSubir();
@@ -10270,7 +10307,7 @@ function nubeAbrir(){
       : `<div class="modal">
         <h3>Conectar con la partida</h3>
         <p>Escribe el código de partida que te ha dado el máster. Después eliges: subir esta ficha o cargar una que ya esté en la partida. Desde ese momento se sube sola cada vez que cambies algo.</p>
-        <label class="nube-campo">Código de partida<input id="nubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XANA-XXXX-XXXX-XXXX"></label>
+        <label class="nube-campo">Código de partida<input id="nubeCodigo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="p. ej. XANA29"></label>
         <p class="nube-estado" id="nubeAviso"></p>
         <div class="nube-botones"><button class="btn principal" data-n="conectar">Conectar</button>
           <button class="btn" data-n="cerrar">Cancelar</button></div></div>`;
@@ -10296,10 +10333,18 @@ function nubeAbrir(){
     if(n === "lista"){ cargarLista(); return; }
     if(n === "volver"){ vista = NUBE.codigo ? "conectada" : "inicio"; pintarModal(); return; }
     if(n === "conectar"){
-      const c = nubeNormalizar(velo.querySelector("#nubeCodigo").value);
+      let c = nubeNormalizar(velo.querySelector("#nubeCodigo").value);
       const aviso = velo.querySelector("#nubeAviso");
-      if(!nubeCodigoValido(c)){ aviso.textContent = "Ese código no tiene la forma XANA-XXXX-XXXX-XXXX. Cópialo tal cual te lo ha pasado el máster."; return; }
+      if(!nubeCodigoValido(c)){ aviso.textContent = "Ese código no es válido. " + NUBE_CODIGO_AYUDA + " Escríbelo tal cual te lo ha pasado el máster."; return; }
       b.disabled = true; aviso.textContent = "Conectando…";
+      // ¿la partida se ha pasado a otro código? se usa el nuevo (y la ficha que era de la vieja sigue unida)
+      const mv = await nubeMovida(c);
+      if(mv){ if(D.nube && D.nube.partida === c){ D.nube.partida = mv; Guardado.escribir(D); } c = mv; toast("Esa partida ahora tiene el código " + mv + ".", 5000); }
+      else{
+        let libre = false;
+        try{ libre = await nubeCodigoLibre(c); }catch(e){ b.disabled = false; aviso.textContent = "No se ha podido conectar (" + (e.message || e) + ")."; return; }
+        if(libre){ b.disabled = false; aviso.textContent = "No hay ninguna partida con el código " + c + ". Revisa que esté bien escrito (el máster la crea en su tracker)."; return; }
+      }
       NUBE.codigo = c; NUBE.ultimo = ""; NUBE.error = ""; NUBE.listo = true; nubeEscucharCombate();
       try{ localStorage.setItem(CLAVE_NUBE, c); localStorage.removeItem(CLAVE_NUBE + "-fuera"); }catch(e){}
       nubePintar();
@@ -10540,6 +10585,8 @@ if(nubeLista()){
   // fichas que ya se subían antes de que hubiera que elegir: este dispositivo estaba conectado, así que siguen unidas a la partida
   if(NUBE.codigo && D && D.nube && /^f[A-Z0-9]{10}$/.test(D.nube.id || "") && !D.nube.partida){ D.nube.partida = NUBE.codigo; Guardado.escribir(D); }
   const arrancar = async () => {
+    // la partida se ha pasado a otro código mientras este dispositivo no estaba
+    try{ const mv = await nubeMovida(NUBE.codigo); if(mv) nubeSeguirMovida(mv); }catch(e){}
     if(delEnlace && delEnlace.ficha && !(D.nube && D.nube.id === delEnlace.ficha && D.nube.partida === NUBE.codigo)){
       try{ const nombre = await nubeTraer(delEnlace.ficha, true); toast("«" + nombre + "» abierta desde la nube.", 4000); }
       catch(e){ avisar("No se ha podido abrir la ficha del enlace: " + (e.message || e) + "."); }
