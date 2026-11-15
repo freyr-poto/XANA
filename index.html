@@ -620,6 +620,8 @@ try{var V=JSON.parse(localStorage.getItem("xana-vista")||"{}");if(V.clasica!==tr
   .nube-enlace{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;margin:8px 0;background:var(--panel-alto)}
   .nube-enlace b,.nube-enlace small{flex-basis:100%}
   .nube-enlace small{color:var(--apagado);font-size:var(--t-xs)}
+  .nube-qr{flex-basis:100%;display:flex;justify-content:center}
+  .nube-qr svg{width:min(180px,60vw);height:auto;border-radius:var(--r-m)}
   .nube-enlace input{flex:1 1 180px;min-width:0;font-size:var(--t-xs)}
   .nube-lista{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
   .nube-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--linea);border-radius:var(--r-m);padding:8px 10px;background:var(--panel-alto)}
@@ -2616,7 +2618,7 @@ function iconizar(raiz){
    en la web, la ficha y el tracker miran ese version.json al abrirse, al volver a la pestaña y cada 5 minutos: si hay uno
    más nuevo que el suyo, sale un aviso con «Recargar», que abre la página con ?v=<versión> para saltarse la caché del
    navegador. Abiertos como archivo (file://) no miran nada. */
-const VERSION_APP = "2026.11.15-1841";
+const VERSION_APP = "2026.11.15-1915";
 const VERSION_AVISO = {visto:""};
 function comprobarVersion(){
   if(!/^https?:$/.test(location.protocol) || !window.fetch) return;
@@ -10258,7 +10260,8 @@ function nubeAbrir(){
         <h3>Partida en la nube</h3>
         <p>Tu ficha está en la partida <b class="nube-codigo">${esc(NUBE.codigo)}</b>. La ficha de verdad es la de la nube: este dispositivo, tu móvil o el ordenador del máster ven la misma, y cada cambio llega solo a todos.</p>
         <p class="nube-estado" id="nubeEstado">${esc(nubeFichaVacia() ? "La ficha está en blanco: se subirá en cuanto tenga nombre o estadísticas." : nubeEstadoTexto())}</p>
-        ${nubeVinculada() ? `<div class="nube-enlace"><b>Abrir esta ficha en otro dispositivo</b><small>Abre este enlace en el móvil u otro ordenador (o guárdalo en favoritos): entra directo en esta ficha de la partida.</small>
+        ${nubeVinculada() ? `<div class="nube-enlace"><b>Abrir esta ficha en otro dispositivo</b><small>Escanea el código con la cámara del móvil, o abre el enlace en otro ordenador (y guárdalo en favoritos): entra directo en esta ficha de la partida.</small>
+          <div class="nube-qr">${typeof qrSvg === "function" ? qrSvg(nubeEnlace(), {etiqueta:"Código QR del enlace de tu ficha"}) : ""}</div>
           <input readonly value="${esc(nubeEnlace())}" aria-label="Enlace de tu ficha" onclick="this.select()"><button class="btn" data-n="enlace">Copiar enlace</button>${navigator.share ? `<button class="btn" data-n="compartir">Enviar…</button>` : ""}</div>` : ""}
         <div class="nube-botones"><button class="btn principal" data-n="subir">Sincronizar ahora</button>
           <button class="btn" data-n="lista">Fichas de la partida</button>
@@ -10560,6 +10563,128 @@ if(nubeLista()){
   window.addEventListener("online", () => { if(NUBE.codigo) nubeComprobar(); });
 }
 /*</UI>*/
+/* ---------- Código QR (propio, sin librerías) ----------
+   Para el enlace de la ficha: modo byte (UTF-8), corrección de errores M, versiones 1 a 10 (hasta 213 bytes).
+   qrMatriz(texto) → matriz de booleanos (true = negro), o null si el texto no cabe. qrSvg(texto) → <svg> listo para pintar. */
+const QR_M = [null,   // por versión: [códigos de corrección por bloque, [bloques, datos], [bloques, datos]]
+  [10, [1, 16]], [16, [1, 28]], [26, [1, 44]], [18, [2, 32]], [24, [2, 43]],
+  [16, [4, 27]], [18, [4, 31]], [22, [2, 38], [2, 39]], [22, [3, 36], [2, 37]], [26, [4, 43], [1, 44]]];
+const QR_ALINEA = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+const QR_EXP = [], QR_LOG = [];
+(function(){ let x = 1; for(let i = 0; i < 255; i++){ QR_EXP[i] = x; QR_LOG[x] = i; x <<= 1; if(x & 256) x ^= 0x11D; } })();
+const qrMul = (a, b) => a && b ? QR_EXP[(QR_LOG[a] + QR_LOG[b]) % 255] : 0;
+function qrCorreccion(datos, n){
+  let gen = [1];                                         // (x − α⁰)(x − α¹)…(x − αⁿ⁻¹)
+  for(let i = 0; i < n; i++){
+    const sig = new Array(gen.length + 1).fill(0);
+    gen.forEach((c, j) => { sig[j] ^= c; sig[j + 1] ^= qrMul(c, QR_EXP[i]); });
+    gen = sig;
+  }
+  const r = new Array(n).fill(0);
+  datos.forEach(d => {
+    const f = d ^ r.shift(); r.push(0);
+    for(let j = 0; j < n; j++) r[j] ^= qrMul(gen[j + 1], f);
+  });
+  return r;
+}
+function qrMatriz(texto){
+  const bytes = Array.from(new TextEncoder().encode(String(texto)));
+  let ver = 0, cap = 0;
+  for(let v = 1; v <= 10; v++){
+    const t = QR_M[v]; cap = t.slice(1).reduce((s, g) => s + g[0] * g[1], 0);
+    if(4 + (v < 10 ? 8 : 16) + bytes.length * 8 <= cap * 8){ ver = v; break; }
+  }
+  if(!ver) return null;
+  // bits: modo byte, longitud, datos, fin y relleno
+  const bits = [];
+  const poner = (v, n) => { for(let i = n - 1; i >= 0; i--) bits.push((v >>> i) & 1); };
+  poner(4, 4); poner(bytes.length, ver < 10 ? 8 : 16); bytes.forEach(b => poner(b, 8));
+  poner(0, Math.min(4, cap * 8 - bits.length));
+  while(bits.length % 8) bits.push(0);
+  const cw = [];
+  for(let i = 0; i < bits.length; i += 8) cw.push(parseInt(bits.slice(i, i + 8).join(""), 2));
+  for(let p = 0; cw.length < cap; p++) cw.push(p % 2 ? 0x11 : 0xEC);
+  // bloques, corrección e intercalado
+  const t = QR_M[ver], bloques = [];
+  let k = 0;
+  t.slice(1).forEach(g => { for(let b = 0; b < g[0]; b++){ const d = cw.slice(k, k + g[1]); k += g[1]; bloques.push({d, e:qrCorreccion(d, t[0])}); } });
+  const final = [];
+  const maxD = Math.max(...bloques.map(b => b.d.length));
+  for(let i = 0; i < maxD; i++) bloques.forEach(b => { if(i < b.d.length) final.push(b.d[i]); });
+  for(let i = 0; i < t[0]; i++) bloques.forEach(b => final.push(b.e[i]));
+  // matriz y módulos de función
+  const n = ver * 4 + 17;
+  const M = [], F = [];
+  for(let y = 0; y < n; y++){ M.push(new Array(n).fill(false)); F.push(new Array(n).fill(false)); }
+  const fijar = (x, y, v) => { M[y][x] = !!v; F[y][x] = true; };
+  for(let i = 0; i < n; i++){ fijar(6, i, i % 2 === 0); fijar(i, 6, i % 2 === 0); }
+  [[3, 3], [n - 4, 3], [3, n - 4]].forEach(([cx, cy]) => {
+    for(let dy = -4; dy <= 4; dy++) for(let dx = -4; dx <= 4; dx++){
+      const x = cx + dx, y = cy + dy, d = Math.max(Math.abs(dx), Math.abs(dy));
+      if(x >= 0 && x < n && y >= 0 && y < n) fijar(x, y, d !== 2 && d !== 4);
+    }
+  });
+  const al = QR_ALINEA[ver], u = al.length - 1;
+  al.forEach((ax, i) => al.forEach((ay, j) => {
+    if((i === 0 && j === 0) || (i === 0 && j === u) || (i === u && j === 0)) return;
+    for(let dy = -2; dy <= 2; dy++) for(let dx = -2; dx <= 2; dx++) fijar(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }));
+  const formato = mask => {
+    const d = mask;                                   // nivel M = 00
+    let r = d; for(let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+    const b = ((d << 10) | r) ^ 0x5412, bit = i => (b >>> i) & 1;
+    for(let i = 0; i <= 5; i++) fijar(8, i, bit(i));
+    fijar(8, 7, bit(6)); fijar(8, 8, bit(7)); fijar(7, 8, bit(8));
+    for(let i = 9; i < 15; i++) fijar(14 - i, 8, bit(i));
+    for(let i = 0; i < 8; i++) fijar(n - 1 - i, 8, bit(i));
+    for(let i = 8; i < 15; i++) fijar(8, n - 15 + i, bit(i));
+    fijar(8, n - 8, 1);
+  };
+  formato(0);
+  if(ver >= 7){
+    let r = ver; for(let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+    const b = (ver << 12) | r;
+    for(let i = 0; i < 18; i++){ const v = (b >>> i) & 1, a = n - 11 + i % 3, c = Math.floor(i / 3); fijar(a, c, v); fijar(c, a, v); }
+  }
+  // datos en zigzag
+  let i = 0;
+  for(let der = n - 1; der >= 1; der -= 2){
+    if(der === 6) der = 5;
+    for(let v = 0; v < n; v++) for(let j = 0; j < 2; j++){
+      const x = der - j, arriba = ((der + 1) & 2) === 0, y = arriba ? n - 1 - v : v;
+      if(!F[y][x] && i < final.length * 8){ M[y][x] = ((final[i >>> 3] >>> (7 - (i & 7))) & 1) === 1; i++; }
+    }
+  }
+  // máscara: la de menor penalización
+  const MASCARAS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => x * y % 2 + x * y % 3 === 0,
+    (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
+  const aplicar = m => { for(let y = 0; y < n; y++) for(let x = 0; x < n; x++) if(!F[y][x] && MASCARAS[m](x, y)) M[y][x] = !M[y][x]; };
+  const penal = () => {
+    let p = 0, negros = 0;
+    const linea = get => { let pen = 0, run = 1; for(let a = 1; a < n; a++){ if(get(a) === get(a - 1)){ run++; if(run === 5) pen += 3; else if(run > 5) pen++; } else run = 1; } return pen; };
+    const patron = get => { let pen = 0; const P = [1, 0, 1, 1, 1, 0, 1];
+      for(let a = 0; a + 7 <= n; a++){ if(!P.every((v, q) => get(a + q) === !!v)) continue;
+        const blanco = (s, e) => { for(let q = s; q < e; q++) if(q >= 0 && q < n && get(q)) return false; return true; };
+        if(blanco(a - 4, a) || blanco(a + 7, a + 11)) pen += 40; } return pen; };
+    for(let a = 0; a < n; a++){ p += linea(b => M[a][b]) + linea(b => M[b][a]) + patron(b => M[a][b]) + patron(b => M[b][a]); }
+    for(let y = 0; y < n - 1; y++) for(let x = 0; x < n - 1; x++){ const c = M[y][x]; if(c === M[y][x + 1] && c === M[y + 1][x] && c === M[y + 1][x + 1]) p += 3; }
+    for(let y = 0; y < n; y++) for(let x = 0; x < n; x++) if(M[y][x]) negros++;
+    return p + Math.floor(Math.abs(negros * 20 - n * n * 10) / (n * n)) * 10;
+  };
+  let mejor = 0, minimo = Infinity;
+  for(let m = 0; m < 8; m++){ aplicar(m); formato(m); const p = penal(); if(p < minimo){ minimo = p; mejor = m; } aplicar(m); }
+  aplicar(mejor); formato(mejor);
+  return M;
+}
+function qrSvg(texto, opc){
+  const M = qrMatriz(texto);
+  if(!M) return "";
+  const n = M.length, borde = 4, t = n + borde * 2;
+  let d = "";
+  for(let y = 0; y < n; y++) for(let x = 0; x < n; x++) if(M[y][x]) d += "M" + (x + borde) + " " + (y + borde) + "h1v1h-1z";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t} ${t}" shape-rendering="crispEdges" role="img" aria-label="${(opc && opc.etiqueta) || "Código QR"}"><rect width="${t}" height="${t}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
 
 /*<UI>*/
 /* ================= NEW-05 (ficha del jugador): el mapa que comparte el máster =================
